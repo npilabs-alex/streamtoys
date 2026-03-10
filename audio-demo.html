@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Drop Cast - Audio Asset Demo</title>
+<style>
+:root {
+  --bg: #07070f;
+  --text: #eeeeff;
+  --beat: #ff2d6e;
+  --vibe: #00e5ff;
+  --melody: #39ff14;
+  --wild: #ffd700;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  padding: 20px;
+  min-height: 100vh;
+}
+h1 {
+  text-align: center;
+  margin-bottom: 10px;
+  background: linear-gradient(90deg, var(--beat), var(--vibe), var(--melody));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.subtitle {
+  text-align: center;
+  color: rgba(255,255,255,0.5);
+  margin-bottom: 30px;
+}
+.category {
+  margin-bottom: 40px;
+}
+.category h2 {
+  padding: 10px 20px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  display: inline-block;
+}
+.category.beat h2 { background: var(--beat); color: #000; }
+.category.vibe h2 { background: var(--vibe); color: #000; }
+.category.melody h2 { background: var(--melody); color: #000; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: rgba(255,255,255,0.03);
+  border-radius: 12px;
+  overflow: hidden;
+}
+th, td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+th {
+  background: rgba(255,255,255,0.05);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+tr:hover { background: rgba(255,255,255,0.05); }
+.tint-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 8px;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.play-btn {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.3);
+  color: var(--text);
+  padding: 8px 20px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+.play-btn:hover {
+  background: rgba(255,255,255,0.2);
+  transform: scale(1.05);
+}
+.play-btn.playing {
+  background: var(--beat);
+  color: #000;
+}
+.play-btn.beat.playing { background: var(--beat); }
+.play-btn.vibe.playing { background: var(--vibe); }
+.play-btn.melody.playing { background: var(--melody); }
+.master-controls {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-bottom: 30px;
+  padding: 20px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 12px;
+}
+.master-btn {
+  background: linear-gradient(135deg, var(--beat), var(--vibe));
+  border: none;
+  color: #000;
+  padding: 12px 30px;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+.master-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(255,45,110,0.4);
+}
+.active-mix {
+  margin-top: 20px;
+  padding: 15px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 8px;
+  text-align: center;
+}
+.active-mix h3 { margin-bottom: 10px; color: var(--wild); }
+.mix-slots {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+.mix-slot {
+  padding: 10px 20px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.1);
+  min-width: 150px;
+}
+.mix-slot.beat { border: 2px solid var(--beat); }
+.mix-slot.vibe { border: 2px solid var(--vibe); }
+.mix-slot.melody { border: 2px solid var(--melody); }
+.mix-slot .label { font-size: 11px; text-transform: uppercase; opacity: 0.6; }
+.mix-slot .value { font-weight: 600; margin-top: 4px; }
+</style>
+</head>
+<body>
+<h1>DROP CAST - Audio Asset Demo</h1>
+<p class="subtitle">Preview the placeholder synthesized loops for each category</p>
+
+<div class="master-controls">
+  <button class="master-btn" onclick="playAllActive()">Play Active Mix</button>
+  <button class="master-btn" onclick="stopAll()">Stop All</button>
+</div>
+
+<div class="active-mix">
+  <h3>Active Mix</h3>
+  <div class="mix-slots">
+    <div class="mix-slot beat">
+      <div class="label">Beat</div>
+      <div class="value" id="active-beat">None</div>
+    </div>
+    <div class="mix-slot vibe">
+      <div class="label">Vibe</div>
+      <div class="value" id="active-vibe">None</div>
+    </div>
+    <div class="mix-slot melody">
+      <div class="label">Melody</div>
+      <div class="value" id="active-melody">None</div>
+    </div>
+  </div>
+</div>
+
+<div class="category beat">
+  <h2>BEAT - Drums & Percussion</h2>
+  <table>
+    <tr>
+      <th>Name</th>
+      <th>ID</th>
+      <th>Tint Color</th>
+      <th>Description</th>
+      <th>Action</th>
+    </tr>
+    <tr>
+      <td>Afrobeat Drums</td>
+      <td><code>afrobeat_drums</code></td>
+      <td><span class="tint-swatch" style="background:#ff6b35"></span>#ff6b35</td>
+      <td>Warm, syncopated percussion pattern with kick/snare/hat</td>
+      <td><button class="play-btn beat" onclick="toggleLoop('beat', 0, this)">Play</button></td>
+    </tr>
+    <tr>
+      <td>Trap 808s</td>
+      <td><code>trap_808</code></td>
+      <td><span class="tint-swatch" style="background:#9d4edd"></span>#9d4edd</td>
+      <td>Deep sub bass with snappy hi-hats</td>
+      <td><button class="play-btn beat" onclick="toggleLoop('beat', 1, this)">Play</button></td>
+    </tr>
+    <tr>
+      <td>House Kick</td>
+      <td><code>house_kick</code></td>
+      <td><span class="tint-swatch" style="background:#ff2d6e"></span>#ff2d6e</td>
+      <td>Four-on-the-floor house pattern</td>
+      <td><button class="play-btn beat" onclick="toggleLoop('beat', 2, this)">Play</button></td>
+    </tr>
+    <tr>
+      <td>Latin Percussion</td>
+      <td><code>latin_perc</code></td>
+      <td><span class="tint-swatch" style="background:#ff9500"></span>#ff9500</td>
+      <td>Rhythmic latin-influenced pattern</td>
+      <td><button class="play-btn beat" onclick="toggleLoop('beat', 3, this)">Play</button></td>
+    </tr>
+    <tr>
+      <td>Breakbeat</td>
+      <td><code>breakbeat</code></td>
+      <td><span class="tint-swatch" style="background:#e83f6f"></span>#e83f6f</td>
+      <td>Syncopated break-style drums</td>
+      <td><button class="play-btn beat" onclick="toggleLoop('beat', 4, this)">Play</button></td>
+    </tr>
+    <tr>
+      <td>Minimal Click</td>
+      <td><code>minimal_click</code></td>
+      <td><span class="tint-swatch" style="background:#ff5c8d"></span>#ff5c8d</td>
+      <td>Sparse, clicky minimal techno pattern</td>
+      <td><button class="play-btn beat" onclick="toggleLoop('beat', 5, this)">Play</button></td>
+    </tr>
+  </table>
+</div>
+
+<div class="category vibe">
+  <h2>VIBE - Pads & Atmosphere</h2>
+  <table>
+    <tr>
+      <th>Name</th>
+      <th>ID</th>
+      <th>Tint Color</th>
+      <th>Description</th>
+      <th>Action</th>
+    </tr>
+    <tr>
+      <td>Ambient Pad</td>
+      <td><code>ambient_pad</code></td>
+      <td><span class="tint-swatch" style="background:#00b4d8"></span>#00b4d8</td>
+      <td>Soft, evolving ambient chord pad</td>
+      <td><button class="play-btn vibe" onclick="toggleLoop('vibe', 0, this)">Play</button></td>
+    </tr>
+    <tr>
+      <td>Lo-Fi Texture</td>
+      <td><code>lofi_texture</code></td>
+      <td><span class="tint-swatch" style="background:#48cae4"></span>#48cae4</td>
+      <td>Warm, slightly detuned texture</td>
+      <td><button class="play-btn vibe" onclick="toggleLoop('vibe', 1, this)">Play</button></td>
+    </tr>
+    <tr>
+      <td>Strings Swell</td>
+      <td><code>strings_swell</code></td>
+      <td><span class="tint-swatch" style="background:#0096c7"></span>#0096c7</td>
+      <td>Orchestral string-like sustained pad</td>
+      <td><button class="play-btn vibe" onclick="toggleLoop('vibe', 2, this)">Play</button></td>
+    </tr>
+    <tr>
+      <td>Synth Wash</td>
+      <td><code>synth_wash</code></td>
+      <td><span class="tint-swatch" style="background:#00e5ff"></span>#00e5ff</td>
+      <td>Bright, shimmering synth texture</td>
+      <td><button class="play-btn vibe" onclick="toggleLoop('vibe', 3, this)">Play</button></td>
+    </tr>
+    <tr>
+      <td>Choir Hum</td>
+      <td><code>choir_hum</code></td>
+      <td><span class="tint-swatch" style="background:#90e0ef"></span>#90e0ef</td>
+      <td>Ethereal choir-like harmonics</td>
+      <td><button class="play-btn vibe" onclick="toggleLoop('vibe', 4, this)">Play</button></td>
+    </tr>
+    <tr>
+      <td>Noise Bed</td>
+      <td><code>noise_bed</code></td>
+      <td><span class="tint-swatch" style="background:#caf0f8"></span>#caf0f8</td>
+      <td>Subtle filtered noise texture</td>
+      <td><button class="play-btn vibe" onclick="toggleLoop('vibe', 5, this)">Play</button></td>
+    </tr>
+  </table>
+</div>
+
+<div class="category melody">
+  <h2>MELODY - Leads & Hooks</h2>
+  <table>
+    <tr>
+      <th>Name</th>
+      <th>ID</th>
+      <th>Tint Color</th>
+      <th>Description</th>
+      <th>Action</th>
+    </tr>
+    <tr>
+      <td>Piano Riff</td>
+      <td><code>piano_riff</code></td>
+      <td><span class="tint-swatch" style="background:#70e000"></span>#70e000</td>
+      <td>Simple melodic piano phrase</td>
+      <td><button class="play-btn melody" onclick="toggleLoop('melody', 0, this)">Play</button></td>
+    </tr>
+    <tr>
+      <td>Synth Arp</td>
+      <td><code>synth_arp</code></td>
+      <td><span class="tint-swatch" style="background:#39ff14"></span>#39ff14</td>
+      <td>Arpeggiated synth pattern</td>
+      <td><button class="play-btn melody" onclick="toggleLoop('melody', 1, this)">Play</button></td>
+    </tr>
+    <tr>
+      <td>Guitar Lick</td>
+      <td><code>guitar_lick</code></td>
+      <td><span class="tint-swatch" style="background:#9ef01a"></span>#9ef01a</td>
+      <td>Clean guitar-style melody</td>
+      <td><button class="play-btn melody" onclick="toggleLoop('melody', 2, this)">Play</button></td>
+    </tr>
+    <tr>
+      <td>Brass Stab</td>
+      <td><code>brass_stab</code></td>
+      <td><span class="tint-swatch" style="background:#ccff33"></span>#ccff33</td>
+      <td>Punchy brass-style hits</td>
+      <td><button class="play-btn melody" onclick="toggleLoop('melody', 3, this)">Play</button></td>
+    </tr>
+    <tr>
+      <td>Pluck Melody</td>
+      <td><code>pluck_melody</code></td>
+      <td><span class="tint-swatch" style="background:#b5e48c"></span>#b5e48c</td>
+      <td>Soft plucked string melody</td>
+      <td><button class="play-btn melody" onclick="toggleLoop('melody', 4, this)">Play</button></td>
+    </tr>
+    <tr>
+      <td>Bell Chime</td>
+      <td><code>bell_chime</code></td>
+      <td><span class="tint-swatch" style="background:#d9ed92"></span>#d9ed92</td>
+      <td>Bright bell-like melodic pattern</td>
+      <td><button class="play-btn melody" onclick="toggleLoop('melody', 5, this)">Play</button></td>
+    </tr>
+  </table>
+</div>
+
+<script>
+'use strict';
+
+// Audio context and state
+let audioCtx = null;
+const BPM = 115;
+const LOOP_DURATION = (60 / BPM) * 4; // 4 bars
+const buffers = {};
+const activeNodes = { beat: null, vibe: null, melody: null };
+const activeIndices = { beat: null, vibe: null, melody: null };
+
+const LOOP_POOLS = {
+  beat: [
+    { id: 'afrobeat_drums', name: 'Afrobeat Drums' },
+    { id: 'trap_808', name: 'Trap 808s' },
+    { id: 'house_kick', name: 'House Kick' },
+    { id: 'latin_perc', name: 'Latin Percussion' },
+    { id: 'breakbeat', name: 'Breakbeat' },
+    { id: 'minimal_click', name: 'Minimal Click' }
+  ],
+  vibe: [
+    { id: 'ambient_pad', name: 'Ambient Pad' },
+    { id: 'lofi_texture', name: 'Lo-Fi Texture' },
+    { id: 'strings_swell', name: 'Strings Swell' },
+    { id: 'synth_wash', name: 'Synth Wash' },
+    { id: 'choir_hum', name: 'Choir Hum' },
+    { id: 'noise_bed', name: 'Noise Bed' }
+  ],
+  melody: [
+    { id: 'piano_riff', name: 'Piano Riff' },
+    { id: 'synth_arp', name: 'Synth Arp' },
+    { id: 'guitar_lick', name: 'Guitar Lick' },
+    { id: 'brass_stab', name: 'Brass Stab' },
+    { id: 'pluck_melody', name: 'Pluck Melody' },
+    { id: 'bell_chime', name: 'Bell Chime' }
+  ]
+};
+
+function getAudioContext() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+  return audioCtx;
+}
+
+async function generateAllBuffers() {
+  const ctx = getAudioContext();
+  const sampleRate = ctx.sampleRate;
+  const samples = Math.floor(sampleRate * LOOP_DURATION);
+
+  for (const cat of ['beat', 'vibe', 'melody']) {
+    for (let i = 0; i < LOOP_POOLS[cat].length; i++) {
+      const buffer = ctx.createBuffer(2, samples, sampleRate);
+      const left = buffer.getChannelData(0);
+      const right = buffer.getChannelData(1);
+
+      if (cat === 'beat') {
+        generateBeatPattern(left, right, samples, sampleRate, i);
+      } else if (cat === 'vibe') {
+        generateVibePattern(left, right, samples, sampleRate, i);
+      } else {
+        generateMelodyPattern(left, right, samples, sampleRate, i);
+      }
+
+      buffers[`${cat}_${i}`] = buffer;
+    }
+  }
+}
+
+function generateBeatPattern(left, right, samples, sampleRate, variant) {
+  const beatsPerBar = 4;
+  const bars = 4;
+  const totalBeats = beatsPerBar * bars;
+  const samplesPerBeat = samples / totalBeats;
+
+  for (let beat = 0; beat < totalBeats; beat++) {
+    const startSample = Math.floor(beat * samplesPerBeat);
+    const isKick = beat % 4 === 0 || (variant > 2 && beat % 4 === 2);
+    const isSnare = beat % 4 === 2;
+    const isHat = variant < 3 ? true : beat % 2 === 0;
+
+    if (isKick) {
+      for (let i = 0; i < Math.min(sampleRate * 0.15, samples - startSample); i++) {
+        const t = i / sampleRate;
+        const freq = 60 + 80 * Math.exp(-t * 30);
+        const env = Math.exp(-t * 15);
+        const val = Math.sin(2 * Math.PI * freq * t) * env * 0.6;
+        left[startSample + i] += val;
+        right[startSample + i] += val;
+      }
+    }
+
+    if (isSnare && variant !== 5) {
+      for (let i = 0; i < Math.min(sampleRate * 0.1, samples - startSample); i++) {
+        const t = i / sampleRate;
+        const env = Math.exp(-t * 20);
+        const noise = (Math.random() * 2 - 1) * 0.3 * env;
+        const tone = Math.sin(2 * Math.PI * 180 * t) * env * 0.2;
+        left[startSample + i] += noise + tone;
+        right[startSample + i] += noise + tone;
+      }
+    }
+
+    if (isHat) {
+      const hatOffset = Math.floor(samplesPerBeat * 0.5) * (beat % 2);
+      for (let i = 0; i < Math.min(sampleRate * 0.05, samples - startSample - hatOffset); i++) {
+        const t = i / sampleRate;
+        const env = Math.exp(-t * 40);
+        const noise = (Math.random() * 2 - 1) * 0.15 * env;
+        left[startSample + hatOffset + i] += noise;
+        right[startSample + hatOffset + i] += noise;
+      }
+    }
+  }
+}
+
+function generateVibePattern(left, right, samples, sampleRate, variant) {
+  const chords = [
+    [130.81, 164.81, 196.00],
+    [146.83, 185.00, 220.00],
+    [164.81, 207.65, 246.94],
+    [174.61, 220.00, 261.63],
+    [196.00, 246.94, 293.66],
+    [220.00, 277.18, 329.63]
+  ];
+  const chord = chords[variant % chords.length];
+
+  for (let i = 0; i < samples; i++) {
+    const t = i / sampleRate;
+    const fadeIn = Math.min(1, t / 0.5);
+    const fadeOut = Math.min(1, (samples - i) / (sampleRate * 0.5));
+    const env = fadeIn * fadeOut;
+
+    let val = 0;
+    chord.forEach((freq, idx) => {
+      const detune = 1 + (Math.sin(t * 0.3 + idx) * 0.002);
+      val += Math.sin(2 * Math.PI * freq * detune * t) * 0.12;
+      val += Math.sin(2 * Math.PI * freq * 2 * detune * t) * 0.03;
+    });
+
+    const lfo = 0.8 + 0.2 * Math.sin(t * 0.5 + variant);
+    val *= env * lfo;
+
+    left[i] += val;
+    right[i] += val * (0.9 + 0.1 * Math.sin(t * 0.2));
+  }
+}
+
+function generateMelodyPattern(left, right, samples, sampleRate, variant) {
+  const scales = [
+    [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25],
+    [261.63, 293.66, 311.13, 349.23, 392.00, 415.30, 466.16, 523.25]
+  ];
+  const scale = scales[variant % 2];
+  const patterns = [
+    [0, 2, 4, 2, 5, 4, 2, 0],
+    [0, 4, 7, 4, 5, 2, 4, 0],
+    [7, 5, 4, 2, 4, 5, 7, 5],
+    [0, 2, 4, 5, 4, 2, 0, 2],
+    [4, 5, 7, 5, 4, 2, 0, 2],
+    [0, 0, 4, 4, 5, 5, 4, 2]
+  ];
+  const pattern = patterns[variant % patterns.length];
+
+  const notesPerBar = 2;
+  const bars = 4;
+  const totalNotes = notesPerBar * bars;
+  const samplesPerNote = samples / totalNotes;
+
+  for (let n = 0; n < totalNotes; n++) {
+    const startSample = Math.floor(n * samplesPerNote);
+    const noteIdx = pattern[n % pattern.length];
+    const freq = scale[noteIdx];
+    const noteDur = samplesPerNote * 0.8;
+
+    for (let i = 0; i < noteDur && startSample + i < samples; i++) {
+      const t = i / sampleRate;
+      const env = Math.exp(-t * 3) * Math.min(1, t / 0.01);
+
+      let val = 0;
+      for (let h = 1; h <= 3; h += 2) {
+        val += Math.sin(2 * Math.PI * freq * h * t) / (h * h) * 0.3;
+      }
+      val *= env;
+
+      left[startSample + i] += val;
+      right[startSample + i] += val;
+    }
+  }
+}
+
+function playLoop(category, index) {
+  const ctx = getAudioContext();
+  const buffer = buffers[`${category}_${index}`];
+  if (!buffer) return null;
+
+  const source = ctx.createBufferSource();
+  const gain = ctx.createGain();
+  source.buffer = buffer;
+  source.loop = true;
+  gain.gain.value = 0.7;
+  source.connect(gain);
+  gain.connect(ctx.destination);
+  source.start();
+
+  return { source, gain };
+}
+
+function stopLoop(category) {
+  if (activeNodes[category]) {
+    activeNodes[category].gain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.1);
+    setTimeout(() => {
+      if (activeNodes[category]) {
+        activeNodes[category].source.stop();
+        activeNodes[category] = null;
+      }
+    }, 200);
+  }
+  activeIndices[category] = null;
+  updateActiveDisplay();
+}
+
+function toggleLoop(category, index, btn) {
+  // Initialize buffers on first interaction
+  if (Object.keys(buffers).length === 0) {
+    generateAllBuffers();
+  }
+
+  // If same loop is playing, stop it
+  if (activeIndices[category] === index) {
+    stopLoop(category);
+    btn.textContent = 'Play';
+    btn.classList.remove('playing');
+    return;
+  }
+
+  // Stop any currently playing loop in this category
+  if (activeNodes[category]) {
+    stopLoop(category);
+    // Reset all buttons in category
+    document.querySelectorAll(`.play-btn.${category}`).forEach(b => {
+      b.textContent = 'Play';
+      b.classList.remove('playing');
+    });
+  }
+
+  // Play new loop
+  activeNodes[category] = playLoop(category, index);
+  activeIndices[category] = index;
+  btn.textContent = 'Stop';
+  btn.classList.add('playing');
+  updateActiveDisplay();
+}
+
+function updateActiveDisplay() {
+  ['beat', 'vibe', 'melody'].forEach(cat => {
+    const el = document.getElementById(`active-${cat}`);
+    if (activeIndices[cat] !== null) {
+      el.textContent = LOOP_POOLS[cat][activeIndices[cat]].name;
+    } else {
+      el.textContent = 'None';
+    }
+  });
+}
+
+function playAllActive() {
+  // Initialize buffers on first interaction
+  if (Object.keys(buffers).length === 0) {
+    generateAllBuffers();
+  }
+
+  ['beat', 'vibe', 'melody'].forEach(cat => {
+    if (activeIndices[cat] !== null && !activeNodes[cat]) {
+      activeNodes[cat] = playLoop(cat, activeIndices[cat]);
+      const btns = document.querySelectorAll(`.play-btn.${cat}`);
+      btns.forEach((b, i) => {
+        if (i === activeIndices[cat]) {
+          b.textContent = 'Stop';
+          b.classList.add('playing');
+        }
+      });
+    }
+  });
+}
+
+function stopAll() {
+  ['beat', 'vibe', 'melody'].forEach(cat => {
+    stopLoop(cat);
+  });
+  document.querySelectorAll('.play-btn').forEach(b => {
+    b.textContent = 'Play';
+    b.classList.remove('playing');
+  });
+}
+</script>
+</body>
+</html>
