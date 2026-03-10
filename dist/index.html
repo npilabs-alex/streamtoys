@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>DROP CAST — Music Hustle</title>
+<title>SONGSUGAR — Soundscape</title>
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Barlow+Condensed:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -257,13 +257,13 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07070f;color:var(--
 
 <div id="toast"></div>
 <div id="overlay" class="show">
-  <h2 id="overlay-title" style="color:var(--vibe)">DROP CAST</h2>
-  <div id="overlay-msg">SOUNDSCAPE
+  <h2 id="overlay-title" style="color:var(--vibe)">SONGSUGAR</h2>
+  <div id="overlay-msg">SOUNDSCAPE CREATOR
 
 TAP CLUSTERS TO COLLAPSE
 EARN POINTS • UNLOCK LOOPS
 BUILD YOUR SOUND • SHARE YOUR MIX</div>
-  <button id="overlay-btn">START ▶</button>
+  <button id="overlay-btn">START SESSION ▶</button>
 </div>
 
 <!-- Loop Selection Panel -->
@@ -292,7 +292,7 @@ BUILD YOUR SOUND • SHARE YOUR MIX</div>
 <script>
 'use strict';
 // ═══════════════════════════════════════════════════════════
-//  DROP CAST v2 — MUSIC HUSTLE
+//  SONGSUGAR — SOUNDSCAPE CREATOR
 // ═══════════════════════════════════════════════════════════
 
 // ── AUDIO ENGINE ─────────────────────────────────────
@@ -900,10 +900,11 @@ let colX = [], colW = [], TS = 36;
 
 function recalcSize() {
   const playcol = document.getElementById('play-col') || document.getElementById('game-area');
-  const availW  = (playcol ? playcol.clientWidth : window.innerWidth - 68) - 12;
-  const availH  = window.innerHeight - 130; // approx controls height
+  const hudWidth = 64;
+  const availW  = (playcol ? playcol.clientWidth : window.innerWidth - hudWidth) * 0.95;
+  const availH  = window.innerHeight * 0.82; // Use 82% of screen height for board
   TS = Math.floor(Math.min(availH / ROWS, availW / COLS));
-  TS = Math.max(22, Math.min(TS, 46));
+  TS = Math.max(28, Math.min(TS, 58)); // Larger min/max for better visibility
   const totalGap   = COL_GAP * (COLS - 1);
   const totalTileW = COLS * TS;
   boardCvs.width  = totalTileW + totalGap;
@@ -2644,11 +2645,11 @@ function endGame() {
   gameOver=true;
   SFX.gameover();
   const ov=document.getElementById('overlay');
-  document.getElementById('overlay-title').textContent='GAME OVER';
+  document.getElementById('overlay-title').textContent='SESSION OVER';
   document.getElementById('overlay-title').style.color='var(--beat)';
   document.getElementById('overlay-msg').textContent=
-    `${STAGES[stageIdx].name}\n\nChart: #${rank}\nStreams: ${fmtNum(streams)}\nFollowers: ${fmtNum(followers)}`;
-  document.getElementById('overlay-btn').textContent='TRY AGAIN ▶';
+    `${STAGES[stageIdx].name}\n\nChart: #${rank}\nStreams: ${fmtNum(streams)}\nBeat: ${resources.beat} | Vibe: ${resources.vibe} | Melody: ${resources.melody}`;
+  document.getElementById('overlay-btn').textContent='NEW SESSION ▶';
   ov.classList.add('show');
 }
 
@@ -2707,6 +2708,24 @@ playCol.addEventListener('touchend',e=>{
   // Tap on piece or empty = rotate
   if(piece&&!resolving) rotate();
 },{passive:false});
+
+// Mouse click support for desktop
+boardCvs.addEventListener('click', e => {
+  if(paused||gameOver||resolving) return;
+  const rect = boardCvs.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  let col = -1;
+  for(let c=0;c<COLS;c++) if(mx>=colX[c]&&mx<colX[c]+colW[c]){col=c;break;}
+  const row = Math.floor(my/TS);
+
+  if(col>=0&&row>=0&&row<ROWS) {
+    const onBoard = board[row]?.[col];
+    if(onBoard) { tapCollapse(row,col); return; }
+  }
+  // Click on empty = rotate piece
+  if(piece) rotate();
+});
 
 document.addEventListener('keydown',e=>{
   if(paused||gameOver) return;

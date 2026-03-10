@@ -1,0 +1,27 @@
+{
+  "name": "dropcast",
+  "version": "0.1.0",
+  "description": "DROP CAST: Music Hustle - A tap-to-collapse puzzle game",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "lint": "eslint src --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "pixi.js": "^8.2.6",
+    "tone": "^15.0.4",
+    "gsap": "^3.12.5",
+    "eventemitter3": "^5.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "typescript": "^5.4.5",
+    "vite": "^5.3.1"
+  },
+  "author": "StreamToys",
+  "license": "UNLICENSED",
+  "private": true
+}
