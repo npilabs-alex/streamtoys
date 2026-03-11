@@ -1,0 +1,3134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>SONGSUGAR</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.3.2/pixi.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #0a0a14;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    #game-container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+<div id="game-container"></div>
+
+<script>
+// ============================================================================
+// SONGSUGAR - Musical Puzzle Game
+// ============================================================================
+
+const CONFIG = {
+  // Grid
+  GRID_COLS: 8,
+  GRID_ROWS: 12,
+  TILE_SIZE: 40,
+  TILE_GAP: 2,
+
+  // Colors
+  COLORS: {
+    BEAT: 0xff2d6e,
+    VIBE: 0x00e5ff,
+    MELODY: 0x39ff14,
+    WILD: 0xffd700,
+    BACKGROUND: 0x0a0a14,
+    HUD_BG: 0x1a1a2e,
+    TEXT: 0xffffff,
+    TEXT_DIM: 0x888899
+  },
+
+  // Gameplay
+  FALL_SPEED: 2,
+  FAST_FALL_SPEED: 15,
+  CLUSTER_MIN: 3,
+  WILD_CHANCE: 0.15,
+  MAX_LAYERS_PER_CATEGORY: 3,
+
+  // Audio
+  BPM: 115,
+  LOOP_BARS: 4,
+
+  // Timing
+  COLLAPSE_DELAY: 200,
+  CHAIN_DELAY: 300,
+
+  // Effects
+  SCREEN_SHAKE_DURATION: 300,
+  SCREEN_SHAKE_INTENSITY: 8,
+  GLOW_PULSE_SPEED: 0.05,
+  PARTICLE_COUNT_BASE: 12,
+  PARTICLE_COUNT_PER_TILE: 4
+};
+
+// Tile types
+const TILE_TYPES = ['BEAT', 'VIBE', 'MELODY', 'WILD'];
+const CATEGORY_TYPES = ['BEAT', 'VIBE', 'MELODY'];
+
+// Loop definitions
+const LOOPS = {
+  BEAT: [
+    { id: 'trap_808', name: 'TRAP 808s', unlocked: true },
+    { id: 'boom_bap', name: 'BOOM BAP', unlocked: true },
+    { id: 'lofi_drums', name: 'LOFI DRUMS', unlocked: true },
+    { id: 'afrobeat', name: 'AFROBEAT', unlocked: false },
+    { id: 'house_4x4', name: 'HOUSE 4x4', unlocked: false },
+    { id: 'drill', name: 'DRILL', unlocked: false },
+    { id: 'amapiano', name: 'AMAPIANO', unlocked: false },
+    { id: 'breakbeat', name: 'BREAKBEAT', unlocked: false }
+  ],
+  VIBE: [
+    { id: 'warm_pad', name: 'WARM PAD', unlocked: true },
+    { id: 'dark_drone', name: 'DARK DRONE', unlocked: true },
+    { id: 'lofi_texture', name: 'LOFI TEXTURE', unlocked: true },
+    { id: 'ethereal_choir', name: 'ETHEREAL CHOIR', unlocked: false },
+    { id: 'strings_swell', name: 'STRINGS SWELL', unlocked: false },
+    { id: 'synth_wash', name: 'SYNTH WASH', unlocked: false },
+    { id: 'sub_drone', name: 'SUB DRONE', unlocked: false },
+    { id: 'glitch_texture', name: 'GLITCH TEXTURE', unlocked: false }
+  ],
+  MELODY: [
+    { id: 'piano_chords', name: 'PIANO CHORDS', unlocked: true },
+    { id: 'synth_arp', name: 'SYNTH ARP', unlocked: true },
+    { id: 'pluck_lead', name: 'PLUCK LEAD', unlocked: true },
+    { id: 'guitar_clean', name: 'GUITAR CLEAN', unlocked: false },
+    { id: 'vocal_chop', name: 'VOCAL CHOP', unlocked: false },
+    { id: 'bell_melody', name: 'BELL MELODY', unlocked: false },
+    { id: 'flute_line', name: 'FLUTE LINE', unlocked: false },
+    { id: 'glide_lead', name: 'GLIDE LEAD', unlocked: false }
+  ]
+};
+
+// ============================================================================
+// GAME STATE
+// ============================================================================
+
+const GameState = {
+  screen: 'HOME', // HOME, PLAY, PAUSE, MIX, SETTINGS
+  score: 0,
+  resources: { BEAT: 0, VIBE: 0, MELODY: 0 },
+  resourcesForUnlock: 50, // Points needed to unlock
+  activeLayers: { BEAT: [], VIBE: [], MELODY: [] },
+  loops: JSON.parse(JSON.stringify(LOOPS)),
+  grid: [],
+  currentPiece: null,
+  nextPiece: null,
+  gameOver: false,
+  paused: false,
+  combo: 0,
+  bpm: CONFIG.BPM,
+  pitch: 0,
+  savedGames: [],
+  highScores: [],
+  // Screen shake state
+  screenShake: { active: false, startTime: 0, intensity: 0 },
+  // Glow animation time
+  glowTime: 0,
+  // Preview state for locked loops
+  previewingLoop: null,
+  // Touch state for better mobile controls
+  touchState: { startX: 0, startY: 0, startTime: 0, moved: false },
+  // BPM sync
+  lastBeatTime: 0,
+  beatPhase: 0
+};
+
+// ============================================================================
+// PIXI APPLICATION
+// ============================================================================
+
+let app, gameContainer, hudContainer, overlayContainer;
+let gridGraphics, particleContainer;
+
+function initPixi() {
+  const container = document.getElementById('game-container');
+  const width = Math.min(window.innerWidth, 500);
+  const height = window.innerHeight;
+
+  app = new PIXI.Application({
+    width,
+    height,
+    backgroundColor: CONFIG.COLORS.BACKGROUND,
+    antialias: true,
+    resolution: window.devicePixelRatio || 1,
+    autoDensity: true
+  });
+
+  container.appendChild(app.view);
+
+  // Containers
+  gameContainer = new PIXI.Container();
+  hudContainer = new PIXI.Container();
+  overlayContainer = new PIXI.Container();
+
+  app.stage.addChild(gameContainer);
+  app.stage.addChild(hudContainer);
+  app.stage.addChild(overlayContainer);
+
+  // Particle container for effects
+  particleContainer = new PIXI.Container();
+  gameContainer.addChild(particleContainer);
+
+  // Handle resize
+  window.addEventListener('resize', onResize);
+  onResize();
+}
+
+function onResize() {
+  const width = Math.min(window.innerWidth, 500);
+  const height = window.innerHeight;
+  app.renderer.resize(width, height);
+
+  // Recalculate tile size to fit
+  const gridWidth = CONFIG.GRID_COLS * (CONFIG.TILE_SIZE + CONFIG.TILE_GAP);
+  const gridHeight = CONFIG.GRID_ROWS * (CONFIG.TILE_SIZE + CONFIG.TILE_GAP);
+  const maxGridWidth = width - 40;
+  const maxGridHeight = height - 200;
+
+  const scale = Math.min(maxGridWidth / gridWidth, maxGridHeight / gridHeight, 1);
+  CONFIG.TILE_SIZE = Math.floor(40 * scale);
+
+  renderCurrentScreen();
+}
+
+// ============================================================================
+// AUDIO ENGINE
+// ============================================================================
+
+class AudioEngine {
+  constructor() {
+    this.initialized = false;
+    this.synths = {};
+    this.loops = {};
+    this.masterGain = null;
+    this.compressor = null;
+    this.limiter = null;
+  }
+
+  async init() {
+    if (this.initialized) return;
+
+    await Tone.start();
+    Tone.Transport.bpm.value = CONFIG.BPM;
+
+    // Master chain
+    this.compressor = new Tone.Compressor(-20, 3).toDestination();
+    this.limiter = new Tone.Limiter(-1).connect(this.compressor);
+    this.masterGain = new Tone.Gain(0.8).connect(this.limiter);
+
+    // Create synth loops for each category
+    this.createSynthLoops();
+
+    // SFX synths
+    this.sfx = {
+      collapse: new Tone.PolySynth(Tone.Synth).connect(this.masterGain),
+      combo: new Tone.PolySynth(Tone.Synth).connect(this.masterGain),
+      unlock: new Tone.PolySynth(Tone.Synth).connect(this.masterGain),
+      land: new Tone.MembraneSynth().connect(this.masterGain)
+    };
+
+    this.sfx.collapse.set({ envelope: { attack: 0.01, decay: 0.2, sustain: 0.1, release: 0.3 } });
+    this.sfx.combo.set({ envelope: { attack: 0.01, decay: 0.1, sustain: 0.05, release: 0.2 } });
+
+    this.initialized = true;
+    Tone.Transport.start();
+  }
+
+  createSynthLoops() {
+    // Create placeholder synth loops for each loop ID
+    const loopDuration = (60 / CONFIG.BPM) * CONFIG.LOOP_BARS;
+
+    // BEAT loops - drum patterns
+    const beatPatterns = {
+      trap_808: ['C2', null, 'C2', null, 'E2', null, 'C2', 'C2'],
+      boom_bap: ['C2', null, null, 'C2', 'E2', null, 'C2', null],
+      lofi_drums: ['C2', null, 'D2', null, 'C2', null, 'D2', null],
+      afrobeat: ['C2', 'D2', 'C2', 'D2', 'E2', 'D2', 'C2', 'D2'],
+      house_4x4: ['C2', null, 'C2', null, 'C2', null, 'C2', null],
+      drill: ['C2', null, null, 'C2', null, 'C2', 'C2', null],
+      amapiano: ['C2', null, 'D2', 'C2', null, 'D2', 'C2', null],
+      breakbeat: ['C2', 'C2', null, 'C2', 'E2', null, 'C2', 'D2']
+    };
+
+    // VIBE loops - pad chords
+    const vibeChords = {
+      warm_pad: ['C3', 'Eb3', 'G3'],
+      dark_drone: ['C2', 'G2', 'Bb2'],
+      lofi_texture: ['C3', 'Eb3', 'F3'],
+      ethereal_choir: ['C4', 'Eb4', 'G4', 'Bb4'],
+      strings_swell: ['C3', 'G3', 'C4'],
+      synth_wash: ['C3', 'Eb3', 'G3', 'Bb3'],
+      sub_drone: ['C1', 'G1'],
+      glitch_texture: ['C3', 'D3', 'Eb3']
+    };
+
+    // MELODY loops - arpeggios
+    const melodyPatterns = {
+      piano_chords: ['C4', 'Eb4', 'G4', 'Bb4', 'G4', 'Eb4', 'C4', 'Bb3'],
+      synth_arp: ['C4', 'Eb4', 'G4', 'C5', 'G4', 'Eb4', 'C4', 'G3'],
+      pluck_lead: ['C5', null, 'Bb4', null, 'G4', null, 'Eb4', null],
+      guitar_clean: ['C4', 'Eb4', 'G4', null, 'F4', 'Eb4', 'C4', null],
+      vocal_chop: ['C4', null, 'C4', 'Eb4', null, 'G4', null, 'Eb4'],
+      bell_melody: ['G5', null, 'Eb5', null, 'C5', null, 'G4', null],
+      flute_line: ['C5', 'D5', 'Eb5', 'G5', 'F5', 'Eb5', 'D5', 'C5'],
+      glide_lead: ['C4', null, null, 'G4', null, null, 'Eb4', null]
+    };
+
+    // Store patterns for later use
+    this.patterns = { BEAT: beatPatterns, VIBE: vibeChords, MELODY: melodyPatterns };
+
+    // Create synths for each category
+    this.categorySynths = {
+      BEAT: new Tone.MembraneSynth({ pitchDecay: 0.05, octaves: 4 }).connect(this.masterGain),
+      VIBE: new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'sine' }, envelope: { attack: 0.5, decay: 0.3, sustain: 0.8, release: 1 } }).connect(this.masterGain),
+      MELODY: new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'triangle' }, envelope: { attack: 0.02, decay: 0.1, sustain: 0.3, release: 0.4 } }).connect(this.masterGain)
+    };
+
+    this.categorySynths.BEAT.volume.value = -6;
+    this.categorySynths.VIBE.volume.value = -12;
+    this.categorySynths.MELODY.volume.value = -8;
+
+    this.activeSequences = { BEAT: [], VIBE: [], MELODY: [] };
+  }
+
+  startLoop(category, loopId) {
+    const synth = this.categorySynths[category];
+    const patterns = this.patterns[category];
+    const pattern = patterns[loopId];
+
+    if (!pattern) return;
+
+    // Calculate gain based on active layers
+    const layerCount = GameState.activeLayers[category].length + 1;
+    const gain = layerCount === 1 ? 1 : layerCount === 2 ? 0.8 : 0.65;
+    synth.volume.value = category === 'BEAT' ? -6 - (layerCount * 2) :
+                         category === 'VIBE' ? -12 - (layerCount * 2) : -8 - (layerCount * 2);
+
+    let sequence;
+
+    if (category === 'VIBE') {
+      // Pads play sustained chords
+      sequence = new Tone.Loop((time) => {
+        synth.triggerAttackRelease(pattern, '2n', time);
+      }, '1m');
+    } else {
+      // BEAT and MELODY use sequences
+      sequence = new Tone.Sequence((time, note) => {
+        if (note) {
+          synth.triggerAttackRelease(note, category === 'BEAT' ? '16n' : '8n', time);
+        }
+      }, pattern, '8n');
+    }
+
+    sequence.start(0);
+
+    // Store the sequence
+    this.activeSequences[category].push({ loopId, sequence });
+
+    return sequence;
+  }
+
+  stopLoop(category, loopId) {
+    const index = this.activeSequences[category].findIndex(s => s.loopId === loopId);
+    if (index !== -1) {
+      this.activeSequences[category][index].sequence.stop();
+      this.activeSequences[category][index].sequence.dispose();
+      this.activeSequences[category].splice(index, 1);
+    }
+  }
+
+  stopAllLoops() {
+    for (const category of CATEGORY_TYPES) {
+      for (const seq of this.activeSequences[category]) {
+        seq.sequence.stop();
+        seq.sequence.dispose();
+      }
+      this.activeSequences[category] = [];
+    }
+  }
+
+  // SFX
+  playCollapse(category, size) {
+    const baseNote = category === 'BEAT' ? 'C3' : category === 'VIBE' ? 'C4' : 'C5';
+    const chord = ['C', 'Eb', 'G'].map(n => n + (category === 'BEAT' ? '3' : category === 'VIBE' ? '4' : '5'));
+    this.sfx.collapse.triggerAttackRelease(chord, '8n', Tone.now(), 0.3 + (size * 0.05));
+  }
+
+  playCombo(level) {
+    const notes = ['C4', 'Eb4', 'G4', 'Bb4', 'C5'].slice(0, Math.min(level + 1, 5));
+    const now = Tone.now();
+    notes.forEach((note, i) => {
+      this.sfx.combo.triggerAttackRelease(note, '16n', now + i * 0.05, 0.2);
+    });
+  }
+
+  playUnlock() {
+    const notes = ['C5', 'Eb5', 'G5', 'C6'];
+    const now = Tone.now();
+    notes.forEach((note, i) => {
+      this.sfx.unlock.triggerAttackRelease(note, '8n', now + i * 0.1, 0.3);
+    });
+  }
+
+  playLand() {
+    this.sfx.land.triggerAttackRelease('C1', '32n', Tone.now(), 0.2);
+  }
+
+  setBPM(bpm) {
+    Tone.Transport.bpm.value = bpm;
+    GameState.bpm = bpm;
+  }
+
+  setPitch(semitones) {
+    // This would use PitchShift in production
+    GameState.pitch = semitones;
+  }
+
+  // Preview functionality for locked loops
+  startPreview(category, loopId) {
+    // Create a dedicated preview synth with reduced volume
+    if (!this.previewSynth) {
+      this.previewSynth = {
+        BEAT: new Tone.MembraneSynth({ pitchDecay: 0.05, octaves: 4 }).connect(this.masterGain),
+        VIBE: new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'sine' }, envelope: { attack: 0.5, decay: 0.3, sustain: 0.8, release: 1 } }).connect(this.masterGain),
+        MELODY: new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'triangle' }, envelope: { attack: 0.02, decay: 0.1, sustain: 0.3, release: 0.4 } }).connect(this.masterGain)
+      };
+      this.previewSynth.BEAT.volume.value = -10;
+      this.previewSynth.VIBE.volume.value = -14;
+      this.previewSynth.MELODY.volume.value = -12;
+    }
+
+    const synth = this.previewSynth[category];
+    const patterns = this.patterns[category];
+    const pattern = patterns[loopId];
+
+    if (!pattern) return;
+
+    // Reduce main loop volumes
+    for (const cat of CATEGORY_TYPES) {
+      if (this.categorySynths[cat]) {
+        this.categorySynths[cat].volume.value -= 6;
+      }
+    }
+
+    // Create preview sequence
+    if (category === 'VIBE') {
+      this.previewSequence = new Tone.Loop((time) => {
+        synth.triggerAttackRelease(pattern, '2n', time);
+      }, '1m');
+    } else {
+      this.previewSequence = new Tone.Sequence((time, note) => {
+        if (note) {
+          synth.triggerAttackRelease(note, category === 'BEAT' ? '16n' : '8n', time);
+        }
+      }, pattern, '8n');
+    }
+
+    this.previewSequence.start(0);
+    this.previewCategory = category;
+  }
+
+  stopPreview() {
+    if (this.previewSequence) {
+      this.previewSequence.stop();
+      this.previewSequence.dispose();
+      this.previewSequence = null;
+
+      // Restore main loop volumes
+      for (const cat of CATEGORY_TYPES) {
+        if (this.categorySynths[cat]) {
+          this.categorySynths[cat].volume.value += 6;
+        }
+      }
+    }
+  }
+
+  // Quantize audio events to beat grid
+  getNextBeatTime() {
+    return Tone.Transport.nextSubdivision('8n');
+  }
+
+  // Play sound on the beat grid for better sync
+  playCollapseSynced(category, size) {
+    const nextBeat = this.getNextBeatTime();
+    const baseNote = category === 'BEAT' ? 'C3' : category === 'VIBE' ? 'C4' : 'C5';
+    const chord = ['C', 'Eb', 'G'].map(n => n + (category === 'BEAT' ? '3' : category === 'VIBE' ? '4' : '5'));
+    this.sfx.collapse.triggerAttackRelease(chord, '8n', nextBeat, 0.3 + (size * 0.05));
+  }
+}
+
+const audioEngine = new AudioEngine();
+
+// ============================================================================
+// GRID & TILES
+// ============================================================================
+
+function initGrid() {
+  GameState.grid = [];
+  for (let row = 0; row < CONFIG.GRID_ROWS; row++) {
+    GameState.grid[row] = [];
+    for (let col = 0; col < CONFIG.GRID_COLS; col++) {
+      GameState.grid[row][col] = null;
+    }
+  }
+}
+
+function getRandomTileType() {
+  if (Math.random() < CONFIG.WILD_CHANCE) {
+    return 'WILD';
+  }
+  return CATEGORY_TYPES[Math.floor(Math.random() * CATEGORY_TYPES.length)];
+}
+
+function createPiece() {
+  // Simple 2-tile pieces for now
+  const shapes = [
+    [[0, 0], [1, 0]], // Horizontal
+    [[0, 0], [0, 1]], // Vertical
+    [[0, 0], [1, 0], [0, 1]], // L shape
+    [[0, 0], [1, 0], [1, 1]]  // Reverse L
+  ];
+
+  const shape = shapes[Math.floor(Math.random() * 2)]; // Start with simple shapes
+  const tiles = shape.map(([dx, dy]) => ({
+    type: getRandomTileType(),
+    dx,
+    dy
+  }));
+
+  return {
+    x: Math.floor(CONFIG.GRID_COLS / 2),
+    y: 0,
+    tiles,
+    rotation: 0
+  };
+}
+
+function rotatePiece(piece) {
+  // Rotate tiles 90 degrees clockwise
+  piece.tiles = piece.tiles.map(tile => ({
+    ...tile,
+    dx: -tile.dy,
+    dy: tile.dx
+  }));
+
+  // Normalize to positive coordinates
+  const minDx = Math.min(...piece.tiles.map(t => t.dx));
+  const minDy = Math.min(...piece.tiles.map(t => t.dy));
+  piece.tiles = piece.tiles.map(tile => ({
+    ...tile,
+    dx: tile.dx - minDx,
+    dy: tile.dy - minDy
+  }));
+}
+
+function canPlacePiece(piece, x, y) {
+  for (const tile of piece.tiles) {
+    const col = x + tile.dx;
+    const row = y + tile.dy;
+    if (col < 0 || col >= CONFIG.GRID_COLS || row >= CONFIG.GRID_ROWS) {
+      return false;
+    }
+    if (row >= 0 && GameState.grid[row][col] !== null) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function placePiece(piece) {
+  for (const tile of piece.tiles) {
+    const col = piece.x + tile.dx;
+    const row = piece.y + tile.dy;
+    if (row >= 0 && row < CONFIG.GRID_ROWS) {
+      GameState.grid[row][col] = { type: tile.type };
+    }
+  }
+  audioEngine.playLand();
+}
+
+// ============================================================================
+// CLUSTER DETECTION & COLLAPSE
+// ============================================================================
+
+function findClusters() {
+  const visited = new Set();
+  const clusters = [];
+
+  for (let row = 0; row < CONFIG.GRID_ROWS; row++) {
+    for (let col = 0; col < CONFIG.GRID_COLS; col++) {
+      const key = `${row},${col}`;
+      if (visited.has(key) || !GameState.grid[row][col]) continue;
+
+      const cluster = findCluster(row, col, visited);
+      if (cluster.tiles.length >= CONFIG.CLUSTER_MIN) {
+        clusters.push(cluster);
+      }
+    }
+  }
+
+  return clusters;
+}
+
+function findCluster(startRow, startCol, visited) {
+  const tile = GameState.grid[startRow][startCol];
+  if (!tile) return { tiles: [], type: null, hasWild: false };
+
+  const cluster = { tiles: [], type: tile.type === 'WILD' ? null : tile.type, hasWild: tile.type === 'WILD' };
+  const queue = [[startRow, startCol]];
+
+  while (queue.length > 0) {
+    const [row, col] = queue.shift();
+    const key = `${row},${col}`;
+
+    if (visited.has(key)) continue;
+
+    const currentTile = GameState.grid[row][col];
+    if (!currentTile) continue;
+
+    // Check if tile matches cluster
+    const isWild = currentTile.type === 'WILD';
+    const matchesType = isWild || cluster.type === null || currentTile.type === cluster.type;
+
+    if (!matchesType) continue;
+
+    visited.add(key);
+    cluster.tiles.push({ row, col, type: currentTile.type });
+
+    if (isWild) cluster.hasWild = true;
+    if (!isWild && cluster.type === null) cluster.type = currentTile.type;
+
+    // Check adjacent cells (orthogonal only)
+    const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+    for (const [dr, dc] of directions) {
+      const newRow = row + dr;
+      const newCol = col + dc;
+      if (newRow >= 0 && newRow < CONFIG.GRID_ROWS && newCol >= 0 && newCol < CONFIG.GRID_COLS) {
+        const newKey = `${newRow},${newCol}`;
+        if (!visited.has(newKey) && GameState.grid[newRow][newCol]) {
+          const newTile = GameState.grid[newRow][newCol];
+          const newIsWild = newTile.type === 'WILD';
+          const newMatches = newIsWild || cluster.type === null || newTile.type === cluster.type;
+          if (newMatches) {
+            queue.push([newRow, newCol]);
+          }
+        }
+      }
+    }
+  }
+
+  return cluster;
+}
+
+async function collapseClusters() {
+  let clusters = findClusters();
+  let chainLevel = 0;
+
+  while (clusters.length > 0) {
+    chainLevel++;
+    GameState.combo = chainLevel;
+
+    // Clear clusters
+    for (const cluster of clusters) {
+      const clusterSize = cluster.tiles.length;
+      const hasWild = cluster.hasWild;
+
+      // Create cluster clear effect
+      createClusterClearEffect(cluster.tiles, cluster.type || 'WILD');
+
+      // Extra effects for WILD tiles
+      if (hasWild) {
+        createWildcardEffect(cluster.tiles);
+      }
+
+      for (const tile of cluster.tiles) {
+        // Create particle effect with cluster size for scaling
+        const particleType = tile.type === 'WILD' ? 'WILD' : (cluster.type || 'WILD');
+        createCollapseParticles(tile.row, tile.col, particleType, clusterSize);
+        GameState.grid[tile.row][tile.col] = null;
+      }
+
+      // Award points - bonus for wild tiles
+      const wildBonus = hasWild ? 1.2 : 1;
+      const points = Math.floor(calculatePoints(clusterSize, chainLevel) * wildBonus);
+      GameState.score += points;
+
+      if (cluster.type && cluster.type !== 'WILD') {
+        GameState.resources[cluster.type] += points;
+        checkUnlocks(cluster.type);
+      }
+
+      // Play sound synced to beat
+      audioEngine.playCollapse(cluster.type || 'BEAT', clusterSize);
+
+      // Screen shake for big clears, high combos, or wild tiles
+      if (clusterSize >= 5 || chainLevel >= 3 || hasWild) {
+        triggerScreenShake(clusterSize + chainLevel + (hasWild ? 2 : 0));
+      }
+    }
+
+    if (chainLevel > 1) {
+      audioEngine.playCombo(chainLevel);
+      // Extra shake for combos
+      if (chainLevel >= 2) {
+        triggerScreenShake(chainLevel * 2);
+      }
+    }
+
+    renderGame();
+    await sleep(CONFIG.COLLAPSE_DELAY);
+
+    // Apply gravity
+    applyGravity();
+    renderGame();
+    await sleep(CONFIG.CHAIN_DELAY);
+
+    // Check for new clusters
+    clusters = findClusters();
+  }
+
+  GameState.combo = 0;
+}
+
+function calculatePoints(size, chain) {
+  const base = size * 3 + Math.max(0, (size - 3) * 2);
+  return Math.floor(base * (1 + (chain - 1) * 0.5));
+}
+
+function applyGravity() {
+  for (let col = 0; col < CONFIG.GRID_COLS; col++) {
+    let writeRow = CONFIG.GRID_ROWS - 1;
+    for (let row = CONFIG.GRID_ROWS - 1; row >= 0; row--) {
+      if (GameState.grid[row][col] !== null) {
+        if (row !== writeRow) {
+          GameState.grid[writeRow][col] = GameState.grid[row][col];
+          GameState.grid[row][col] = null;
+        }
+        writeRow--;
+      }
+    }
+  }
+}
+
+function checkUnlocks(category) {
+  const loops = GameState.loops[category];
+  const lockedLoops = loops.filter(l => !l.unlocked);
+
+  if (lockedLoops.length > 0 && GameState.resources[category] >= GameState.resourcesForUnlock) {
+    // Don't auto-unlock, just show notification
+    showToast(`${category} loop ready to unlock!`);
+  }
+}
+
+// ============================================================================
+// PARTICLES & EFFECTS
+// ============================================================================
+
+const particles = [];
+
+// Particle types for different effects
+const PARTICLE_TYPES = {
+  BURST: 'burst',      // Standard collapse
+  SPARK: 'spark',      // Small sparkles
+  RING: 'ring',        // Expanding ring
+  TRAIL: 'trail',      // Trailing particles
+  STAR: 'star'         // Star-shaped
+};
+
+function createCollapseParticles(row, col, type, clusterSize = 1) {
+  const color = CONFIG.COLORS[type] || CONFIG.COLORS.WILD;
+  const gridOffsetX = (app.screen.width - CONFIG.GRID_COLS * (CONFIG.TILE_SIZE + CONFIG.TILE_GAP)) / 2;
+  const gridOffsetY = 80;
+  const x = gridOffsetX + col * (CONFIG.TILE_SIZE + CONFIG.TILE_GAP) + CONFIG.TILE_SIZE / 2;
+  const y = gridOffsetY + row * (CONFIG.TILE_SIZE + CONFIG.TILE_GAP) + CONFIG.TILE_SIZE / 2;
+
+  // More particles for larger clusters
+  const particleCount = CONFIG.PARTICLE_COUNT_BASE + (clusterSize * CONFIG.PARTICLE_COUNT_PER_TILE);
+
+  // Create burst particles
+  for (let i = 0; i < particleCount; i++) {
+    const angle = (Math.PI * 2 * i) / particleCount + Math.random() * 0.5;
+    const speed = 3 + Math.random() * 6;
+    const size = 3 + Math.random() * 5;
+
+    const particle = new PIXI.Graphics();
+
+    // Alternate between circle and diamond shapes
+    if (i % 3 === 0) {
+      // Diamond/star shape
+      particle.beginFill(color);
+      particle.moveTo(0, -size);
+      particle.lineTo(size * 0.6, 0);
+      particle.lineTo(0, size);
+      particle.lineTo(-size * 0.6, 0);
+      particle.closePath();
+      particle.endFill();
+    } else {
+      // Circle with glow
+      particle.beginFill(0xffffff, 0.6);
+      particle.drawCircle(0, 0, size * 0.5);
+      particle.endFill();
+      particle.beginFill(color);
+      particle.drawCircle(0, 0, size * 0.8);
+      particle.endFill();
+    }
+
+    particle.x = x;
+    particle.y = y;
+    particle.vx = Math.cos(angle) * speed;
+    particle.vy = Math.sin(angle) * speed - 2;
+    particle.life = 1;
+    particle.decay = 0.015 + Math.random() * 0.015;
+    particle.rotationSpeed = (Math.random() - 0.5) * 0.3;
+    particle.type = PARTICLE_TYPES.BURST;
+
+    particleContainer.addChild(particle);
+    particles.push(particle);
+  }
+
+  // Add sparkle particles
+  for (let i = 0; i < Math.floor(particleCount / 2); i++) {
+    const spark = new PIXI.Graphics();
+    spark.beginFill(0xffffff);
+    spark.drawCircle(0, 0, 2);
+    spark.endFill();
+
+    spark.x = x + (Math.random() - 0.5) * CONFIG.TILE_SIZE;
+    spark.y = y + (Math.random() - 0.5) * CONFIG.TILE_SIZE;
+    spark.vx = (Math.random() - 0.5) * 4;
+    spark.vy = -Math.random() * 6 - 2;
+    spark.life = 0.5 + Math.random() * 0.5;
+    spark.decay = 0.03 + Math.random() * 0.02;
+    spark.type = PARTICLE_TYPES.SPARK;
+
+    particleContainer.addChild(spark);
+    particles.push(spark);
+  }
+}
+
+// Create ring effect for big clears
+function createRingEffect(row, col, type) {
+  const color = CONFIG.COLORS[type] || CONFIG.COLORS.WILD;
+  const gridOffsetX = (app.screen.width - CONFIG.GRID_COLS * (CONFIG.TILE_SIZE + CONFIG.TILE_GAP)) / 2;
+  const gridOffsetY = 80;
+  const x = gridOffsetX + col * (CONFIG.TILE_SIZE + CONFIG.TILE_GAP) + CONFIG.TILE_SIZE / 2;
+  const y = gridOffsetY + row * (CONFIG.TILE_SIZE + CONFIG.TILE_GAP) + CONFIG.TILE_SIZE / 2;
+
+  const ring = new PIXI.Graphics();
+  ring.lineStyle(3, color, 1);
+  ring.drawCircle(0, 0, 10);
+  ring.x = x;
+  ring.y = y;
+  ring.life = 1;
+  ring.decay = 0.025;
+  ring.type = PARTICLE_TYPES.RING;
+  ring.growthRate = 4;
+
+  particleContainer.addChild(ring);
+  particles.push(ring);
+}
+
+// Wildcard special effects
+function createWildcardEffect(tiles) {
+  const gridOffsetX = (app.screen.width - CONFIG.GRID_COLS * (CONFIG.TILE_SIZE + CONFIG.TILE_GAP)) / 2;
+  const gridOffsetY = 80;
+
+  // Find center of cluster
+  let centerX = 0, centerY = 0;
+  tiles.forEach(tile => {
+    centerX += gridOffsetX + tile.col * (CONFIG.TILE_SIZE + CONFIG.TILE_GAP) + CONFIG.TILE_SIZE / 2;
+    centerY += gridOffsetY + tile.row * (CONFIG.TILE_SIZE + CONFIG.TILE_GAP) + CONFIG.TILE_SIZE / 2;
+  });
+  centerX /= tiles.length;
+  centerY /= tiles.length;
+
+  // Create golden starburst
+  for (let i = 0; i < 16; i++) {
+    const angle = (Math.PI * 2 * i) / 16;
+    const speed = 6 + Math.random() * 4;
+
+    const star = new PIXI.Graphics();
+    star.beginFill(CONFIG.COLORS.WILD);
+    // Draw a small star shape
+    for (let j = 0; j < 5; j++) {
+      const starAngle = (Math.PI * 2 * j) / 5 - Math.PI / 2;
+      const innerAngle = starAngle + Math.PI / 5;
+      const outerRadius = 5;
+      const innerRadius = 2;
+      if (j === 0) {
+        star.moveTo(Math.cos(starAngle) * outerRadius, Math.sin(starAngle) * outerRadius);
+      } else {
+        star.lineTo(Math.cos(starAngle) * outerRadius, Math.sin(starAngle) * outerRadius);
+      }
+      star.lineTo(Math.cos(innerAngle) * innerRadius, Math.sin(innerAngle) * innerRadius);
+    }
+    star.closePath();
+    star.endFill();
+
+    star.x = centerX;
+    star.y = centerY;
+    star.vx = Math.cos(angle) * speed;
+    star.vy = Math.sin(angle) * speed;
+    star.life = 1;
+    star.decay = 0.015;
+    star.rotationSpeed = (Math.random() - 0.5) * 0.4;
+    star.type = PARTICLE_TYPES.STAR;
+
+    particleContainer.addChild(star);
+    particles.push(star);
+  }
+
+  // Create golden ring
+  const ring = new PIXI.Graphics();
+  ring.lineStyle(4, CONFIG.COLORS.WILD, 1);
+  ring.drawCircle(0, 0, 15);
+  ring.x = centerX;
+  ring.y = centerY;
+  ring.life = 1;
+  ring.decay = 0.02;
+  ring.type = PARTICLE_TYPES.RING;
+  ring.growthRate = 8;
+
+  particleContainer.addChild(ring);
+  particles.push(ring);
+
+  // Flash effect
+  const flash = new PIXI.Graphics();
+  flash.beginFill(CONFIG.COLORS.WILD, 0.4);
+  flash.drawCircle(0, 0, 60);
+  flash.endFill();
+  flash.x = centerX;
+  flash.y = centerY;
+  flash.life = 0.5;
+  flash.decay = 0.05;
+  flash.type = PARTICLE_TYPES.RING;
+  flash.growthRate = 3;
+
+  particleContainer.addChild(flash);
+  particles.push(flash);
+}
+
+// Cluster clear effect - creates connected particles
+function createClusterClearEffect(tiles, type) {
+  // Find center of cluster
+  let centerX = 0, centerY = 0;
+  const gridOffsetX = (app.screen.width - CONFIG.GRID_COLS * (CONFIG.TILE_SIZE + CONFIG.TILE_GAP)) / 2;
+  const gridOffsetY = 80;
+
+  tiles.forEach(tile => {
+    centerX += gridOffsetX + tile.col * (CONFIG.TILE_SIZE + CONFIG.TILE_GAP) + CONFIG.TILE_SIZE / 2;
+    centerY += gridOffsetY + tile.row * (CONFIG.TILE_SIZE + CONFIG.TILE_GAP) + CONFIG.TILE_SIZE / 2;
+  });
+  centerX /= tiles.length;
+  centerY /= tiles.length;
+
+  // Create ring at center for large clusters
+  if (tiles.length >= 5) {
+    const ring = new PIXI.Graphics();
+    ring.lineStyle(4, CONFIG.COLORS[type] || CONFIG.COLORS.WILD, 1);
+    ring.drawCircle(0, 0, 10);
+    ring.x = centerX;
+    ring.y = centerY;
+    ring.life = 1;
+    ring.decay = 0.02;
+    ring.type = PARTICLE_TYPES.RING;
+    ring.growthRate = 6;
+
+    particleContainer.addChild(ring);
+    particles.push(ring);
+
+    // Trigger screen shake for big clusters
+    if (tiles.length >= 6) {
+      triggerScreenShake(tiles.length);
+    }
+  }
+}
+
+function updateParticles() {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+
+    if (p.type === PARTICLE_TYPES.RING) {
+      // Rings expand and fade
+      p.scale.set(p.scale.x + p.growthRate * 0.02);
+      p.life -= p.decay;
+      p.alpha = p.life;
+    } else {
+      // Standard physics for other particles
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.15; // Gravity
+      p.vx *= 0.98; // Air resistance
+      p.life -= p.decay;
+      p.alpha = Math.min(p.life, 1);
+
+      if (p.rotationSpeed) {
+        p.rotation += p.rotationSpeed;
+      }
+
+      // Scale down as life decreases
+      if (p.type === PARTICLE_TYPES.BURST) {
+        p.scale.set(0.5 + p.life * 0.5);
+      }
+    }
+
+    if (p.life <= 0) {
+      particleContainer.removeChild(p);
+      particles.splice(i, 1);
+    }
+  }
+}
+
+// Screen shake effect
+function triggerScreenShake(intensity = 1) {
+  GameState.screenShake = {
+    active: true,
+    startTime: Date.now(),
+    intensity: Math.min(intensity * 2, CONFIG.SCREEN_SHAKE_INTENSITY)
+  };
+}
+
+function updateScreenShake() {
+  if (!GameState.screenShake.active) {
+    gameContainer.x = 0;
+    gameContainer.y = 0;
+    return;
+  }
+
+  const elapsed = Date.now() - GameState.screenShake.startTime;
+  if (elapsed > CONFIG.SCREEN_SHAKE_DURATION) {
+    GameState.screenShake.active = false;
+    gameContainer.x = 0;
+    gameContainer.y = 0;
+    return;
+  }
+
+  const progress = elapsed / CONFIG.SCREEN_SHAKE_DURATION;
+  const dampening = 1 - progress;
+  const intensity = GameState.screenShake.intensity * dampening;
+
+  gameContainer.x = (Math.random() - 0.5) * intensity * 2;
+  gameContainer.y = (Math.random() - 0.5) * intensity * 2;
+}
+
+// ============================================================================
+// RENDERING
+// ============================================================================
+
+function renderCurrentScreen() {
+  // Clear all containers
+  gameContainer.removeChildren();
+  hudContainer.removeChildren();
+  overlayContainer.removeChildren();
+
+  // Re-add particle container
+  gameContainer.addChild(particleContainer);
+
+  switch (GameState.screen) {
+    case 'HOME':
+      renderHomeScreen();
+      break;
+    case 'PLAY':
+      renderGame();
+      renderHUD();
+      break;
+    case 'PAUSE':
+      renderGame();
+      renderHUD();
+      renderPauseOverlay();
+      break;
+    case 'MIX':
+      renderMixScreen();
+      break;
+    case 'SETTINGS':
+      renderSettingsScreen();
+      break;
+  }
+}
+
+function renderHomeScreen() {
+  const width = app.screen.width;
+  const height = app.screen.height;
+
+  // Animated background particles
+  const bg = new PIXI.Graphics();
+  bg.beginFill(CONFIG.COLORS.BACKGROUND);
+  bg.drawRect(0, 0, width, height);
+  bg.endFill();
+  overlayContainer.addChild(bg);
+
+  // Floating background particles (decorative)
+  const particleTime = Date.now() / 1000;
+  for (let i = 0; i < 15; i++) {
+    const particle = new PIXI.Graphics();
+    const colors = [CONFIG.COLORS.BEAT, CONFIG.COLORS.VIBE, CONFIG.COLORS.MELODY];
+    const color = colors[i % 3];
+    const x = (width * 0.1) + (i * width * 0.06) + Math.sin(particleTime + i) * 20;
+    const y = (height * 0.1) + Math.sin(particleTime * 0.5 + i * 0.7) * height * 0.3 + (i % 3) * height * 0.25;
+    const size = 4 + Math.sin(particleTime + i) * 2;
+    const alpha = 0.15 + Math.sin(particleTime + i * 0.5) * 0.1;
+
+    particle.beginFill(color, alpha);
+    particle.drawCircle(x, y, size);
+    particle.endFill();
+    overlayContainer.addChild(particle);
+  }
+
+  // Title with glow effect
+  const titleGlow = new PIXI.Graphics();
+  const glowPulse = 0.15 + Math.sin(Date.now() / 500) * 0.05;
+  titleGlow.beginFill(CONFIG.COLORS.VIBE, glowPulse);
+  titleGlow.drawEllipse(width / 2, height * 0.2, 180, 40);
+  titleGlow.endFill();
+  overlayContainer.addChild(titleGlow);
+
+  const title = new PIXI.Text('SONGSUGAR', {
+    fontFamily: 'system-ui',
+    fontSize: 44,
+    fontWeight: 'bold',
+    fill: [CONFIG.COLORS.BEAT, CONFIG.COLORS.VIBE, CONFIG.COLORS.MELODY],
+    fillGradientType: 1,
+    fillGradientStops: [0, 0.5, 1],
+    dropShadow: true,
+    dropShadowColor: CONFIG.COLORS.VIBE,
+    dropShadowBlur: 15,
+    dropShadowDistance: 0
+  });
+  title.anchor.set(0.5);
+  title.x = width / 2;
+  title.y = height * 0.2;
+  overlayContainer.addChild(title);
+
+  // Subtitle with animation
+  const subtitleAlpha = 0.6 + Math.sin(Date.now() / 800) * 0.2;
+  const subtitle = new PIXI.Text('Make Music While You Play', {
+    fontFamily: 'system-ui',
+    fontSize: 15,
+    fill: CONFIG.COLORS.TEXT_DIM
+  });
+  subtitle.anchor.set(0.5);
+  subtitle.x = width / 2;
+  subtitle.y = height * 0.27;
+  subtitle.alpha = subtitleAlpha;
+  overlayContainer.addChild(subtitle);
+
+  // Music note decorations
+  const noteSymbols = ['\u266A', '\u266B', '\u266C'];
+  for (let i = 0; i < 3; i++) {
+    const note = new PIXI.Text(noteSymbols[i], {
+      fontFamily: 'system-ui',
+      fontSize: 20,
+      fill: [CONFIG.COLORS.BEAT, CONFIG.COLORS.VIBE, CONFIG.COLORS.MELODY][i]
+    });
+    note.anchor.set(0.5);
+    note.x = width * 0.25 + i * width * 0.25;
+    note.y = height * 0.33 + Math.sin(Date.now() / 400 + i) * 5;
+    note.alpha = 0.5;
+    overlayContainer.addChild(note);
+  }
+
+  // Buttons
+  const buttons = [
+    { text: 'START SESSION', action: startGame, primary: true },
+    { text: 'SETTINGS', action: () => setScreen('SETTINGS'), primary: false },
+    { text: 'HIGH SCORES', action: () => showToast('Coming soon!'), primary: false }
+  ];
+
+  buttons.forEach((btn, i) => {
+    const button = createButton(btn.text, width / 2, height * 0.48 + i * 65, btn.action, btn.primary ? 200 : 160, btn.primary ? 55 : 45);
+    if (btn.primary) {
+      // Add glow to primary button
+      const btnGlow = new PIXI.Graphics();
+      btnGlow.beginFill(CONFIG.COLORS.VIBE, 0.2 + Math.sin(Date.now() / 300) * 0.1);
+      btnGlow.drawRoundedRect(width / 2 - 105, height * 0.48 - 32, 210, 64, 15);
+      btnGlow.endFill();
+      overlayContainer.addChild(btnGlow);
+    }
+    overlayContainer.addChild(button);
+  });
+
+  // Version/credit footer
+  const footer = new PIXI.Text('v0.2 - Prototype', {
+    fontFamily: 'system-ui',
+    fontSize: 10,
+    fill: CONFIG.COLORS.TEXT_DIM
+  });
+  footer.anchor.set(0.5);
+  footer.x = width / 2;
+  footer.y = height - 30;
+  footer.alpha = 0.5;
+  overlayContainer.addChild(footer);
+}
+
+function renderGame() {
+  // Clear game container except particles
+  const children = [...gameContainer.children];
+  children.forEach(child => {
+    if (child !== particleContainer) {
+      gameContainer.removeChild(child);
+    }
+  });
+
+  const width = app.screen.width;
+  const gridWidth = CONFIG.GRID_COLS * (CONFIG.TILE_SIZE + CONFIG.TILE_GAP);
+  const gridHeight = CONFIG.GRID_ROWS * (CONFIG.TILE_SIZE + CONFIG.TILE_GAP);
+  const gridOffsetX = (width - gridWidth) / 2;
+  const gridOffsetY = 80;
+
+  // Calculate glow pulse based on BPM
+  const beatInterval = 60000 / GameState.bpm;
+  const beatPhase = (Date.now() % beatInterval) / beatInterval;
+  const glowPulse = 0.3 + Math.sin(beatPhase * Math.PI * 2) * 0.15;
+
+  // Grid background
+  const gridBg = new PIXI.Graphics();
+  gridBg.beginFill(CONFIG.COLORS.HUD_BG, 0.5);
+  gridBg.drawRoundedRect(gridOffsetX - 10, gridOffsetY - 10, gridWidth + 20, gridHeight + 20, 10);
+  gridBg.endFill();
+  gameContainer.addChild(gridBg);
+
+  // Draw grid cells
+  const gridGraphics = new PIXI.Graphics();
+  for (let row = 0; row < CONFIG.GRID_ROWS; row++) {
+    for (let col = 0; col < CONFIG.GRID_COLS; col++) {
+      const x = gridOffsetX + col * (CONFIG.TILE_SIZE + CONFIG.TILE_GAP);
+      const y = gridOffsetY + row * (CONFIG.TILE_SIZE + CONFIG.TILE_GAP);
+
+      // Empty cell with subtle grid pattern
+      gridGraphics.beginFill(0x1a1a2e, 0.5);
+      gridGraphics.drawRoundedRect(x, y, CONFIG.TILE_SIZE, CONFIG.TILE_SIZE, 6);
+      gridGraphics.endFill();
+
+      // Filled cell
+      const tile = GameState.grid[row][col];
+      if (tile) {
+        const color = CONFIG.COLORS[tile.type];
+
+        // Check if tile is part of a potential cluster (adjacent to same color)
+        const isClusterCandidate = hasAdjacentMatch(row, col, tile.type);
+
+        // Outer glow - pulses for cluster candidates
+        const glowAlpha = isClusterCandidate ? glowPulse + 0.1 : 0.2;
+        const glowSize = isClusterCandidate ? 4 : 2;
+
+        // Animated outer glow
+        gridGraphics.beginFill(color, glowAlpha);
+        gridGraphics.drawRoundedRect(x - glowSize, y - glowSize,
+          CONFIG.TILE_SIZE + glowSize * 2, CONFIG.TILE_SIZE + glowSize * 2, 8);
+        gridGraphics.endFill();
+
+        // Main tile
+        gridGraphics.beginFill(color);
+        gridGraphics.drawRoundedRect(x, y, CONFIG.TILE_SIZE, CONFIG.TILE_SIZE, 6);
+        gridGraphics.endFill();
+
+        // Inner gradient effect
+        const gradient = isClusterCandidate ? 0.35 : 0.25;
+        gridGraphics.beginFill(0xffffff, gradient);
+        gridGraphics.drawRoundedRect(x + 2, y + 2, CONFIG.TILE_SIZE - 4, CONFIG.TILE_SIZE / 2.5, 4);
+        gridGraphics.endFill();
+
+        // Bottom shadow
+        gridGraphics.beginFill(0x000000, 0.2);
+        gridGraphics.drawRoundedRect(x + 2, y + CONFIG.TILE_SIZE * 0.7,
+          CONFIG.TILE_SIZE - 4, CONFIG.TILE_SIZE * 0.25, 3);
+        gridGraphics.endFill();
+
+        // Wild tiles get extra sparkle effect
+        if (tile.type === 'WILD') {
+          const sparklePhase = (Date.now() / 200 + row + col) % 1;
+          gridGraphics.beginFill(0xffffff, 0.3 + sparklePhase * 0.3);
+          gridGraphics.drawCircle(x + CONFIG.TILE_SIZE * 0.3, y + CONFIG.TILE_SIZE * 0.3, 3);
+          gridGraphics.endFill();
+        }
+      }
+    }
+  }
+  gameContainer.addChild(gridGraphics);
+
+  // Draw ghost piece (landing preview)
+  if (GameState.currentPiece && !GameState.paused) {
+    // Find where piece would land
+    let ghostY = GameState.currentPiece.y;
+    while (canPlacePiece(GameState.currentPiece, GameState.currentPiece.x, ghostY + 1)) {
+      ghostY++;
+    }
+
+    // Draw ghost if different from current position
+    if (ghostY > GameState.currentPiece.y) {
+      const ghostGraphics = new PIXI.Graphics();
+      for (const tile of GameState.currentPiece.tiles) {
+        const col = GameState.currentPiece.x + tile.dx;
+        const row = ghostY + tile.dy;
+        const x = gridOffsetX + col * (CONFIG.TILE_SIZE + CONFIG.TILE_GAP);
+        const y = gridOffsetY + row * (CONFIG.TILE_SIZE + CONFIG.TILE_GAP);
+        const color = CONFIG.COLORS[tile.type];
+
+        // Ghost outline only
+        ghostGraphics.lineStyle(2, color, 0.3);
+        ghostGraphics.beginFill(color, 0.1);
+        ghostGraphics.drawRoundedRect(x, y, CONFIG.TILE_SIZE, CONFIG.TILE_SIZE, 6);
+        ghostGraphics.endFill();
+      }
+      gameContainer.addChild(ghostGraphics);
+    }
+
+    // Draw current piece with enhanced glow
+    const pieceGraphics = new PIXI.Graphics();
+    for (const tile of GameState.currentPiece.tiles) {
+      const col = GameState.currentPiece.x + tile.dx;
+      const row = GameState.currentPiece.y + tile.dy;
+      const x = gridOffsetX + col * (CONFIG.TILE_SIZE + CONFIG.TILE_GAP);
+      const y = gridOffsetY + row * (CONFIG.TILE_SIZE + CONFIG.TILE_GAP);
+      const color = CONFIG.COLORS[tile.type];
+
+      // Animated outer glow
+      const pulseGlow = 0.4 + Math.sin(Date.now() / 150) * 0.2;
+      pieceGraphics.beginFill(color, pulseGlow);
+      pieceGraphics.drawRoundedRect(x - 4, y - 4, CONFIG.TILE_SIZE + 8, CONFIG.TILE_SIZE + 8, 10);
+      pieceGraphics.endFill();
+
+      // Main tile
+      pieceGraphics.beginFill(color);
+      pieceGraphics.drawRoundedRect(x, y, CONFIG.TILE_SIZE, CONFIG.TILE_SIZE, 6);
+      pieceGraphics.endFill();
+
+      // Highlight
+      pieceGraphics.beginFill(0xffffff, 0.4);
+      pieceGraphics.drawRoundedRect(x + 2, y + 2, CONFIG.TILE_SIZE - 4, CONFIG.TILE_SIZE / 2.5, 4);
+      pieceGraphics.endFill();
+    }
+    gameContainer.addChild(pieceGraphics);
+  }
+}
+
+// Helper to check if a tile has adjacent matching tiles
+function hasAdjacentMatch(row, col, type) {
+  const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+  for (const [dr, dc] of directions) {
+    const newRow = row + dr;
+    const newCol = col + dc;
+    if (newRow >= 0 && newRow < CONFIG.GRID_ROWS && newCol >= 0 && newCol < CONFIG.GRID_COLS) {
+      const neighbor = GameState.grid[newRow][newCol];
+      if (neighbor && (neighbor.type === type || neighbor.type === 'WILD' || type === 'WILD')) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+function renderHUD() {
+  hudContainer.removeChildren();
+
+  const width = app.screen.width;
+  const height = app.screen.height;
+
+  // Top bar background
+  const topBar = new PIXI.Graphics();
+  topBar.beginFill(CONFIG.COLORS.HUD_BG);
+  topBar.drawRect(0, 0, width, 60);
+  topBar.endFill();
+  hudContainer.addChild(topBar);
+
+  // Score (left)
+  const scoreText = new PIXI.Text(GameState.score.toLocaleString(), {
+    fontFamily: 'system-ui',
+    fontSize: 28,
+    fontWeight: 'bold',
+    fill: CONFIG.COLORS.TEXT
+  });
+  scoreText.x = 20;
+  scoreText.y = 15;
+  hudContainer.addChild(scoreText);
+
+  const ptsLabel = new PIXI.Text('pts', {
+    fontFamily: 'system-ui',
+    fontSize: 14,
+    fill: CONFIG.COLORS.TEXT_DIM
+  });
+  ptsLabel.x = 20;
+  ptsLabel.y = 42;
+  hudContainer.addChild(ptsLabel);
+
+  // Pause button (right)
+  const pauseBtn = createButton('II', width - 50, 30, () => setScreen('PAUSE'), 50, 40);
+  hudContainer.addChild(pauseBtn);
+
+  // Bottom bar
+  const bottomY = height - 80;
+  const bottomBar = new PIXI.Graphics();
+  bottomBar.beginFill(CONFIG.COLORS.HUD_BG);
+  bottomBar.drawRect(0, bottomY, width, 80);
+  bottomBar.endFill();
+  hudContainer.addChild(bottomBar);
+
+  // Progress bars
+  const barWidth = 120;
+  const barHeight = 12;
+  const barStartX = 20;
+
+  // BPM sync for pulsing
+  const beatInterval = 60000 / GameState.bpm;
+  const beatPhase = (Date.now() % beatInterval) / beatInterval;
+
+  CATEGORY_TYPES.forEach((category, i) => {
+    const y = bottomY + 15 + i * 20;
+    const progress = Math.min(GameState.resources[category] / GameState.resourcesForUnlock, 1);
+    const color = CONFIG.COLORS[category];
+
+    // Label with glow when near full
+    const labelGlow = progress > 0.7 ? 0.3 + Math.sin(beatPhase * Math.PI * 2) * 0.2 : 0;
+    if (labelGlow > 0) {
+      const glowBg = new PIXI.Graphics();
+      glowBg.beginFill(color, labelGlow);
+      glowBg.drawCircle(barStartX + 6, y + 6, 12);
+      glowBg.endFill();
+      hudContainer.addChild(glowBg);
+    }
+
+    const label = new PIXI.Text(category[0], {
+      fontFamily: 'system-ui',
+      fontSize: 12,
+      fontWeight: 'bold',
+      fill: color
+    });
+    label.x = barStartX;
+    label.y = y - 2;
+    hudContainer.addChild(label);
+
+    // Background with subtle border
+    const barBg = new PIXI.Graphics();
+    barBg.lineStyle(1, 0x444455);
+    barBg.beginFill(0x222233);
+    barBg.drawRoundedRect(barStartX + 20, y, barWidth, barHeight, 4);
+    barBg.endFill();
+    hudContainer.addChild(barBg);
+
+    // Fill
+    if (progress > 0) {
+      const barFill = new PIXI.Graphics();
+
+      // Glow behind the bar when near full
+      if (progress > 0.7) {
+        const glowIntensity = 0.15 + Math.sin(beatPhase * Math.PI * 2) * 0.1;
+        barFill.beginFill(color, glowIntensity);
+        barFill.drawRoundedRect(barStartX + 18, y - 2, barWidth * progress + 4, barHeight + 4, 6);
+        barFill.endFill();
+      }
+
+      // Main fill
+      barFill.beginFill(color);
+      barFill.drawRoundedRect(barStartX + 20, y, barWidth * progress, barHeight, 4);
+      barFill.endFill();
+
+      // Shine effect
+      barFill.beginFill(0xffffff, 0.3);
+      barFill.drawRoundedRect(barStartX + 20, y, barWidth * progress, barHeight / 2, 4);
+      barFill.endFill();
+
+      // Pulse effect when near full - synced to BPM
+      if (progress > 0.8) {
+        const pulseAlpha = 0.7 + Math.sin(beatPhase * Math.PI * 2) * 0.3;
+        barFill.alpha = pulseAlpha;
+
+        // Add "READY" text when full
+        if (progress >= 1) {
+          const readyText = new PIXI.Text('READY!', {
+            fontFamily: 'system-ui',
+            fontSize: 9,
+            fontWeight: 'bold',
+            fill: 0xffffff
+          });
+          readyText.x = barStartX + barWidth + 28;
+          readyText.y = y;
+          readyText.alpha = 0.7 + Math.sin(beatPhase * Math.PI * 4) * 0.3;
+          hudContainer.addChild(readyText);
+        }
+      }
+
+      hudContainer.addChild(barFill);
+    }
+  });
+
+  // MIX button
+  const mixBtn = createButton('MIX', width - 60, bottomY + 40, () => setScreen('MIX'), 80, 50);
+  hudContainer.addChild(mixBtn);
+
+  // Combo display with effects
+  if (GameState.combo > 1) {
+    // Combo background glow
+    const comboPulse = 0.5 + Math.sin(Date.now() / 100) * 0.3;
+    const comboGlow = new PIXI.Graphics();
+    comboGlow.beginFill(CONFIG.COLORS.WILD, comboPulse * 0.3);
+    comboGlow.drawRoundedRect(width / 2 - 80, 85, 160, 40, 10);
+    comboGlow.endFill();
+    hudContainer.addChild(comboGlow);
+
+    // Scale animation based on combo
+    const comboScale = 1 + Math.sin(Date.now() / 80) * 0.1 * Math.min(GameState.combo, 5);
+
+    const comboText = new PIXI.Text(`${GameState.combo}x COMBO!`, {
+      fontFamily: 'system-ui',
+      fontSize: 22 + Math.min(GameState.combo, 5) * 2,
+      fontWeight: 'bold',
+      fill: [CONFIG.COLORS.WILD, 0xffffff],
+      fillGradientType: 1,
+      dropShadow: true,
+      dropShadowColor: CONFIG.COLORS.WILD,
+      dropShadowBlur: 8,
+      dropShadowDistance: 0
+    });
+    comboText.anchor.set(0.5);
+    comboText.x = width / 2;
+    comboText.y = 105;
+    comboText.scale.set(comboScale);
+    hudContainer.addChild(comboText);
+  }
+
+  // Next piece preview
+  if (GameState.nextPiece && !GameState.paused) {
+    const previewX = width - 70;
+    const previewY = 75;
+    const previewSize = 15;
+
+    // Preview background
+    const previewBg = new PIXI.Graphics();
+    previewBg.beginFill(CONFIG.COLORS.HUD_BG, 0.7);
+    previewBg.drawRoundedRect(previewX - 25, previewY - 25, 60, 60, 8);
+    previewBg.endFill();
+    hudContainer.addChild(previewBg);
+
+    const nextLabel = new PIXI.Text('NEXT', {
+      fontFamily: 'system-ui',
+      fontSize: 9,
+      fill: CONFIG.COLORS.TEXT_DIM
+    });
+    nextLabel.anchor.set(0.5);
+    nextLabel.x = previewX + 5;
+    nextLabel.y = previewY - 18;
+    hudContainer.addChild(nextLabel);
+
+    // Draw next piece
+    for (const tile of GameState.nextPiece.tiles) {
+      const px = previewX + tile.dx * (previewSize + 2);
+      const py = previewY + tile.dy * (previewSize + 2);
+      const color = CONFIG.COLORS[tile.type];
+
+      const pieceGraphics = new PIXI.Graphics();
+      pieceGraphics.beginFill(color, 0.8);
+      pieceGraphics.drawRoundedRect(px - previewSize/2, py - previewSize/2, previewSize, previewSize, 3);
+      pieceGraphics.endFill();
+      hudContainer.addChild(pieceGraphics);
+    }
+  }
+
+  // Touch zone indicators (subtle, only on first few seconds of game)
+  if (!hasSeenTutorial && GameState.score < 50) {
+    const zoneAlpha = 0.1;
+
+    // Left zone
+    const leftZone = new PIXI.Graphics();
+    leftZone.beginFill(CONFIG.COLORS.VIBE, zoneAlpha);
+    leftZone.drawRect(0, 60, width * 0.3, height - 140);
+    leftZone.endFill();
+    hudContainer.addChild(leftZone);
+
+    const leftArrow = new PIXI.Text('\u2190', {
+      fontFamily: 'system-ui',
+      fontSize: 24,
+      fill: CONFIG.COLORS.VIBE
+    });
+    leftArrow.anchor.set(0.5);
+    leftArrow.x = width * 0.15;
+    leftArrow.y = height / 2;
+    leftArrow.alpha = 0.4;
+    hudContainer.addChild(leftArrow);
+
+    // Right zone
+    const rightZone = new PIXI.Graphics();
+    rightZone.beginFill(CONFIG.COLORS.MELODY, zoneAlpha);
+    rightZone.drawRect(width * 0.7, 60, width * 0.3, height - 140);
+    rightZone.endFill();
+    hudContainer.addChild(rightZone);
+
+    const rightArrow = new PIXI.Text('\u2192', {
+      fontFamily: 'system-ui',
+      fontSize: 24,
+      fill: CONFIG.COLORS.MELODY
+    });
+    rightArrow.anchor.set(0.5);
+    rightArrow.x = width * 0.85;
+    rightArrow.y = height / 2;
+    rightArrow.alpha = 0.4;
+    hudContainer.addChild(rightArrow);
+
+    // Center zone
+    const centerHint = new PIXI.Text('TAP TO ROTATE', {
+      fontFamily: 'system-ui',
+      fontSize: 10,
+      fill: CONFIG.COLORS.TEXT_DIM
+    });
+    centerHint.anchor.set(0.5);
+    centerHint.x = width / 2;
+    centerHint.y = height - 100;
+    centerHint.alpha = 0.5;
+    hudContainer.addChild(centerHint);
+  }
+}
+
+function renderPauseOverlay() {
+  const width = app.screen.width;
+  const height = app.screen.height;
+
+  // Dim background
+  const bg = new PIXI.Graphics();
+  bg.beginFill(0x000000, 0.7);
+  bg.drawRect(0, 0, width, height);
+  bg.endFill();
+  bg.interactive = true;
+  overlayContainer.addChild(bg);
+
+  // Panel
+  const panel = new PIXI.Graphics();
+  panel.beginFill(CONFIG.COLORS.HUD_BG);
+  panel.drawRoundedRect(width / 2 - 120, height / 2 - 150, 240, 300, 20);
+  panel.endFill();
+  overlayContainer.addChild(panel);
+
+  // Title
+  const title = new PIXI.Text('PAUSED', {
+    fontFamily: 'system-ui',
+    fontSize: 32,
+    fontWeight: 'bold',
+    fill: CONFIG.COLORS.TEXT
+  });
+  title.anchor.set(0.5);
+  title.x = width / 2;
+  title.y = height / 2 - 100;
+  overlayContainer.addChild(title);
+
+  // Buttons
+  const buttons = [
+    { text: 'RESUME', action: () => setScreen('PLAY') },
+    { text: 'SAVE & EXIT', action: () => { saveGame(); setScreen('HOME'); } },
+    { text: 'SETTINGS', action: () => setScreen('SETTINGS') }
+  ];
+
+  buttons.forEach((btn, i) => {
+    const button = createButton(btn.text, width / 2, height / 2 - 30 + i * 60, btn.action);
+    overlayContainer.addChild(button);
+  });
+}
+
+// MIX screen scroll state
+const mixScrollState = { BEAT: 0, VIBE: 0, MELODY: 0 };
+
+function renderMixScreen() {
+  const width = app.screen.width;
+  const height = app.screen.height;
+
+  // Background with subtle gradient
+  const bg = new PIXI.Graphics();
+  bg.beginFill(CONFIG.COLORS.BACKGROUND);
+  bg.drawRect(0, 0, width, height);
+  bg.endFill();
+  overlayContainer.addChild(bg);
+
+  // Header
+  const header = new PIXI.Graphics();
+  header.beginFill(CONFIG.COLORS.HUD_BG);
+  header.drawRect(0, 0, width, 55);
+  header.endFill();
+  overlayContainer.addChild(header);
+
+  const title = new PIXI.Text('MIX', {
+    fontFamily: 'system-ui',
+    fontSize: 24,
+    fontWeight: 'bold',
+    fill: CONFIG.COLORS.TEXT
+  });
+  title.anchor.set(0.5);
+  title.x = width / 2;
+  title.y = 28;
+  overlayContainer.addChild(title);
+
+  // Close button
+  const closeBtn = createButton('X', width - 35, 28, () => setScreen('PLAY'), 40, 35);
+  overlayContainer.addChild(closeBtn);
+
+  // Active layer slots (3x3 grid at top)
+  const slotsY = 65;
+  const slotSize = 50;
+  const slotGap = 8;
+  const totalSlotsWidth = 3 * slotSize + 2 * slotGap;
+  const slotsStartX = (width - totalSlotsWidth) / 2;
+
+  // Category labels and slots
+  CATEGORY_TYPES.forEach((category, col) => {
+    const color = CONFIG.COLORS[category];
+    const x = slotsStartX + col * (slotSize + slotGap);
+
+    // Category label
+    const label = new PIXI.Text(category, {
+      fontFamily: 'system-ui',
+      fontSize: 11,
+      fontWeight: 'bold',
+      fill: color
+    });
+    label.anchor.set(0.5);
+    label.x = x + slotSize / 2;
+    label.y = slotsY;
+    overlayContainer.addChild(label);
+
+    // Active layer count
+    const activeLayers = GameState.activeLayers[category];
+    const countText = new PIXI.Text(`${activeLayers.length}/${CONFIG.MAX_LAYERS_PER_CATEGORY}`, {
+      fontFamily: 'system-ui',
+      fontSize: 9,
+      fill: CONFIG.COLORS.TEXT_DIM
+    });
+    countText.anchor.set(0.5);
+    countText.x = x + slotSize / 2;
+    countText.y = slotsY + 12;
+    overlayContainer.addChild(countText);
+
+    // Draw slots
+    for (let row = 0; row < CONFIG.MAX_LAYERS_PER_CATEGORY; row++) {
+      const slotY = slotsY + 22 + row * (slotSize + slotGap - 5);
+      const slot = new PIXI.Graphics();
+      const isActive = row < activeLayers.length;
+
+      if (isActive) {
+        // Filled slot with glow
+        slot.beginFill(color, 0.15);
+        slot.drawRoundedRect(x - 2, slotY - 2, slotSize + 4, slotSize + 4, 10);
+        slot.endFill();
+        slot.beginFill(color, 0.85);
+        slot.lineStyle(2, color);
+      } else {
+        // Empty slot
+        slot.lineStyle(1, CONFIG.COLORS.TEXT_DIM, 0.4);
+        slot.beginFill(0x1a1a2e, 0.3);
+      }
+      slot.drawRoundedRect(x, slotY, slotSize, slotSize, 8);
+      slot.endFill();
+      overlayContainer.addChild(slot);
+
+      if (isActive) {
+        const loopName = activeLayers[row].name.split(' ')[0];
+        const slotLabel = new PIXI.Text(loopName, {
+          fontFamily: 'system-ui',
+          fontSize: 9,
+          fontWeight: 'bold',
+          fill: 0xffffff
+        });
+        slotLabel.anchor.set(0.5);
+        slotLabel.x = x + slotSize / 2;
+        slotLabel.y = slotY + slotSize / 2 - 5;
+        overlayContainer.addChild(slotLabel);
+
+        // Tap to remove indicator
+        const removeHint = new PIXI.Text('tap -', {
+          fontFamily: 'system-ui',
+          fontSize: 8,
+          fill: 0xffffff,
+          alpha: 0.6
+        });
+        removeHint.anchor.set(0.5);
+        removeHint.x = x + slotSize / 2;
+        removeHint.y = slotY + slotSize / 2 + 10;
+        overlayContainer.addChild(removeHint);
+
+        // Make slot interactive to remove
+        slot.interactive = true;
+        slot.cursor = 'pointer';
+        slot.on('pointerdown', () => toggleLoop(category, activeLayers[row].id));
+      }
+    }
+  });
+
+  // Divider line
+  const dividerY = slotsY + 175;
+  const divider = new PIXI.Graphics();
+  divider.lineStyle(1, CONFIG.COLORS.TEXT_DIM, 0.3);
+  divider.moveTo(20, dividerY);
+  divider.lineTo(width - 20, dividerY);
+  overlayContainer.addChild(divider);
+
+  // Loop card columns (independently scrollable)
+  const cardsY = dividerY + 15;
+  const cardsHeight = height - cardsY - 140; // Leave room for controls
+  const cardWidth = (width - 50) / 3;
+  const cardHeight = 48;
+  const cardGap = 6;
+
+  CATEGORY_TYPES.forEach((category, col) => {
+    const color = CONFIG.COLORS[category];
+    const loops = GameState.loops[category];
+    const colX = 15 + col * (cardWidth + 10);
+
+    // Column header with unlock indicator
+    const canUnlock = Math.floor(GameState.resources[category] / GameState.resourcesForUnlock);
+    const headerBg = new PIXI.Graphics();
+    if (canUnlock > 0) {
+      headerBg.beginFill(color, 0.2);
+      headerBg.drawRoundedRect(colX, cardsY - 2, cardWidth, 18, 4);
+      headerBg.endFill();
+    }
+    overlayContainer.addChild(headerBg);
+
+    const colHeader = new PIXI.Text(canUnlock > 0 ? `${canUnlock} READY` : category, {
+      fontFamily: 'system-ui',
+      fontSize: 10,
+      fontWeight: 'bold',
+      fill: canUnlock > 0 ? color : CONFIG.COLORS.TEXT_DIM
+    });
+    colHeader.anchor.set(0.5);
+    colHeader.x = colX + cardWidth / 2;
+    colHeader.y = cardsY + 6;
+    overlayContainer.addChild(colHeader);
+
+    // Create a mask for the scrollable area
+    const scrollMask = new PIXI.Graphics();
+    scrollMask.beginFill(0xffffff);
+    scrollMask.drawRect(colX - 5, cardsY + 20, cardWidth + 10, cardsHeight - 20);
+    scrollMask.endFill();
+    overlayContainer.addChild(scrollMask);
+
+    // Card container for this column
+    const cardContainer = new PIXI.Container();
+    cardContainer.mask = scrollMask;
+    overlayContainer.addChild(cardContainer);
+
+    // Calculate scroll offset
+    const scrollOffset = mixScrollState[category] || 0;
+    const maxScroll = Math.max(0, loops.length * (cardHeight + cardGap) - cardsHeight + 30);
+
+    // Render cards
+    loops.forEach((loop, i) => {
+      const cardY = cardsY + 22 + i * (cardHeight + cardGap) - scrollOffset;
+
+      // Skip if completely outside visible area
+      if (cardY + cardHeight < cardsY + 20 || cardY > cardsY + cardsHeight) return;
+
+      const isActive = GameState.activeLayers[category].some(l => l.id === loop.id);
+      const isUnlocked = loop.unlocked;
+      const isPreviewing = GameState.previewingLoop === loop.id;
+
+      const card = new PIXI.Graphics();
+
+      // Card background with different states
+      if (isActive) {
+        // Active - bright with glow
+        card.beginFill(color, 0.15);
+        card.drawRoundedRect(colX - 2, cardY - 2, cardWidth + 4, cardHeight + 4, 10);
+        card.endFill();
+        card.beginFill(color, 0.9);
+        card.lineStyle(2, color);
+      } else if (isPreviewing) {
+        // Previewing - pulsing
+        const pulse = 0.5 + Math.sin(Date.now() / 150) * 0.2;
+        card.beginFill(color, pulse);
+        card.lineStyle(2, color, 0.8);
+      } else if (isUnlocked) {
+        // Unlocked but inactive
+        card.beginFill(color, 0.25);
+        card.lineStyle(1, color, 0.5);
+      } else {
+        // Locked
+        card.beginFill(0x2a2a3e, 0.6);
+        card.lineStyle(1, CONFIG.COLORS.TEXT_DIM, 0.3);
+      }
+      card.drawRoundedRect(colX, cardY, cardWidth, cardHeight, 6);
+      card.endFill();
+
+      card.interactive = true;
+      card.cursor = 'pointer';
+      cardContainer.addChild(card);
+
+      // Loop name
+      const nameText = new PIXI.Text(loop.name, {
+        fontFamily: 'system-ui',
+        fontSize: 11,
+        fontWeight: isActive ? 'bold' : 'normal',
+        fill: isUnlocked ? (isActive ? 0xffffff : CONFIG.COLORS.TEXT) : CONFIG.COLORS.TEXT_DIM
+      });
+      nameText.x = colX + 8;
+      nameText.y = cardY + 8;
+      cardContainer.addChild(nameText);
+
+      // Status badge
+      const statusBadge = new PIXI.Graphics();
+      const statusText = isActive ? 'ON' : isUnlocked ? 'OFF' : 'LOCKED';
+      const badgeColor = isActive ? 0x00ff00 : isUnlocked ? 0x666666 : 0xff6600;
+
+      statusBadge.beginFill(badgeColor, 0.3);
+      statusBadge.lineStyle(1, badgeColor, 0.5);
+      statusBadge.drawRoundedRect(colX + 8, cardY + 28, 35, 14, 3);
+      statusBadge.endFill();
+      cardContainer.addChild(statusBadge);
+
+      const statusLabel = new PIXI.Text(statusText, {
+        fontFamily: 'system-ui',
+        fontSize: 8,
+        fontWeight: 'bold',
+        fill: isActive ? 0x00ff00 : CONFIG.COLORS.TEXT_DIM
+      });
+      statusLabel.x = colX + 12;
+      statusLabel.y = cardY + 30;
+      cardContainer.addChild(statusLabel);
+
+      // Preview/Demo button for locked loops
+      if (!isUnlocked) {
+        const previewBtn = new PIXI.Graphics();
+        previewBtn.beginFill(isPreviewing ? color : 0x444455, 0.8);
+        previewBtn.lineStyle(1, color, 0.5);
+        previewBtn.drawRoundedRect(colX + cardWidth - 35, cardY + 8, 28, 32, 4);
+        previewBtn.endFill();
+
+        // Play/Stop icon
+        if (isPreviewing) {
+          previewBtn.beginFill(0xffffff);
+          previewBtn.drawRect(colX + cardWidth - 27, cardY + 18, 4, 12);
+          previewBtn.drawRect(colX + cardWidth - 19, cardY + 18, 4, 12);
+          previewBtn.endFill();
+        } else {
+          previewBtn.beginFill(0xffffff);
+          previewBtn.moveTo(colX + cardWidth - 26, cardY + 16);
+          previewBtn.lineTo(colX + cardWidth - 26, cardY + 32);
+          previewBtn.lineTo(colX + cardWidth - 14, cardY + 24);
+          previewBtn.closePath();
+          previewBtn.endFill();
+        }
+
+        previewBtn.interactive = true;
+        previewBtn.cursor = 'pointer';
+        previewBtn.on('pointerdown', (e) => {
+          e.stopPropagation();
+          togglePreview(category, loop.id);
+        });
+        cardContainer.addChild(previewBtn);
+
+        // Cost indicator
+        const costText = new PIXI.Text(`${GameState.resourcesForUnlock} pts`, {
+          fontFamily: 'system-ui',
+          fontSize: 8,
+          fill: canUnlock > 0 ? color : CONFIG.COLORS.TEXT_DIM
+        });
+        costText.x = colX + 48;
+        costText.y = cardY + 30;
+        cardContainer.addChild(costText);
+
+        card.on('pointerdown', () => unlockLoop(category, loop.id));
+      } else {
+        card.on('pointerdown', () => toggleLoop(category, loop.id));
+      }
+    });
+
+    // Scroll indicators
+    if (scrollOffset > 0) {
+      const upArrow = new PIXI.Text('\u25B2', {
+        fontFamily: 'system-ui',
+        fontSize: 12,
+        fill: color
+      });
+      upArrow.anchor.set(0.5);
+      upArrow.x = colX + cardWidth / 2;
+      upArrow.y = cardsY + 25;
+      upArrow.alpha = 0.6;
+      overlayContainer.addChild(upArrow);
+    }
+
+    if (scrollOffset < maxScroll) {
+      const downArrow = new PIXI.Text('\u25BC', {
+        fontFamily: 'system-ui',
+        fontSize: 12,
+        fill: color
+      });
+      downArrow.anchor.set(0.5);
+      downArrow.x = colX + cardWidth / 2;
+      downArrow.y = cardsY + cardsHeight - 5;
+      downArrow.alpha = 0.6;
+      overlayContainer.addChild(downArrow);
+    }
+
+    // Make the column scrollable via touch/drag
+    const scrollArea = new PIXI.Graphics();
+    scrollArea.beginFill(0x000000, 0.001); // Nearly invisible
+    scrollArea.drawRect(colX - 5, cardsY + 15, cardWidth + 10, cardsHeight);
+    scrollArea.endFill();
+    scrollArea.interactive = true;
+
+    let scrollStartY = 0;
+    let scrollStartOffset = 0;
+
+    scrollArea.on('pointerdown', (e) => {
+      scrollStartY = e.data.global.y;
+      scrollStartOffset = mixScrollState[category] || 0;
+    });
+
+    scrollArea.on('pointermove', (e) => {
+      if (scrollStartY !== null) {
+        const deltaY = scrollStartY - e.data.global.y;
+        mixScrollState[category] = Math.max(0, Math.min(maxScroll, scrollStartOffset + deltaY));
+        renderMixScreen();
+      }
+    });
+
+    scrollArea.on('pointerup', () => { scrollStartY = null; });
+    scrollArea.on('pointerupoutside', () => { scrollStartY = null; });
+
+    overlayContainer.addChild(scrollArea);
+  });
+
+  // Bottom controls area
+  const controlsY = height - 115;
+
+  // Controls background
+  const controlsBg = new PIXI.Graphics();
+  controlsBg.beginFill(CONFIG.COLORS.HUD_BG, 0.9);
+  controlsBg.drawRect(0, controlsY - 10, width, 125);
+  controlsBg.endFill();
+  overlayContainer.addChild(controlsBg);
+
+  // BPM control
+  const bpmLabel = new PIXI.Text(`BPM`, {
+    fontFamily: 'system-ui',
+    fontSize: 12,
+    fill: CONFIG.COLORS.TEXT_DIM
+  });
+  bpmLabel.x = 20;
+  bpmLabel.y = controlsY;
+  overlayContainer.addChild(bpmLabel);
+
+  const bpmValue = new PIXI.Text(`${GameState.bpm}`, {
+    fontFamily: 'system-ui',
+    fontSize: 14,
+    fontWeight: 'bold',
+    fill: CONFIG.COLORS.TEXT
+  });
+  bpmValue.x = 55;
+  bpmValue.y = controlsY - 1;
+  overlayContainer.addChild(bpmValue);
+
+  const bpmSlider = createSlider(90, controlsY + 4, width - 110, GameState.bpm, 95, 135, (val) => {
+    audioEngine.setBPM(Math.round(val));
+    renderMixScreen();
+  });
+  overlayContainer.addChild(bpmSlider);
+
+  // Pitch control
+  const pitchLabel = new PIXI.Text(`PITCH`, {
+    fontFamily: 'system-ui',
+    fontSize: 12,
+    fill: CONFIG.COLORS.TEXT_DIM
+  });
+  pitchLabel.x = 20;
+  pitchLabel.y = controlsY + 30;
+  overlayContainer.addChild(pitchLabel);
+
+  const pitchValue = new PIXI.Text(`${GameState.pitch >= 0 ? '+' : ''}${GameState.pitch}`, {
+    fontFamily: 'system-ui',
+    fontSize: 14,
+    fontWeight: 'bold',
+    fill: CONFIG.COLORS.TEXT
+  });
+  pitchValue.x = 65;
+  pitchValue.y = controlsY + 29;
+  overlayContainer.addChild(pitchValue);
+
+  const pitchSlider = createSlider(90, controlsY + 34, width - 110, GameState.pitch, -5, 5, (val) => {
+    audioEngine.setPitch(Math.round(val));
+    renderMixScreen();
+  });
+  overlayContainer.addChild(pitchSlider);
+
+  // Back button
+  const backBtn = createButton('BACK TO GAME', width / 2, controlsY + 75, () => setScreen('PLAY'), 180, 38);
+  overlayContainer.addChild(backBtn);
+}
+
+// Toggle preview for locked loops
+function togglePreview(category, loopId) {
+  if (GameState.previewingLoop === loopId) {
+    // Stop preview
+    audioEngine.stopPreview();
+    GameState.previewingLoop = null;
+  } else {
+    // Start preview
+    audioEngine.stopPreview();
+    audioEngine.startPreview(category, loopId);
+    GameState.previewingLoop = loopId;
+  }
+  renderMixScreen();
+}
+
+// Settings state
+const SettingsState = {
+  masterVolume: 80,
+  musicVolume: 80,
+  sfxVolume: 80
+};
+
+function renderSettingsScreen() {
+  const width = app.screen.width;
+  const height = app.screen.height;
+
+  // Background
+  const bg = new PIXI.Graphics();
+  bg.beginFill(CONFIG.COLORS.BACKGROUND);
+  bg.drawRect(0, 0, width, height);
+  bg.endFill();
+  overlayContainer.addChild(bg);
+
+  // Header
+  const header = new PIXI.Graphics();
+  header.beginFill(CONFIG.COLORS.HUD_BG);
+  header.drawRect(0, 0, width, 60);
+  header.endFill();
+  overlayContainer.addChild(header);
+
+  const title = new PIXI.Text('SETTINGS', {
+    fontFamily: 'system-ui',
+    fontSize: 24,
+    fontWeight: 'bold',
+    fill: CONFIG.COLORS.TEXT
+  });
+  title.anchor.set(0.5);
+  title.x = width / 2;
+  title.y = 30;
+  overlayContainer.addChild(title);
+
+  // Settings panel
+  const panelY = 80;
+  const panel = new PIXI.Graphics();
+  panel.beginFill(CONFIG.COLORS.HUD_BG, 0.5);
+  panel.drawRoundedRect(20, panelY, width - 40, 250, 15);
+  panel.endFill();
+  overlayContainer.addChild(panel);
+
+  // Audio settings
+  const settingsData = [
+    { label: 'MASTER VOLUME', value: SettingsState.masterVolume, key: 'masterVolume' },
+    { label: 'MUSIC VOLUME', value: SettingsState.musicVolume, key: 'musicVolume' },
+    { label: 'SFX VOLUME', value: SettingsState.sfxVolume, key: 'sfxVolume' }
+  ];
+
+  settingsData.forEach((setting, i) => {
+    const y = panelY + 30 + i * 70;
+
+    const label = new PIXI.Text(setting.label, {
+      fontFamily: 'system-ui',
+      fontSize: 13,
+      fill: CONFIG.COLORS.TEXT_DIM
+    });
+    label.x = 40;
+    label.y = y;
+    overlayContainer.addChild(label);
+
+    const valueText = new PIXI.Text(`${setting.value}%`, {
+      fontFamily: 'system-ui',
+      fontSize: 14,
+      fontWeight: 'bold',
+      fill: CONFIG.COLORS.TEXT
+    });
+    valueText.anchor.set(1, 0);
+    valueText.x = width - 40;
+    valueText.y = y;
+    overlayContainer.addChild(valueText);
+
+    const slider = createSlider(40, y + 25, width - 80, setting.value, 0, 100, (val) => {
+      SettingsState[setting.key] = Math.round(val);
+      applyAudioSettings();
+      renderSettingsScreen();
+    });
+    overlayContainer.addChild(slider);
+  });
+
+  // Game settings section
+  const gameSettingsY = panelY + 260;
+  const gamePanel = new PIXI.Graphics();
+  gamePanel.beginFill(CONFIG.COLORS.HUD_BG, 0.5);
+  gamePanel.drawRoundedRect(20, gameSettingsY, width - 40, 120, 15);
+  gamePanel.endFill();
+  overlayContainer.addChild(gamePanel);
+
+  const gameTitle = new PIXI.Text('GAME', {
+    fontFamily: 'system-ui',
+    fontSize: 14,
+    fontWeight: 'bold',
+    fill: CONFIG.COLORS.TEXT
+  });
+  gameTitle.x = 40;
+  gameTitle.y = gameSettingsY + 20;
+  overlayContainer.addChild(gameTitle);
+
+  // Fall speed indicator
+  const speedLabel = new PIXI.Text('FALL SPEED', {
+    fontFamily: 'system-ui',
+    fontSize: 12,
+    fill: CONFIG.COLORS.TEXT_DIM
+  });
+  speedLabel.x = 40;
+  speedLabel.y = gameSettingsY + 50;
+  overlayContainer.addChild(speedLabel);
+
+  const speedValue = new PIXI.Text(CONFIG.FALL_SPEED === 2 ? 'NORMAL' : CONFIG.FALL_SPEED < 2 ? 'SLOW' : 'FAST', {
+    fontFamily: 'system-ui',
+    fontSize: 13,
+    fontWeight: 'bold',
+    fill: CONFIG.COLORS.VIBE
+  });
+  speedValue.anchor.set(1, 0);
+  speedValue.x = width - 40;
+  speedValue.y = gameSettingsY + 50;
+  overlayContainer.addChild(speedValue);
+
+  // Credits/info
+  const infoY = height - 140;
+  const infoText = new PIXI.Text('SONGSUGAR v0.2\nA musical puzzle game prototype\nPowered by PixiJS & Tone.js', {
+    fontFamily: 'system-ui',
+    fontSize: 11,
+    fill: CONFIG.COLORS.TEXT_DIM,
+    align: 'center'
+  });
+  infoText.anchor.set(0.5);
+  infoText.x = width / 2;
+  infoText.y = infoY;
+  overlayContainer.addChild(infoText);
+
+  // Back button
+  const backBtn = createButton('BACK', width / 2, height - 50, () => {
+    setScreen(GameState.score > 0 && !GameState.gameOver ? 'PAUSE' : 'HOME');
+  }, 150, 45);
+  overlayContainer.addChild(backBtn);
+}
+
+function applyAudioSettings() {
+  if (audioEngine.masterGain) {
+    // Convert percentage to decibels (rough approximation)
+    const masterDb = (SettingsState.masterVolume / 100) * 0.8;
+    audioEngine.masterGain.gain.value = masterDb;
+  }
+}
+
+// ============================================================================
+// UI HELPERS
+// ============================================================================
+
+function createButton(text, x, y, action, w = 180, h = 50) {
+  const container = new PIXI.Container();
+
+  // Button glow (subtle)
+  const glow = new PIXI.Graphics();
+  glow.beginFill(CONFIG.COLORS.VIBE, 0.1);
+  glow.drawRoundedRect(-w/2 - 3, -h/2 - 3, w + 6, h + 6, 13);
+  glow.endFill();
+  container.addChild(glow);
+
+  // Button background
+  const bg = new PIXI.Graphics();
+  bg.beginFill(CONFIG.COLORS.HUD_BG);
+  bg.lineStyle(2, CONFIG.COLORS.VIBE);
+  bg.drawRoundedRect(-w/2, -h/2, w, h, 10);
+  bg.endFill();
+  container.addChild(bg);
+
+  // Button highlight (top edge)
+  const highlight = new PIXI.Graphics();
+  highlight.beginFill(0xffffff, 0.1);
+  highlight.drawRoundedRect(-w/2 + 3, -h/2 + 3, w - 6, h/3, 6);
+  highlight.endFill();
+  container.addChild(highlight);
+
+  const label = new PIXI.Text(text, {
+    fontFamily: 'system-ui',
+    fontSize: Math.min(16, w / text.length * 1.8),
+    fontWeight: 'bold',
+    fill: CONFIG.COLORS.TEXT
+  });
+  label.anchor.set(0.5);
+  container.addChild(label);
+
+  container.x = x;
+  container.y = y;
+  container.interactive = true;
+  container.cursor = 'pointer';
+
+  // Store original glow alpha
+  const originalGlowAlpha = glow.alpha;
+
+  container.on('pointerover', () => {
+    glow.alpha = 0.3;
+  });
+
+  container.on('pointerout', () => {
+    glow.alpha = originalGlowAlpha;
+    container.scale.set(1);
+  });
+
+  container.on('pointerdown', () => {
+    container.scale.set(0.95);
+    glow.alpha = 0.5;
+  });
+
+  container.on('pointerup', () => {
+    container.scale.set(1);
+    glow.alpha = originalGlowAlpha;
+    action();
+  });
+
+  container.on('pointerupoutside', () => {
+    container.scale.set(1);
+    glow.alpha = originalGlowAlpha;
+  });
+
+  return container;
+}
+
+function createSlider(x, y, sliderWidth, value, min, max, onChange) {
+  const container = new PIXI.Container();
+  container.x = x;
+  container.y = y;
+
+  // Track background
+  const track = new PIXI.Graphics();
+  track.beginFill(0x222233);
+  track.lineStyle(1, 0x444455);
+  track.drawRoundedRect(0, -2, sliderWidth, 12, 6);
+  track.endFill();
+  container.addChild(track);
+
+  // Fill
+  const percent = (value - min) / (max - min);
+  const fill = new PIXI.Graphics();
+  fill.beginFill(CONFIG.COLORS.VIBE);
+  fill.drawRoundedRect(0, 0, sliderWidth * percent, 8, 4);
+  fill.endFill();
+  container.addChild(fill);
+
+  // Handle with glow
+  const handleGlow = new PIXI.Graphics();
+  handleGlow.beginFill(CONFIG.COLORS.VIBE, 0.3);
+  handleGlow.drawCircle(sliderWidth * percent, 4, 14);
+  handleGlow.endFill();
+  container.addChild(handleGlow);
+
+  const handle = new PIXI.Graphics();
+  handle.beginFill(CONFIG.COLORS.TEXT);
+  handle.lineStyle(2, CONFIG.COLORS.VIBE);
+  handle.drawCircle(sliderWidth * percent, 4, 10);
+  handle.endFill();
+  container.addChild(handle);
+
+  // Make entire area interactive for better touch
+  const hitArea = new PIXI.Graphics();
+  hitArea.beginFill(0x000000, 0.001);
+  hitArea.drawRect(-10, -15, sliderWidth + 20, 35);
+  hitArea.endFill();
+  hitArea.interactive = true;
+  hitArea.cursor = 'pointer';
+  container.addChild(hitArea);
+
+  let isDragging = false;
+
+  const updateValue = (e) => {
+    const localX = e.data.global.x - x;
+    const newPercent = Math.max(0, Math.min(1, localX / sliderWidth));
+    const newValue = min + (max - min) * newPercent;
+    onChange(newValue);
+  };
+
+  hitArea.on('pointerdown', (e) => {
+    isDragging = true;
+    updateValue(e);
+  });
+
+  hitArea.on('pointermove', (e) => {
+    if (isDragging) {
+      updateValue(e);
+    }
+  });
+
+  hitArea.on('pointerup', () => { isDragging = false; });
+  hitArea.on('pointerupoutside', () => { isDragging = false; });
+
+  return container;
+}
+
+let toastTimeout;
+function showToast(message) {
+  // Remove existing toast
+  const existing = overlayContainer.children.find(c => c.isToast);
+  if (existing) overlayContainer.removeChild(existing);
+
+  const width = app.screen.width;
+
+  const container = new PIXI.Container();
+  container.isToast = true;
+
+  const bg = new PIXI.Graphics();
+  bg.beginFill(CONFIG.COLORS.HUD_BG, 0.9);
+  bg.drawRoundedRect(0, 0, width - 40, 50, 10);
+  bg.endFill();
+  container.addChild(bg);
+
+  const text = new PIXI.Text(message, {
+    fontFamily: 'system-ui',
+    fontSize: 14,
+    fill: CONFIG.COLORS.TEXT
+  });
+  text.anchor.set(0.5);
+  text.x = (width - 40) / 2;
+  text.y = 25;
+  container.addChild(text);
+
+  container.x = 20;
+  container.y = 70;
+  container.alpha = 0;
+
+  overlayContainer.addChild(container);
+
+  // Animate in
+  let alpha = 0;
+  const fadeIn = () => {
+    alpha += 0.1;
+    container.alpha = alpha;
+    if (alpha < 1) requestAnimationFrame(fadeIn);
+  };
+  fadeIn();
+
+  // Remove after delay
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => {
+    let fadeAlpha = 1;
+    const fadeOut = () => {
+      fadeAlpha -= 0.1;
+      container.alpha = fadeAlpha;
+      if (fadeAlpha > 0) {
+        requestAnimationFrame(fadeOut);
+      } else {
+        overlayContainer.removeChild(container);
+      }
+    };
+    fadeOut();
+  }, 2000);
+}
+
+// ============================================================================
+// GAME LOGIC
+// ============================================================================
+
+function setScreen(screen) {
+  const prevScreen = GameState.screen;
+  GameState.screen = screen;
+
+  if (screen === 'PLAY' && prevScreen !== 'PLAY') {
+    GameState.paused = false;
+  } else if (screen === 'PAUSE' || screen === 'MIX') {
+    GameState.paused = true;
+  }
+
+  renderCurrentScreen();
+}
+
+// Track if player has seen tutorial
+let hasSeenTutorial = localStorage.getItem('songsugar_tutorial') === 'true';
+
+async function startGame() {
+  await audioEngine.init();
+
+  // Reset state
+  GameState.score = 0;
+  GameState.resources = { BEAT: 0, VIBE: 0, MELODY: 0 };
+  GameState.activeLayers = { BEAT: [], VIBE: [], MELODY: [] };
+  GameState.loops = JSON.parse(JSON.stringify(LOOPS));
+  GameState.gameOver = false;
+  GameState.paused = false;
+  GameState.combo = 0;
+  GameState.previewingLoop = null;
+
+  // Reset scroll states
+  mixScrollState.BEAT = 0;
+  mixScrollState.VIBE = 0;
+  mixScrollState.MELODY = 0;
+
+  initGrid();
+  spawnPiece();
+
+  setScreen('PLAY');
+
+  // Start with one loop per category
+  toggleLoop('BEAT', 'trap_808');
+  toggleLoop('VIBE', 'warm_pad');
+  toggleLoop('MELODY', 'piano_chords');
+
+  // Show tutorial for first-time players
+  if (!hasSeenTutorial) {
+    showTutorialOverlay();
+  }
+}
+
+function showTutorialOverlay() {
+  const width = app.screen.width;
+  const height = app.screen.height;
+
+  // Dim background
+  const bg = new PIXI.Graphics();
+  bg.beginFill(0x000000, 0.85);
+  bg.drawRect(0, 0, width, height);
+  bg.endFill();
+  bg.interactive = true;
+  overlayContainer.addChild(bg);
+
+  // Tutorial panel
+  const panel = new PIXI.Graphics();
+  panel.beginFill(CONFIG.COLORS.HUD_BG);
+  panel.lineStyle(2, CONFIG.COLORS.VIBE);
+  panel.drawRoundedRect(20, height * 0.1, width - 40, height * 0.75, 20);
+  panel.endFill();
+  overlayContainer.addChild(panel);
+
+  // Title
+  const title = new PIXI.Text('HOW TO PLAY', {
+    fontFamily: 'system-ui',
+    fontSize: 24,
+    fontWeight: 'bold',
+    fill: CONFIG.COLORS.TEXT
+  });
+  title.anchor.set(0.5);
+  title.x = width / 2;
+  title.y = height * 0.15;
+  overlayContainer.addChild(title);
+
+  // Instructions
+  const instructions = [
+    { icon: '\u2190 \u2192', text: 'Swipe left/right to move' },
+    { icon: '\u2191', text: 'Tap center or swipe up to rotate' },
+    { icon: '\u2193', text: 'Swipe down for hard drop' },
+    { icon: '\u2022\u2022', text: 'Double-tap for instant drop' },
+    { icon: '\u25A0\u25A0\u25A0', text: 'Match 3+ same colors to clear' },
+    { icon: '\u2605', text: 'WILD (gold) matches any color' }
+  ];
+
+  instructions.forEach((inst, i) => {
+    const y = height * 0.22 + i * 55;
+
+    const icon = new PIXI.Text(inst.icon, {
+      fontFamily: 'system-ui',
+      fontSize: 18,
+      fill: CONFIG.COLORS.VIBE
+    });
+    icon.x = 50;
+    icon.y = y;
+    overlayContainer.addChild(icon);
+
+    const text = new PIXI.Text(inst.text, {
+      fontFamily: 'system-ui',
+      fontSize: 14,
+      fill: CONFIG.COLORS.TEXT
+    });
+    text.x = 100;
+    text.y = y + 2;
+    overlayContainer.addChild(text);
+  });
+
+  // Tile colors explanation
+  const colorY = height * 0.58;
+  const tileData = [
+    { type: 'BEAT', desc: 'Drums' },
+    { type: 'VIBE', desc: 'Pads' },
+    { type: 'MELODY', desc: 'Leads' }
+  ];
+
+  tileData.forEach((tile, i) => {
+    const x = 50 + i * 100;
+    const tileGraphic = new PIXI.Graphics();
+    tileGraphic.beginFill(CONFIG.COLORS[tile.type]);
+    tileGraphic.drawRoundedRect(x, colorY, 25, 25, 5);
+    tileGraphic.endFill();
+    overlayContainer.addChild(tileGraphic);
+
+    const label = new PIXI.Text(tile.desc, {
+      fontFamily: 'system-ui',
+      fontSize: 11,
+      fill: CONFIG.COLORS.TEXT_DIM
+    });
+    label.x = x;
+    label.y = colorY + 30;
+    overlayContainer.addChild(label);
+  });
+
+  // Tip
+  const tip = new PIXI.Text('Clearing tiles earns points to unlock new loops!\nTap MIX to customize your sound.', {
+    fontFamily: 'system-ui',
+    fontSize: 12,
+    fill: CONFIG.COLORS.TEXT_DIM,
+    align: 'center'
+  });
+  tip.anchor.set(0.5);
+  tip.x = width / 2;
+  tip.y = height * 0.72;
+  overlayContainer.addChild(tip);
+
+  // Start button
+  const startBtn = createButton('GOT IT!', width / 2, height * 0.82, () => {
+    hasSeenTutorial = true;
+    localStorage.setItem('songsugar_tutorial', 'true');
+    overlayContainer.removeChildren();
+    renderHUD();
+  }, 180, 50);
+  overlayContainer.addChild(startBtn);
+}
+
+function spawnPiece() {
+  if (GameState.nextPiece) {
+    GameState.currentPiece = GameState.nextPiece;
+  } else {
+    GameState.currentPiece = createPiece();
+  }
+  GameState.nextPiece = createPiece();
+
+  // Check if spawn position is valid
+  if (!canPlacePiece(GameState.currentPiece, GameState.currentPiece.x, GameState.currentPiece.y)) {
+    GameState.gameOver = true;
+    audioEngine.stopAllLoops();
+    audioEngine.stopPreview();
+    GameState.previewingLoop = null;
+    showGameOverScreen();
+  }
+}
+
+function showGameOverScreen() {
+  const width = app.screen.width;
+  const height = app.screen.height;
+
+  // Dim background
+  const bg = new PIXI.Graphics();
+  bg.beginFill(0x000000, 0.8);
+  bg.drawRect(0, 0, width, height);
+  bg.endFill();
+  bg.interactive = true;
+  overlayContainer.addChild(bg);
+
+  // Game Over panel
+  const panel = new PIXI.Graphics();
+  panel.beginFill(CONFIG.COLORS.HUD_BG);
+  panel.lineStyle(3, CONFIG.COLORS.BEAT);
+  panel.drawRoundedRect(width / 2 - 140, height / 2 - 180, 280, 360, 20);
+  panel.endFill();
+  overlayContainer.addChild(panel);
+
+  // Title
+  const title = new PIXI.Text('GAME OVER', {
+    fontFamily: 'system-ui',
+    fontSize: 32,
+    fontWeight: 'bold',
+    fill: CONFIG.COLORS.BEAT
+  });
+  title.anchor.set(0.5);
+  title.x = width / 2;
+  title.y = height / 2 - 130;
+  overlayContainer.addChild(title);
+
+  // Final score
+  const scoreLabel = new PIXI.Text('FINAL SCORE', {
+    fontFamily: 'system-ui',
+    fontSize: 14,
+    fill: CONFIG.COLORS.TEXT_DIM
+  });
+  scoreLabel.anchor.set(0.5);
+  scoreLabel.x = width / 2;
+  scoreLabel.y = height / 2 - 80;
+  overlayContainer.addChild(scoreLabel);
+
+  const scoreText = new PIXI.Text(GameState.score.toLocaleString(), {
+    fontFamily: 'system-ui',
+    fontSize: 42,
+    fontWeight: 'bold',
+    fill: CONFIG.COLORS.WILD
+  });
+  scoreText.anchor.set(0.5);
+  scoreText.x = width / 2;
+  scoreText.y = height / 2 - 45;
+  overlayContainer.addChild(scoreText);
+
+  // Stats
+  const stats = [
+    { label: 'BEAT', value: GameState.resources.BEAT, color: CONFIG.COLORS.BEAT },
+    { label: 'VIBE', value: GameState.resources.VIBE, color: CONFIG.COLORS.VIBE },
+    { label: 'MELODY', value: GameState.resources.MELODY, color: CONFIG.COLORS.MELODY }
+  ];
+
+  stats.forEach((stat, i) => {
+    const y = height / 2 - 5 + i * 25;
+
+    const label = new PIXI.Text(stat.label, {
+      fontFamily: 'system-ui',
+      fontSize: 12,
+      fill: stat.color
+    });
+    label.x = width / 2 - 80;
+    label.y = y;
+    overlayContainer.addChild(label);
+
+    const value = new PIXI.Text(stat.value.toLocaleString(), {
+      fontFamily: 'system-ui',
+      fontSize: 14,
+      fontWeight: 'bold',
+      fill: CONFIG.COLORS.TEXT
+    });
+    value.anchor.set(1, 0);
+    value.x = width / 2 + 80;
+    value.y = y;
+    overlayContainer.addChild(value);
+  });
+
+  // Buttons
+  const playAgainBtn = createButton('PLAY AGAIN', width / 2, height / 2 + 100, () => {
+    overlayContainer.removeChildren();
+    startGame();
+  }, 180, 50);
+  overlayContainer.addChild(playAgainBtn);
+
+  const homeBtn = createButton('HOME', width / 2, height / 2 + 160, () => {
+    overlayContainer.removeChildren();
+    setScreen('HOME');
+  }, 140, 45);
+  overlayContainer.addChild(homeBtn);
+}
+
+function toggleLoop(category, loopId) {
+  const activeLayers = GameState.activeLayers[category];
+  const index = activeLayers.findIndex(l => l.id === loopId);
+
+  if (index !== -1) {
+    // Turn off
+    audioEngine.stopLoop(category, loopId);
+    activeLayers.splice(index, 1);
+  } else {
+    // Check max layers
+    if (activeLayers.length >= CONFIG.MAX_LAYERS_PER_CATEGORY) {
+      showToast(`Max ${category} layers reached!`);
+      return;
+    }
+
+    // Turn on
+    const loop = GameState.loops[category].find(l => l.id === loopId);
+    if (loop && loop.unlocked) {
+      audioEngine.startLoop(category, loopId);
+      activeLayers.push(loop);
+    }
+  }
+
+  if (GameState.screen === 'MIX') {
+    renderMixScreen();
+  }
+}
+
+function unlockLoop(category, loopId) {
+  const cost = GameState.resourcesForUnlock;
+
+  if (GameState.resources[category] < cost) {
+    showToast(`Need ${cost - GameState.resources[category]} more ${category} pts!`);
+    return;
+  }
+
+  const loop = GameState.loops[category].find(l => l.id === loopId);
+  if (loop && !loop.unlocked) {
+    GameState.resources[category] -= cost;
+    loop.unlocked = true;
+    audioEngine.playUnlock();
+    showUnlockAnimation(category, loop.name);
+    renderMixScreen();
+  }
+}
+
+function showUnlockAnimation(category, loopName) {
+  const width = app.screen.width;
+  const height = app.screen.height;
+  const color = CONFIG.COLORS[category];
+
+  // Create unlock overlay
+  const container = new PIXI.Container();
+  container.isUnlockAnim = true;
+
+  // Flash effect
+  const flash = new PIXI.Graphics();
+  flash.beginFill(color, 0.3);
+  flash.drawRect(0, 0, width, height);
+  flash.endFill();
+  container.addChild(flash);
+
+  // Unlock text
+  const unlockText = new PIXI.Text('UNLOCKED!', {
+    fontFamily: 'system-ui',
+    fontSize: 28,
+    fontWeight: 'bold',
+    fill: color,
+    dropShadow: true,
+    dropShadowColor: 0x000000,
+    dropShadowBlur: 8,
+    dropShadowDistance: 0
+  });
+  unlockText.anchor.set(0.5);
+  unlockText.x = width / 2;
+  unlockText.y = height / 2 - 20;
+  container.addChild(unlockText);
+
+  // Loop name
+  const nameText = new PIXI.Text(loopName, {
+    fontFamily: 'system-ui',
+    fontSize: 20,
+    fontWeight: 'bold',
+    fill: CONFIG.COLORS.TEXT
+  });
+  nameText.anchor.set(0.5);
+  nameText.x = width / 2;
+  nameText.y = height / 2 + 20;
+  container.addChild(nameText);
+
+  overlayContainer.addChild(container);
+
+  // Animate and remove
+  let alpha = 1;
+  let scale = 0.5;
+  const animate = () => {
+    scale = Math.min(1.2, scale + 0.05);
+    unlockText.scale.set(scale);
+    nameText.scale.set(scale * 0.9);
+
+    if (scale >= 1.2) {
+      alpha -= 0.05;
+      container.alpha = alpha;
+    }
+
+    if (alpha > 0) {
+      requestAnimationFrame(animate);
+    } else {
+      overlayContainer.removeChild(container);
+    }
+  };
+
+  setTimeout(animate, 100);
+}
+
+function saveGame() {
+  // Simple save for now
+  showToast('Game saved!');
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// ============================================================================
+// INPUT HANDLING
+// ============================================================================
+
+function handleInput(key) {
+  if (GameState.screen !== 'PLAY' || GameState.paused || GameState.gameOver) return;
+  if (!GameState.currentPiece) return;
+
+  switch (key) {
+    case 'ArrowLeft':
+      if (canPlacePiece(GameState.currentPiece, GameState.currentPiece.x - 1, GameState.currentPiece.y)) {
+        GameState.currentPiece.x--;
+      }
+      break;
+    case 'ArrowRight':
+      if (canPlacePiece(GameState.currentPiece, GameState.currentPiece.x + 1, GameState.currentPiece.y)) {
+        GameState.currentPiece.x++;
+      }
+      break;
+    case 'ArrowDown':
+      // Fast fall
+      while (canPlacePiece(GameState.currentPiece, GameState.currentPiece.x, GameState.currentPiece.y + 1)) {
+        GameState.currentPiece.y++;
+      }
+      break;
+    case 'ArrowUp':
+    case ' ':
+      // Rotate
+      const originalTiles = [...GameState.currentPiece.tiles];
+      rotatePiece(GameState.currentPiece);
+      if (!canPlacePiece(GameState.currentPiece, GameState.currentPiece.x, GameState.currentPiece.y)) {
+        GameState.currentPiece.tiles = originalTiles;
+      }
+      break;
+  }
+
+  renderGame();
+}
+
+// Keyboard
+document.addEventListener('keydown', (e) => {
+  if (['ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp', ' '].includes(e.key)) {
+    e.preventDefault();
+    handleInput(e.key);
+  }
+});
+
+// Improved Touch Controls
+const TOUCH_CONFIG = {
+  SWIPE_THRESHOLD: 25,
+  TAP_THRESHOLD: 10,
+  TAP_TIME_THRESHOLD: 200,
+  HOLD_THRESHOLD: 300,
+  REPEAT_INTERVAL: 80
+};
+
+let touchStartX = null;
+let touchStartY = null;
+let touchStartTime = 0;
+let touchMoved = false;
+let holdInterval = null;
+let lastMoveDirection = null;
+
+document.addEventListener('touchstart', (e) => {
+  if (GameState.screen !== 'PLAY' || GameState.paused) return;
+
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+  touchStartTime = Date.now();
+  touchMoved = false;
+  lastMoveDirection = null;
+
+  // Clear any existing hold interval
+  if (holdInterval) {
+    clearInterval(holdInterval);
+    holdInterval = null;
+  }
+
+  // Start hold detection for fast drop
+  holdInterval = setTimeout(() => {
+    // If still holding and moved down, start fast drop
+    const rect = app.view.getBoundingClientRect();
+    const y = touchStartY - rect.top;
+    if (y > 60 && y < rect.height - 80) {
+      // Start repeating moves
+      holdInterval = setInterval(() => {
+        if (lastMoveDirection) {
+          handleInput(lastMoveDirection);
+        }
+      }, TOUCH_CONFIG.REPEAT_INTERVAL);
+    }
+  }, TOUCH_CONFIG.HOLD_THRESHOLD);
+}, { passive: true });
+
+document.addEventListener('touchmove', (e) => {
+  if (GameState.screen !== 'PLAY' || GameState.paused) return;
+  if (touchStartX === null || touchStartY === null) return;
+
+  const currentX = e.touches[0].clientX;
+  const currentY = e.touches[0].clientY;
+  const dx = currentX - touchStartX;
+  const dy = currentY - touchStartY;
+
+  // Check if we've moved enough to count as a swipe
+  if (Math.abs(dx) > TOUCH_CONFIG.SWIPE_THRESHOLD || Math.abs(dy) > TOUCH_CONFIG.SWIPE_THRESHOLD) {
+    touchMoved = true;
+
+    // Determine direction and handle incremental moves
+    if (Math.abs(dx) > Math.abs(dy)) {
+      // Horizontal swipe
+      if (dx > TOUCH_CONFIG.SWIPE_THRESHOLD) {
+        handleInput('ArrowRight');
+        touchStartX = currentX; // Reset for next increment
+        lastMoveDirection = 'ArrowRight';
+      } else if (dx < -TOUCH_CONFIG.SWIPE_THRESHOLD) {
+        handleInput('ArrowLeft');
+        touchStartX = currentX;
+        lastMoveDirection = 'ArrowLeft';
+      }
+    } else {
+      // Vertical swipe
+      if (dy > TOUCH_CONFIG.SWIPE_THRESHOLD * 1.5) {
+        // Swipe down - hard drop
+        handleInput('ArrowDown');
+        lastMoveDirection = 'ArrowDown';
+        touchStartY = currentY;
+      } else if (dy < -TOUCH_CONFIG.SWIPE_THRESHOLD) {
+        // Swipe up - rotate
+        handleInput('ArrowUp');
+        touchStartY = currentY;
+        lastMoveDirection = 'ArrowUp';
+      }
+    }
+  }
+}, { passive: true });
+
+document.addEventListener('touchend', (e) => {
+  // Clear hold interval
+  if (holdInterval) {
+    clearInterval(holdInterval);
+    holdInterval = null;
+  }
+
+  if (GameState.screen !== 'PLAY' || GameState.paused) {
+    touchStartX = null;
+    touchStartY = null;
+    return;
+  }
+
+  const touchDuration = Date.now() - touchStartTime;
+
+  // If it was a quick tap without movement, rotate
+  if (!touchMoved && touchDuration < TOUCH_CONFIG.TAP_TIME_THRESHOLD) {
+    const rect = app.view.getBoundingClientRect();
+    const endY = e.changedTouches[0].clientY - rect.top;
+    const endX = e.changedTouches[0].clientX - rect.left;
+
+    // Only rotate if tapping on game area (not HUD)
+    if (endY > 60 && endY < rect.height - 80) {
+      // Tap on left side = move left, right side = move right, center = rotate
+      const gameWidth = rect.width;
+      if (endX < gameWidth * 0.3) {
+        handleInput('ArrowLeft');
+      } else if (endX > gameWidth * 0.7) {
+        handleInput('ArrowRight');
+      } else {
+        handleInput('ArrowUp'); // Rotate on center tap
+      }
+    }
+  }
+
+  touchStartX = null;
+  touchStartY = null;
+  touchMoved = false;
+  lastMoveDirection = null;
+}, { passive: true });
+
+// Prevent default touch behaviors that interfere with game
+document.addEventListener('touchmove', (e) => {
+  if (GameState.screen === 'PLAY') {
+    e.preventDefault();
+  }
+}, { passive: false });
+
+// Double-tap to hard drop
+let lastTapTime = 0;
+document.addEventListener('touchstart', (e) => {
+  if (GameState.screen !== 'PLAY' || GameState.paused) return;
+
+  const now = Date.now();
+  if (now - lastTapTime < 300) {
+    // Double tap detected - hard drop
+    handleInput('ArrowDown');
+  }
+  lastTapTime = now;
+}, { passive: true });
+
+// ============================================================================
+// GAME LOOP
+// ============================================================================
+
+let lastTime = 0;
+let fallAccumulator = 0;
+let hudUpdateAccumulator = 0;
+const HUD_UPDATE_INTERVAL = 50; // Update HUD at 20fps for animations
+
+function gameLoop(currentTime) {
+  const deltaTime = currentTime - lastTime;
+  lastTime = currentTime;
+
+  // Update glow time for animations
+  GameState.glowTime += deltaTime;
+
+  // Update BPM sync
+  const beatInterval = 60000 / GameState.bpm;
+  const currentBeat = Math.floor(currentTime / beatInterval);
+  if (currentBeat !== GameState.lastBeatTime) {
+    GameState.lastBeatTime = currentBeat;
+    GameState.beatPhase = 0;
+  } else {
+    GameState.beatPhase = (currentTime % beatInterval) / beatInterval;
+  }
+
+  // Update particles
+  updateParticles();
+
+  // Update screen shake
+  updateScreenShake();
+
+  // Update HUD animations (progress bar pulses, etc.)
+  hudUpdateAccumulator += deltaTime;
+  if (hudUpdateAccumulator >= HUD_UPDATE_INTERVAL) {
+    hudUpdateAccumulator = 0;
+    if (GameState.screen === 'PLAY' && !GameState.paused) {
+      renderHUD();
+    }
+  }
+
+  if (GameState.screen === 'PLAY' && !GameState.paused && !GameState.gameOver && GameState.currentPiece) {
+    fallAccumulator += deltaTime;
+
+    // Sync fall speed slightly to BPM for better musical feel
+    const baseFallInterval = 1000 / CONFIG.FALL_SPEED;
+    const bpmFactor = 115 / GameState.bpm; // Adjust relative to base BPM
+    const fallInterval = baseFallInterval * bpmFactor;
+
+    if (fallAccumulator >= fallInterval) {
+      fallAccumulator = 0;
+
+      if (canPlacePiece(GameState.currentPiece, GameState.currentPiece.x, GameState.currentPiece.y + 1)) {
+        GameState.currentPiece.y++;
+      } else {
+        // Place piece and check for clusters
+        placePiece(GameState.currentPiece);
+        GameState.currentPiece = null;
+
+        collapseClusters().then(() => {
+          if (!GameState.gameOver) {
+            spawnPiece();
+          }
+          renderGame();
+        });
+      }
+
+      renderGame();
+    }
+  }
+
+  requestAnimationFrame(gameLoop);
+}
+
+// ============================================================================
+// INITIALIZATION
+// ============================================================================
+
+initPixi();
+renderCurrentScreen();
+requestAnimationFrame(gameLoop);
+
+// Home screen animation loop
+setInterval(() => {
+  if (GameState.screen === 'HOME') {
+    renderHomeScreen();
+  } else if (GameState.screen === 'MIX' && GameState.previewingLoop) {
+    renderMixScreen();
+  }
+}, 50);
+
+console.log('SONGSUGAR initialized!');
+</script>
+</body>
+</html>
