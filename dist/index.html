@@ -15,56 +15,103 @@
   --bg:#07070f; --text:#eeeeff; --dim:rgba(200,200,255,0.4);
   --safe-top:env(safe-area-inset-top,0px);
   --safe-bottom:env(safe-area-inset-bottom,0px);
+  --hud-width:60px;
 }
+@media (min-width: 480px) { :root { --hud-width:72px; } }
+@media (min-width: 768px) { :root { --hud-width:84px; } }
+@media (min-width: 1024px) { :root { --hud-width:96px; } }
+
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 html,body{width:100%;height:100%;overflow:hidden;background:#07070f;color:var(--text);
-  font-family:'Barlow Condensed',sans-serif;touch-action:none;}
+  font-family:'Barlow Condensed',sans-serif;touch-action:none;
+  overscroll-behavior:none;-webkit-overflow-scrolling:touch;}
 
 #bg-canvas{position:fixed;inset:0;z-index:0;}
 #crt{position:fixed;inset:0;z-index:999;pointer-events:none;
-  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.05) 3px,rgba(0,0,0,0.05) 4px);}
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.025) 3px,rgba(0,0,0,0.025) 4px);}
 
 /* ROOT: left HUD + play column */
 #app{position:relative;z-index:1;width:100%;height:100%;
   display:flex;flex-direction:row;align-items:stretch;overflow:hidden;}
 
-/* LEFT HUD */
+/* LEFT HUD - responsive width for mobile */
 #hud{
-  width:64px;flex-shrink:0;
-  padding:max(10px,var(--safe-top)) 5px 10px;
-  background:linear-gradient(180deg,rgba(3,3,14,0.97),rgba(5,3,16,0.94));
+  width:var(--hud-width);flex-shrink:0;
+  padding:max(8px,var(--safe-top)) 4px 8px;
+  background:linear-gradient(180deg,rgba(8,8,20,0.96),rgba(4,4,14,0.98));
   border-right:1px solid rgba(255,255,255,0.05);
   display:flex;flex-direction:column;align-items:center;
   position:relative;z-index:10;
+  box-shadow:2px 0 20px rgba(0,0,0,0.5);
 }
 #rank-pill{
   display:flex;flex-direction:column;align-items:center;width:100%;
-  background:linear-gradient(180deg,rgba(255,230,0,0.16),rgba(255,180,0,0.05));
-  border:1px solid rgba(255,230,0,0.35);border-radius:8px;
-  padding:6px 3px 5px;margin-bottom:6px;
+  background:linear-gradient(180deg,rgba(255,230,0,0.18),rgba(255,180,0,0.06));
+  border:1px solid rgba(255,230,0,0.4);border-radius:6px;
+  padding:5px 2px 4px;margin-bottom:5px;
+  box-shadow:0 0 12px rgba(255,215,0,0.15),inset 0 0 8px rgba(255,215,0,0.05);
 }
-#rank-num{font-family:'Press Start 2P',monospace;font-size:17px;line-height:1;
-  color:var(--hype);text-shadow:0 0 18px rgba(255,230,0,0.8);}
-#rank-lbl{font-family:'Press Start 2P',monospace;font-size:3.5px;color:var(--dim);
-  margin-top:2px;letter-spacing:1px;}
+#rank-num{font-family:'Press Start 2P',monospace;font-size:14px;line-height:1;
+  color:var(--wild);text-shadow:0 0 15px rgba(255,230,0,0.7);}
+@media (min-width:480px){#rank-num{font-size:16px;}}
+@media (min-width:768px){#rank-num{font-size:18px;}}
+#rank-lbl{font-family:'Press Start 2P',monospace;font-size:3px;color:var(--dim);
+  margin-top:2px;letter-spacing:0.5px;}
+@media (min-width:480px){#rank-lbl{font-size:3.5px;}}
 #stage-tag{
-  font-family:'Press Start 2P',monospace;font-size:3.5px;
-  color:var(--vocal);letter-spacing:1px;text-align:center;
+  font-family:'Press Start 2P',monospace;font-size:3px;
+  color:var(--vibe);letter-spacing:0.5px;text-align:center;
   writing-mode:vertical-rl;transform:rotate(180deg);
-  line-height:1.4;margin-bottom:8px;
-  text-shadow:0 0 8px rgba(0,229,255,0.5);max-height:85px;overflow:hidden;
+  line-height:1.3;margin-bottom:6px;
+  text-shadow:0 0 10px rgba(0,229,255,0.6);max-height:70px;overflow:hidden;
 }
-.stat-block{width:100%;display:flex;flex-direction:column;align-items:center;margin-bottom:8px;}
-.stat-icon-big{font-size:17px;line-height:1;margin-bottom:2px;filter:drop-shadow(0 0 5px currentColor);}
-.stat-val{font-family:'Press Start 2P',monospace;font-size:8px;font-weight:700;
-  line-height:1.1;text-align:center;margin-bottom:2px;}
-.stat-name{font-family:'Press Start 2P',monospace;font-size:3px;color:var(--dim);
+@media (min-width:480px){#stage-tag{font-size:3.5px;max-height:85px;}}
+.stat-block{width:100%;display:flex;flex-direction:column;align-items:center;margin-bottom:6px;
+  transition:transform 0.15s ease,filter 0.15s ease;}
+.stat-block.flash{transform:scale(1.15);filter:brightness(1.5) drop-shadow(0 0 10px currentColor);}
+.stat-icon-big{width:16px;height:16px;margin-bottom:2px;filter:drop-shadow(0 0 6px currentColor);
+  transition:transform 0.2s ease;position:relative;}
+@media (min-width:480px){.stat-icon-big{width:18px;height:18px;}}
+@media (min-width:768px){.stat-icon-big{width:20px;height:20px;}}
+
+/* BEAT icon - circle with inner rings (drum) */
+.hud-icon-beat::before{content:'';position:absolute;inset:0;border-radius:50%;
+  border:2px solid currentColor;box-shadow:inset 0 0 3px currentColor;}
+.hud-icon-beat::after{content:'';position:absolute;top:25%;left:25%;right:25%;bottom:25%;
+  border-radius:50%;background:currentColor;opacity:0.6;}
+
+/* VIBE icon - wave lines */
+.hud-icon-vibe{overflow:hidden;}
+.hud-icon-vibe::before{content:'';position:absolute;left:0;right:0;top:35%;height:2px;
+  background:currentColor;box-shadow:0 -5px 0 currentColor,0 5px 0 currentColor;
+  border-radius:2px;}
+
+/* MELODY icon - note shape */
+.hud-icon-melody::before{content:'';position:absolute;bottom:2px;left:3px;width:5px;height:5px;
+  background:currentColor;border-radius:50%;}
+.hud-icon-melody::after{content:'';position:absolute;bottom:5px;left:6px;width:2px;height:10px;
+  background:currentColor;border-radius:1px;}
+
+/* SCORE icon - star */
+.hud-icon-score{clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);
+  background:currentColor;}
+.stat-val{font-family:'Press Start 2P',monospace;font-size:10px;font-weight:700;
+  line-height:1.1;text-align:center;margin-bottom:2px;transition:transform 0.2s ease,color 0.2s ease;
+  text-shadow:0 0 8px currentColor;}
+@media (min-width:480px){.stat-val{font-size:12px;}}
+@media (min-width:768px){.stat-val{font-size:14px;}}
+.stat-name{font-family:'Press Start 2P',monospace;font-size:5px;color:var(--dim);
   letter-spacing:0.5px;text-align:center;margin-bottom:3px;}
-.stat-track{width:100%;height:4px;background:rgba(255,255,255,0.07);border-radius:2px;overflow:hidden;}
-.stat-fill{height:100%;border-radius:2px;transition:width 0.5s cubic-bezier(.4,0,.2,1);}
-#streams-fill  {background:linear-gradient(90deg,#00b4cc,var(--vocal),var(--flow));}
-#followers-fill{background:linear-gradient(90deg,#8822cc,var(--label),#ff80ff);}
-#visibility-fill{background:linear-gradient(90deg,#cc8800,var(--hype),var(--wild));}
+@media (min-width:480px){.stat-name{font-size:6px;}}
+@media (min-width:768px){.stat-name{font-size:7px;}}
+.stat-track{width:100%;height:3px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden;
+  box-shadow:inset 0 1px 3px rgba(0,0,0,0.4);}
+@media (min-width:480px){.stat-track{height:4px;}}
+.stat-fill{height:100%;border-radius:2px;transition:width 0.4s cubic-bezier(.4,0,.2,1);
+  box-shadow:0 0 8px currentColor;}
+#streams-fill  {background:linear-gradient(90deg,#00b4cc,var(--vibe),#39ff14);}
+#followers-fill{background:linear-gradient(90deg,#8822cc,var(--beat),#ff80ff);}
+#visibility-fill{background:linear-gradient(90deg,#cc8800,var(--wild),#ff9900);}
 .hud-div{width:80%;height:1px;background:rgba(255,255,255,0.07);margin:3px 0;}
 
 /* PLAY COLUMN */
@@ -75,20 +122,28 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07070f;color:var(--
   flex:1;display:flex;align-items:center;justify-content:center;
   width:100%;position:relative;overflow:hidden;
 }
-#board-canvas{display:block;border-radius:4px;
-  box-shadow:0 0 60px rgba(0,0,0,0.7),0 0 120px rgba(0,0,0,0.4);}
+#board-canvas{display:block;border-radius:8px;
+  box-shadow:0 0 40px rgba(0,0,0,0.8),0 0 80px rgba(0,0,0,0.5),
+    inset 0 0 30px rgba(0,0,0,0.3),
+    0 0 100px rgba(0,229,255,0.08),0 0 150px rgba(255,45,110,0.05);
+  border:1px solid rgba(255,255,255,0.06);}
 
 /* NEXT PIECE + hint bar — slim strip above bottom safe area */
 #info-bar{
   width:100%;display:flex;align-items:center;justify-content:space-between;
-  padding:4px 10px max(8px,calc(var(--safe-bottom)+4px));
-  background:linear-gradient(0deg,rgba(3,3,14,0.96),transparent);
+  padding:6px 8px max(10px,calc(var(--safe-bottom)+6px));
+  background:linear-gradient(0deg,rgba(3,3,14,0.98) 60%,transparent);
   position:relative;z-index:10;
+  gap:8px;
 }
-.info-label{font-family:'Press Start 2P',monospace;font-size:5px;color:var(--dim);letter-spacing:1px;}
-#next-canvas{display:block;}
-#ability-hint{font-family:'Press Start 2P',monospace;font-size:4.5px;color:var(--dim);
-  text-align:right;line-height:1.8;max-width:150px;}
+@media (min-width:480px){#info-bar{padding:8px 12px max(12px,calc(var(--safe-bottom)+8px));}}
+.info-label{font-family:'Press Start 2P',monospace;font-size:4px;color:var(--dim);letter-spacing:1px;margin-bottom:2px;}
+@media (min-width:480px){.info-label{font-size:5px;}}
+#next-canvas{display:block;border-radius:6px;box-shadow:0 0 15px rgba(0,0,0,0.5);
+  border:1px solid rgba(255,255,255,0.08);}
+#ability-hint{font-family:'Press Start 2P',monospace;font-size:4px;color:var(--dim);
+  text-align:right;line-height:1.9;max-width:120px;opacity:0.8;}
+@media (min-width:480px){#ability-hint{font-size:5px;max-width:160px;}}
 
 /* SWIPE ZONES — invisible touch areas covering the full board */
 #swipe-left,#swipe-right{
@@ -98,103 +153,204 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07070f;color:var(--
 #swipe-left{left:0;}
 #swipe-right{right:0;}
 
-/* Combo popup */
+/* Combo popup - AAA QUALITY */
 #combo-text{
   position:absolute;top:22%;left:50%;transform:translateX(-50%);
-  font-family:'Press Start 2P',monospace;font-size:13px;text-align:center;
-  pointer-events:none;z-index:20;opacity:0;text-shadow:0 0 20px currentColor;white-space:nowrap;
+  font-family:'Press Start 2P',monospace;font-size:clamp(16px,4vw,28px);text-align:center;
+  pointer-events:none;z-index:20;opacity:0;white-space:nowrap;
+  text-shadow:0 0 30px currentColor,0 0 60px currentColor,0 0 90px currentColor,
+    0 2px 0 rgba(0,0,0,0.8),0 4px 8px rgba(0,0,0,0.5);
+  filter:drop-shadow(0 0 20px currentColor);
+  letter-spacing:3px;
+  background:linear-gradient(180deg,#fff 0%,currentColor 50%,rgba(255,255,255,0.7) 100%);
+  -webkit-background-clip:text;background-clip:text;
+  -webkit-text-stroke:1px currentColor;
 }
-#combo-text.show{animation:comboAnim 1.1s ease forwards;}
+#combo-text.show{animation:comboAnim 1.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;}
 @keyframes comboAnim{
-  0%  {opacity:0;transform:translateX(-50%) translateY(12px) scale(0.6);}
-  18% {opacity:1;transform:translateX(-50%) translateY(0) scale(1.2);}
-  65% {opacity:1;transform:translateX(-50%) translateY(-6px) scale(1);}
-  100%{opacity:0;transform:translateX(-50%) translateY(-22px) scale(0.85);}
+  0%  {opacity:0;transform:translateX(-50%) translateY(30px) scale(0.3) rotateX(90deg);filter:blur(10px);}
+  15% {opacity:1;transform:translateX(-50%) translateY(-5px) scale(1.4) rotateX(0deg);filter:blur(0);}
+  25% {transform:translateX(-50%) translateY(0) scale(1.1) rotateX(0deg);}
+  40% {transform:translateX(-50%) translateY(-8px) scale(1.15);}
+  60% {opacity:1;transform:translateX(-50%) translateY(-4px) scale(1.05);}
+  100%{opacity:0;transform:translateX(-50%) translateY(-40px) scale(0.9);filter:blur(4px);}
+}
+/* Combo shake effect */
+#combo-text.shake{animation:comboAnim 1.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards, comboShake 0.1s ease-in-out 3;}
+@keyframes comboShake{
+  0%,100%{transform:translateX(-50%) translateY(-5px) scale(1.4);}
+  25%{transform:translateX(calc(-50% + 4px)) translateY(-5px) scale(1.4);}
+  75%{transform:translateX(calc(-50% - 4px)) translateY(-5px) scale(1.4);}
 }
 
-/* Toast */
+/* Toast - PREMIUM STYLING */
 #toast{
   position:fixed;top:max(52px,calc(var(--safe-top)+44px));left:50%;
-  transform:translateX(-50%) translateY(-8px);
-  font-family:'Press Start 2P',monospace;font-size:6px;padding:7px 14px;
-  border-radius:5px;border:1px solid currentColor;background:rgba(3,3,14,0.96);
-  pointer-events:none;z-index:200;opacity:0;transition:opacity 0.18s,transform 0.18s;
-  white-space:nowrap;letter-spacing:1px;text-shadow:0 0 8px currentColor;
+  transform:translateX(-50%) translateY(-12px) scale(0.9);
+  font-family:'Press Start 2P',monospace;font-size:clamp(6px,1.5vw,9px);padding:10px 20px;
+  border-radius:8px;border:2px solid currentColor;
+  background:linear-gradient(135deg,rgba(8,8,20,0.98),rgba(20,15,35,0.98));
+  pointer-events:none;z-index:200;opacity:0;
+  transition:all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  white-space:nowrap;letter-spacing:2px;
+  text-shadow:0 0 12px currentColor,0 0 24px currentColor;
+  box-shadow:0 0 20px currentColor,0 0 40px rgba(0,0,0,0.5),
+    inset 0 0 20px rgba(255,255,255,0.05),inset 0 1px 0 rgba(255,255,255,0.1);
+  backdrop-filter:blur(8px);
 }
-#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0) scale(1);}
 
-/* Overlay */
+/* Overlay - Premium Title Screen */
 #overlay{
-  position:fixed;inset:0;background:rgba(2,2,12,0.93);
+  position:fixed;inset:0;
+  background:radial-gradient(ellipse at 50% 30%,rgba(20,10,40,0.97),rgba(2,2,12,0.98));
   display:none;flex-direction:column;align-items:center;justify-content:center;
-  z-index:500;gap:16px;padding:32px;
+  z-index:500;gap:20px;padding:32px;
+  overflow:hidden;
+}
+#overlay::before{
+  content:'';position:absolute;inset:0;
+  background:url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events:none;
 }
 #overlay.show{display:flex;}
-#overlay h2{font-family:'Press Start 2P',monospace;font-size:15px;text-align:center;line-height:1.7;}
-#overlay-msg{font-family:'Press Start 2P',monospace;font-size:6px;color:var(--dim);text-align:center;line-height:2.5;}
-#overlay-btn{font-family:'Press Start 2P',monospace;font-size:8px;padding:12px 28px;
-  background:transparent;border:2px solid var(--vocal);color:var(--vocal);border-radius:4px;
-  cursor:pointer;letter-spacing:2px;}
-#overlay-btn:active{background:var(--vibe);color:var(--bg);}
+#overlay h2{
+  font-family:'Press Start 2P',monospace;font-size:clamp(18px,6vw,32px);text-align:center;line-height:1.4;
+  background:linear-gradient(180deg,#fff 0%,var(--vibe) 50%,var(--beat) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  text-shadow:none;filter:drop-shadow(0 0 20px var(--vibe)) drop-shadow(0 0 40px var(--beat));
+  animation:titleGlow 3s ease-in-out infinite alternate;
+  letter-spacing:3px;position:relative;z-index:1;
+}
+@keyframes titleGlow{
+  0%{filter:drop-shadow(0 0 15px var(--vibe)) drop-shadow(0 0 30px rgba(255,45,110,0.4));}
+  100%{filter:drop-shadow(0 0 25px var(--beat)) drop-shadow(0 0 50px rgba(0,229,255,0.5));}
+}
+#overlay-subtitle{
+  font-family:'Press Start 2P',monospace;font-size:clamp(5px,2vw,8px);
+  color:var(--wild);letter-spacing:4px;text-shadow:0 0 15px var(--wild);
+  margin-top:-10px;animation:subtitlePulse 2s ease-in-out infinite;
+}
+@keyframes subtitlePulse{0%,100%{opacity:0.7;}50%{opacity:1;}}
+#overlay-msg{
+  font-family:'Press Start 2P',monospace;font-size:clamp(5px,1.5vw,7px);color:var(--dim);
+  text-align:center;line-height:2.8;max-width:320px;position:relative;z-index:1;
+}
+#overlay-btn{
+  font-family:'Press Start 2P',monospace;font-size:clamp(7px,2vw,10px);
+  padding:14px 36px;
+  background:linear-gradient(135deg,rgba(255,45,110,0.15),rgba(0,229,255,0.15));
+  border:2px solid var(--vibe);color:var(--vibe);border-radius:8px;
+  cursor:pointer;letter-spacing:3px;position:relative;z-index:1;
+  box-shadow:0 0 20px rgba(0,229,255,0.3),inset 0 0 20px rgba(0,229,255,0.1);
+  transition:all 0.25s ease;text-transform:uppercase;
+}
+#overlay-btn:hover{
+  transform:scale(1.05);
+  box-shadow:0 0 35px rgba(0,229,255,0.5),inset 0 0 25px rgba(0,229,255,0.2);
+  border-color:#fff;color:#fff;
+}
+#overlay-btn:active{
+  background:linear-gradient(135deg,var(--beat),var(--vibe));
+  color:#000;transform:scale(0.98);
+}
+/* Animated background orbs */
+.overlay-orb{
+  position:absolute;border-radius:50%;filter:blur(60px);opacity:0.4;
+  animation:orbFloat 8s ease-in-out infinite;pointer-events:none;
+}
+.overlay-orb:nth-child(1){width:200px;height:200px;background:var(--beat);top:10%;left:10%;animation-delay:0s;}
+.overlay-orb:nth-child(2){width:150px;height:150px;background:var(--vibe);top:60%;right:15%;animation-delay:-3s;}
+.overlay-orb:nth-child(3){width:180px;height:180px;background:var(--melody);bottom:20%;left:20%;animation-delay:-5s;}
+@keyframes orbFloat{
+  0%,100%{transform:translate(0,0) scale(1);}
+  25%{transform:translate(30px,-20px) scale(1.1);}
+  50%{transform:translate(-20px,30px) scale(0.9);}
+  75%{transform:translate(20px,20px) scale(1.05);}
+}
 
-/* Loop Panel */
+/* Loop Panel - Mobile Optimized Slide-in */
 #loop-panel{
-  position:fixed;right:-280px;top:50%;transform:translateY(-50%);
-  width:260px;max-height:80vh;
-  background:rgba(7,7,15,0.97);border:1px solid rgba(255,255,255,0.1);
-  border-radius:12px 0 0 12px;z-index:400;
-  transition:right 0.3s ease;overflow:hidden;
-  display:flex;flex-direction:column;
+  position:fixed;right:-100%;top:0;bottom:0;
+  width:min(280px,85vw);
+  background:linear-gradient(180deg,rgba(7,7,18,0.98),rgba(5,3,14,0.99));
+  border-left:1px solid rgba(255,255,255,0.1);
+  z-index:400;transition:right 0.35s cubic-bezier(0.4,0,0.2,1);
+  overflow:hidden;display:flex;flex-direction:column;
+  box-shadow:-5px 0 40px rgba(0,0,0,0.7);
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
 }
 #loop-panel.open{right:0;}
+#loop-panel-backdrop{
+  position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:399;
+  opacity:0;pointer-events:none;transition:opacity 0.3s ease;
+}
+#loop-panel.open ~ #loop-panel-backdrop{opacity:1;pointer-events:auto;}
 .loop-panel-header{
   display:flex;justify-content:space-between;align-items:center;
-  padding:10px 15px;background:rgba(255,255,255,0.05);
-  font-family:'Press Start 2P',monospace;font-size:8px;
-  border-bottom:1px solid rgba(255,255,255,0.1);
+  padding:14px 16px;
+  background:linear-gradient(90deg,rgba(255,45,110,0.1),rgba(0,229,255,0.1));
+  font-family:'Press Start 2P',monospace;font-size:9px;
+  border-bottom:1px solid rgba(255,255,255,0.12);
+  color:var(--vibe);text-shadow:0 0 10px var(--vibe);
 }
 #loop-panel-close{
-  background:none;border:none;color:var(--text);font-size:18px;
-  cursor:pointer;padding:0 5px;
+  background:rgba(255,255,255,0.1);border:none;color:var(--text);font-size:20px;
+  cursor:pointer;padding:4px 10px;border-radius:6px;
+  transition:all 0.15s;
 }
+#loop-panel-close:active{background:rgba(255,255,255,0.2);transform:scale(0.95);}
 .loop-categories{
-  flex:1;overflow-y:auto;padding:10px;
+  flex:1;overflow-y:auto;padding:12px;
+  -webkit-overflow-scrolling:touch;
 }
-.loop-category{margin-bottom:15px;}
+.loop-category{margin-bottom:18px;}
 .cat-header{
-  font-family:'Press Start 2P',monospace;font-size:7px;
-  margin-bottom:8px;letter-spacing:1px;
+  font-family:'Press Start 2P',monospace;font-size:8px;
+  margin-bottom:10px;letter-spacing:2px;
+  display:flex;align-items:center;gap:8px;
 }
-.loop-list{display:flex;flex-direction:column;gap:4px;}
+.cat-header::after{content:'';flex:1;height:1px;background:currentColor;opacity:0.3;}
+.loop-list{display:flex;flex-direction:column;gap:6px;}
 .loop-item{
   display:flex;justify-content:space-between;align-items:center;
-  padding:8px 10px;background:rgba(255,255,255,0.05);
-  border-radius:6px;cursor:pointer;transition:all 0.15s;
-  font-size:11px;
+  padding:12px 14px;background:rgba(255,255,255,0.05);
+  border-radius:8px;cursor:pointer;transition:all 0.2s ease;
+  font-size:12px;border:1px solid transparent;
+  -webkit-tap-highlight-color:transparent;
 }
-.loop-item:hover{background:rgba(255,255,255,0.1);}
-.loop-item.locked{opacity:0.5;}
+.loop-item:active{transform:scale(0.98);background:rgba(255,255,255,0.12);}
+.loop-item.locked{opacity:0.4;filter:grayscale(0.5);}
 .loop-item.active{
-  background:rgba(255,255,255,0.15);
-  box-shadow:0 0 10px currentColor;
+  background:linear-gradient(135deg,rgba(255,255,255,0.12),rgba(255,255,255,0.06));
+  border:1px solid currentColor;
+  box-shadow:0 0 15px currentColor,inset 0 0 15px rgba(255,255,255,0.05);
 }
-.loop-item .name{flex:1;}
+.loop-item .name{flex:1;font-weight:600;}
 .loop-item .cost{
-  font-family:'Press Start 2P',monospace;font-size:6px;
-  opacity:0.6;
+  font-family:'Press Start 2P',monospace;font-size:7px;
+  padding:3px 8px;border-radius:4px;background:rgba(0,0,0,0.3);
 }
-.loop-item .status{font-size:10px;margin-left:8px;}
+.loop-item .status{font-size:14px;margin-left:10px;filter:drop-shadow(0 0 4px currentColor);}
 #loop-panel-toggle{
-  position:fixed;right:10px;top:50%;transform:translateY(-50%);
-  width:40px;height:40px;border-radius:50%;
+  position:fixed;right:8px;top:50%;transform:translateY(-50%);
+  width:44px;height:44px;border-radius:50%;
   background:linear-gradient(135deg,var(--beat),var(--vibe));
-  border:none;font-size:18px;cursor:pointer;z-index:399;
-  box-shadow:0 0 15px rgba(0,229,255,0.4);
-  transition:all 0.2s;
+  border:2px solid rgba(255,255,255,0.2);
+  font-size:20px;cursor:pointer;z-index:398;
+  box-shadow:0 0 20px rgba(0,229,255,0.5),0 4px 15px rgba(0,0,0,0.4);
+  transition:all 0.25s ease;
+  display:flex;align-items:center;justify-content:center;
 }
-#loop-panel-toggle:hover{transform:translateY(-50%) scale(1.1);}
+#loop-panel-toggle:active{transform:translateY(-50%) scale(0.92);}
 #loop-panel-toggle.hidden{display:none;}
+@media (min-width:768px){
+  #loop-panel{width:300px;right:-320px;top:10%;bottom:10%;border-radius:12px 0 0 12px;}
+  #loop-panel.open{right:0;}
+}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
 </head>
 <body>
 <canvas id="bg-canvas"></canvas>
@@ -211,30 +367,30 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07070f;color:var(--
     <div class="hud-div"></div>
     <!-- Resource Points -->
     <div class="stat-block">
-      <div class="stat-icon-big" style="color:var(--beat)">&#x1F941;</div>
+      <div class="stat-icon-big hud-icon-beat" style="color:var(--beat)"></div>
       <div class="stat-val" id="beat-val" style="color:var(--beat)">0</div>
       <div class="stat-name">BEAT</div>
       <div class="stat-track"><div class="stat-fill" id="beat-fill" style="width:0%;background:var(--beat)"></div></div>
     </div>
     <div class="stat-block">
-      <div class="stat-icon-big" style="color:var(--vibe)">&#x1F30A;</div>
+      <div class="stat-icon-big hud-icon-vibe" style="color:var(--vibe)"></div>
       <div class="stat-val" id="vibe-val" style="color:var(--vibe)">0</div>
       <div class="stat-name">VIBE</div>
       <div class="stat-track"><div class="stat-fill" id="vibe-fill" style="width:0%;background:var(--vibe)"></div></div>
     </div>
     <div class="stat-block">
-      <div class="stat-icon-big" style="color:var(--melody)">&#x1F3B5;</div>
+      <div class="stat-icon-big hud-icon-melody" style="color:var(--melody)"></div>
       <div class="stat-val" id="melody-val" style="color:var(--melody)">0</div>
       <div class="stat-name">MELODY</div>
       <div class="stat-track"><div class="stat-fill" id="melody-fill" style="width:0%;background:var(--melody)"></div></div>
     </div>
     <div class="hud-div"></div>
-    <!-- Legacy Stats -->
+    <!-- Score -->
     <div class="stat-block">
-      <div class="stat-icon-big" style="color:var(--vibe)">&#x1F3A7;</div>
-      <div class="stat-val" id="streams-val" style="color:var(--vibe)">0</div>
-      <div class="stat-name">STREAMS</div>
-      <div class="stat-track"><div class="stat-fill" id="streams-fill" style="width:0%"></div></div>
+      <div class="stat-icon-big hud-icon-score" style="color:var(--wild)"></div>
+      <div class="stat-val" id="streams-val" style="color:var(--wild)">0</div>
+      <div class="stat-name">SCORE</div>
+      <div class="stat-track"><div class="stat-fill" id="streams-fill" style="width:0%;background:var(--wild)"></div></div>
     </div>
   </div>
 
@@ -257,14 +413,17 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07070f;color:var(--
 
 <div id="toast"></div>
 <div id="overlay" class="show">
-  <h2 id="overlay-title" style="color:var(--vibe)">SONGSUGAR</h2>
-  <div id="overlay-msg">SOUNDSCAPE CREATOR
-
-TAP CLUSTERS TO COLLAPSE
-EARN POINTS • UNLOCK LOOPS
-BUILD YOUR SOUND • SHARE YOUR MIX</div>
-  <button id="overlay-btn">START SESSION ▶</button>
+  <div class="overlay-orb"></div>
+  <div class="overlay-orb"></div>
+  <div class="overlay-orb"></div>
+  <h2 id="overlay-title">SONGSUGAR</h2>
+  <div id="overlay-subtitle">SOUNDSCAPE CREATOR</div>
+  <div id="overlay-msg">TAP CLUSTERS TO COLLAPSE
+EARN POINTS &bull; UNLOCK LOOPS
+BUILD YOUR SOUND &bull; SHARE YOUR MIX</div>
+  <button id="overlay-btn">START SESSION</button>
 </div>
+<div id="loop-panel-backdrop"></div>
 
 <!-- Loop Selection Panel -->
 <div id="loop-panel">
@@ -367,6 +526,12 @@ const SFX = {
   rotate:  ()=> note(660,'sine',0.07,0.004,0.06,880),
   tap:     ()=> popSound(880),
   invalid: ()=> { note(180,'sawtooth',0.08,0.005,0.2,120); },
+  hardDrop:()=> {
+    // Deep thud for hard drop - low frequency impact
+    note(80,'sine',0.25,0.002,0.15,40);
+    note(120,'triangle',0.15,0.003,0.1,60);
+    crunchSound();
+  },
   collapse:{
     BEAT:   ()=>{ crunchSound(); note(80,'sine',0.25,0.004,0.3,40); },
     VIBE:   ()=>{ chord([523,659,784,1047],'sine',0.12,0.45,0.03); sparkleSound(3); },
@@ -384,7 +549,10 @@ const SFX = {
   wildcard:()=>{ chord([440,554,659,880,1047],'sawtooth',0.08,0.4,0.02); },
 };
 
-// ── SOUNDSCAPE ENGINE ─────────────────────────────────
+// ══════════════════════════════════════════════════════════════════
+// SOUNDSCAPE ENGINE (Tone.js Professional Audio)
+// ══════════════════════════════════════════════════════════════════
+
 const LOOP_POOLS = {
   beat: [
     { id: 'afrobeat_drums', name: 'Afrobeat Drums', tint: '#ff6b35' },
@@ -414,273 +582,504 @@ const LOOP_POOLS = {
 
 const UNLOCK_COSTS = [0, 10, 15, 20, 25, 30];
 
+
 class SoundscapeEngine {
   constructor() {
-    this.ctx = null;
-    this.masterGain = null;
     this.bpm = 115;
-    this.loopDuration = (60 / this.bpm) * 4; // 4 bars in seconds
     this.activeLoops = { beat: null, vibe: null, melody: null };
-    this.loopNodes = { beat: null, vibe: null, melody: null };
     this.loopGains = { beat: null, vibe: null, melody: null };
-    this.buffers = {};
+    this.sequences = { beat: null, vibe: null, melody: null };
     this.crossfadeDuration = 0.5;
-    this.nextLoopTime = 0;
     this.isPlaying = false;
+    this.initialized = false;
+    this.instruments = {};
+    this.effects = {};
   }
 
   async init() {
-    this.ctx = getAudio();
-    this.masterGain = this.ctx.createGain();
-    this.masterGain.gain.value = 0.7;
-    this.masterGain.connect(getMaster());
+    if (this.initialized) return;
 
-    // Create gain nodes for each category
-    ['beat', 'vibe', 'melody'].forEach(cat => {
-      this.loopGains[cat] = this.ctx.createGain();
-      this.loopGains[cat].gain.value = 0;
-      this.loopGains[cat].connect(this.masterGain);
-    });
+    try {
+      await Tone.start();
+      Tone.Transport.bpm.value = this.bpm;
 
-    // Generate placeholder loops
-    await this.generatePlaceholderLoops();
-    this.isPlaying = true;
-    this.scheduleLoops();
-  }
+      // ═══════════════════════════════════════════════════════════
+      // MASTER CHAIN - professional limiting and compression
+      // ═══════════════════════════════════════════════════════════
 
-  async generatePlaceholderLoops() {
-    const sampleRate = this.ctx.sampleRate;
-    const duration = this.loopDuration;
-    const samples = Math.floor(sampleRate * duration);
+      this.effects.masterLimiter = new Tone.Limiter(-1).toDestination();
+      this.effects.masterComp = new Tone.Compressor({
+        threshold: -12,
+        ratio: 4,
+        attack: 0.003,
+        release: 0.15
+      }).connect(this.effects.masterLimiter);
 
-    // Generate placeholder synth loops for each category
-    for (const cat of ['beat', 'vibe', 'melody']) {
-      for (let i = 0; i < LOOP_POOLS[cat].length; i++) {
-        const loopDef = LOOP_POOLS[cat][i];
-        const buffer = this.ctx.createBuffer(2, samples, sampleRate);
-        const left = buffer.getChannelData(0);
-        const right = buffer.getChannelData(1);
-
-        if (cat === 'beat') {
-          // Drum pattern placeholder
-          this.generateBeatPattern(left, right, samples, sampleRate, i);
-        } else if (cat === 'vibe') {
-          // Pad/atmosphere placeholder
-          this.generateVibePattern(left, right, samples, sampleRate, i);
-        } else {
-          // Melody placeholder
-          this.generateMelodyPattern(left, right, samples, sampleRate, i);
-        }
-
-        this.buffers[`${cat}_${loopDef.id}`] = buffer;
-      }
-    }
-  }
-
-  generateBeatPattern(left, right, samples, sampleRate, variant) {
-    const beatsPerBar = 4;
-    const bars = 4;
-    const totalBeats = beatsPerBar * bars;
-    const samplesPerBeat = samples / totalBeats;
-
-    for (let beat = 0; beat < totalBeats; beat++) {
-      const startSample = Math.floor(beat * samplesPerBeat);
-      const isKick = beat % 4 === 0 || (variant > 2 && beat % 4 === 2);
-      const isSnare = beat % 4 === 2;
-      const isHat = variant < 3 ? true : beat % 2 === 0;
-
-      if (isKick) {
-        // Kick drum - low sine with pitch envelope
-        for (let i = 0; i < Math.min(sampleRate * 0.15, samples - startSample); i++) {
-          const t = i / sampleRate;
-          const freq = 60 + 80 * Math.exp(-t * 30);
-          const env = Math.exp(-t * 15);
-          const val = Math.sin(2 * Math.PI * freq * t) * env * 0.6;
-          left[startSample + i] += val;
-          right[startSample + i] += val;
-        }
-      }
-
-      if (isSnare && variant !== 5) {
-        // Snare - noise burst + tone
-        for (let i = 0; i < Math.min(sampleRate * 0.1, samples - startSample); i++) {
-          const t = i / sampleRate;
-          const env = Math.exp(-t * 20);
-          const noise = (Math.random() * 2 - 1) * 0.3 * env;
-          const tone = Math.sin(2 * Math.PI * 180 * t) * env * 0.2;
-          left[startSample + i] += noise + tone;
-          right[startSample + i] += noise + tone;
-        }
-      }
-
-      if (isHat) {
-        // Hi-hat - filtered noise
-        const hatOffset = Math.floor(samplesPerBeat * 0.5) * (beat % 2);
-        for (let i = 0; i < Math.min(sampleRate * 0.05, samples - startSample - hatOffset); i++) {
-          const t = i / sampleRate;
-          const env = Math.exp(-t * 40);
-          const noise = (Math.random() * 2 - 1) * 0.15 * env;
-          left[startSample + hatOffset + i] += noise;
-          right[startSample + hatOffset + i] += noise;
-        }
-      }
-    }
-  }
-
-  generateVibePattern(left, right, samples, sampleRate, variant) {
-    // Pad/atmosphere - slow evolving chord
-    const chords = [
-      [130.81, 164.81, 196.00], // C major
-      [146.83, 185.00, 220.00], // D minor
-      [164.81, 207.65, 246.94], // E minor
-      [174.61, 220.00, 261.63], // F major
-      [196.00, 246.94, 293.66], // G major
-      [220.00, 277.18, 329.63]  // A minor
-    ];
-    const chord = chords[variant % chords.length];
-
-    for (let i = 0; i < samples; i++) {
-      const t = i / sampleRate;
-      const fadeIn = Math.min(1, t / 0.5);
-      const fadeOut = Math.min(1, (samples - i) / (sampleRate * 0.5));
-      const env = fadeIn * fadeOut;
-
-      let val = 0;
-      chord.forEach((freq, idx) => {
-        // Slight detuning for warmth
-        const detune = 1 + (Math.sin(t * 0.3 + idx) * 0.002);
-        val += Math.sin(2 * Math.PI * freq * detune * t) * 0.12;
-        // Add subtle harmonics
-        val += Math.sin(2 * Math.PI * freq * 2 * detune * t) * 0.03;
+      // Category gain nodes for crossfading
+      ['beat', 'vibe', 'melody'].forEach(cat => {
+        this.loopGains[cat] = new Tone.Gain(0).connect(this.effects.masterComp);
       });
 
-      // Slow LFO modulation
-      const lfo = 0.8 + 0.2 * Math.sin(t * 0.5 + variant);
-      val *= env * lfo;
+      // ═══════════════════════════════════════════════════════════
+      // DRUM INSTRUMENTS - MembraneSynth, NoiseSynth, MetalSynth
+      // ═══════════════════════════════════════════════════════════
 
-      left[i] += val;
-      right[i] += val * (0.9 + 0.1 * Math.sin(t * 0.2));
+      this.effects.drumBus = new Tone.Compressor({
+        threshold: -20, ratio: 3, attack: 0.01, release: 0.1
+      }).connect(this.loopGains.beat);
+
+      // Kick - MembraneSynth with 150Hz->60Hz sweep
+      this.instruments.kick = new Tone.MembraneSynth({
+        pitchDecay: 0.08,
+        octaves: 4,
+        oscillator: { type: 'sine' },
+        envelope: { attack: 0.001, decay: 0.4, sustain: 0.01, release: 0.4 }
+      }).connect(this.effects.drumBus);
+      this.instruments.kick.volume.value = -6;
+
+      // Sub layer for 808-style kicks
+      this.instruments.kickSub = new Tone.Synth({
+        oscillator: { type: 'sine' },
+        envelope: { attack: 0.001, decay: 0.5, sustain: 0, release: 0.2 }
+      }).connect(this.effects.drumBus);
+      this.instruments.kickSub.volume.value = -10;
+
+      // Snare - noise + filtered oscillator
+      const snareFilter = new Tone.Filter({
+        type: 'bandpass', frequency: 3000, Q: 1.5
+      }).connect(this.effects.drumBus);
+
+      this.instruments.snareNoise = new Tone.NoiseSynth({
+        noise: { type: 'white' },
+        envelope: { attack: 0.001, decay: 0.15, sustain: 0, release: 0.08 }
+      }).connect(snareFilter);
+      this.instruments.snareNoise.volume.value = -8;
+
+      this.instruments.snareBody = new Tone.MembraneSynth({
+        pitchDecay: 0.02, octaves: 2,
+        envelope: { attack: 0.001, decay: 0.12, sustain: 0, release: 0.05 }
+      }).connect(this.effects.drumBus);
+      this.instruments.snareBody.volume.value = -12;
+
+      // Hi-hats - MetalSynth for authentic metallic sound
+      const hihatFilter = new Tone.Filter({
+        type: 'highpass', frequency: 7000
+      }).connect(this.effects.drumBus);
+
+      this.instruments.hihatClosed = new Tone.MetalSynth({
+        frequency: 250,
+        envelope: { attack: 0.001, decay: 0.05, release: 0.01 },
+        harmonicity: 5.1, modulationIndex: 32, resonance: 4000, octaves: 1.5
+      }).connect(hihatFilter);
+      this.instruments.hihatClosed.volume.value = -18;
+
+      this.instruments.hihatOpen = new Tone.MetalSynth({
+        frequency: 250,
+        envelope: { attack: 0.001, decay: 0.25, release: 0.1 },
+        harmonicity: 5.1, modulationIndex: 32, resonance: 4000, octaves: 1.5
+      }).connect(hihatFilter);
+      this.instruments.hihatOpen.volume.value = -20;
+
+      // Percussion for latin/afrobeat
+      this.instruments.conga = new Tone.MembraneSynth({
+        pitchDecay: 0.03, octaves: 3,
+        envelope: { attack: 0.001, decay: 0.2, sustain: 0, release: 0.1 }
+      }).connect(this.effects.drumBus);
+      this.instruments.conga.volume.value = -14;
+
+      this.instruments.rimshot = new Tone.NoiseSynth({
+        noise: { type: 'pink' },
+        envelope: { attack: 0.001, decay: 0.03, sustain: 0, release: 0.01 }
+      }).connect(this.effects.drumBus);
+      this.instruments.rimshot.volume.value = -12;
+
+      // ═══════════════════════════════════════════════════════════
+      // PAD / VIBE - FMSynth with Reverb (0.5-2s envelopes)
+      // ═══════════════════════════════════════════════════════════
+
+      this.effects.padReverb = new Tone.Reverb({
+        decay: 4, wet: 0.5, preDelay: 0.1
+      }).connect(this.loopGains.vibe);
+      await this.effects.padReverb.generate();
+
+      this.effects.padChorus = new Tone.Chorus({
+        frequency: 0.5, delayTime: 3.5, depth: 0.7, wet: 0.3
+      }).connect(this.effects.padReverb);
+      this.effects.padChorus.start();
+
+      // Main pad - FMSynth for warmth
+      this.instruments.pad = new Tone.PolySynth(Tone.FMSynth, {
+        harmonicity: 2, modulationIndex: 1.5,
+        oscillator: { type: 'sine' },
+        envelope: { attack: 0.8, decay: 0.5, sustain: 0.8, release: 2 },
+        modulation: { type: 'sine' },
+        modulationEnvelope: { attack: 0.5, decay: 0.3, sustain: 0.5, release: 1 }
+      }).connect(this.effects.padChorus);
+      this.instruments.pad.volume.value = -10;
+
+      this.instruments.texture = new Tone.PolySynth(Tone.Synth, {
+        oscillator: { type: 'sine4' },
+        envelope: { attack: 1.5, decay: 1, sustain: 0.6, release: 2.5 }
+      }).connect(this.effects.padChorus);
+      this.instruments.texture.volume.value = -16;
+
+      this.effects.lofiFilter = new Tone.Filter({
+        type: 'lowpass', frequency: 2000, Q: 1
+      }).connect(this.effects.padReverb);
+
+      this.instruments.noiseTexture = new Tone.Noise('pink').connect(this.effects.lofiFilter);
+      this.instruments.noiseTexture.volume.value = -30;
+
+      // ═══════════════════════════════════════════════════════════
+      // MELODY - PolySynth with Pattern arpeggios
+      // ═══════════════════════════════════════════════════════════
+
+      this.effects.melodyDelay = new Tone.PingPongDelay({
+        delayTime: '8n', feedback: 0.25, wet: 0.2
+      }).connect(this.loopGains.melody);
+
+      this.effects.melodyReverb = new Tone.Reverb({
+        decay: 2, wet: 0.25
+      }).connect(this.effects.melodyDelay);
+      await this.effects.melodyReverb.generate();
+
+      // Piano-like synth
+      this.instruments.piano = new Tone.PolySynth(Tone.Synth, {
+        oscillator: { type: 'triangle8' },
+        envelope: { attack: 0.005, decay: 0.3, sustain: 0.2, release: 0.8 }
+      }).connect(this.effects.melodyReverb);
+      this.instruments.piano.volume.value = -8;
+
+      // Arpeggio synth
+      this.instruments.arp = new Tone.PolySynth(Tone.Synth, {
+        oscillator: { type: 'sawtooth8' },
+        envelope: { attack: 0.003, decay: 0.15, sustain: 0.1, release: 0.3 }
+      }).connect(this.effects.melodyReverb);
+      this.instruments.arp.volume.value = -12;
+
+      // Pluck synth
+      this.instruments.pluck = new Tone.PluckSynth({
+        attackNoise: 1, dampening: 3000, resonance: 0.98
+      }).connect(this.effects.melodyReverb);
+      this.instruments.pluck.volume.value = -8;
+
+      // Bell synth - FM metallic
+      this.instruments.bell = new Tone.PolySynth(Tone.FMSynth, {
+        harmonicity: 8, modulationIndex: 2,
+        envelope: { attack: 0.001, decay: 1.5, sustain: 0, release: 1 }
+      }).connect(this.effects.melodyReverb);
+      this.instruments.bell.volume.value = -10;
+
+      // Brass/lead synth
+      this.instruments.brass = new Tone.PolySynth(Tone.Synth, {
+        oscillator: { type: 'sawtooth' },
+        envelope: { attack: 0.1, decay: 0.2, sustain: 0.6, release: 0.4 }
+      }).connect(this.effects.melodyReverb);
+      this.instruments.brass.volume.value = -10;
+
+      this.initialized = true;
+      this.isPlaying = true;
+      Tone.Transport.start();
+
+    } catch (e) {
+      console.error('SoundscapeEngine init error:', e);
     }
   }
 
-  generateMelodyPattern(left, right, samples, sampleRate, variant) {
-    // Simple melody pattern
-    const scales = [
-      [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25], // C major
-      [261.63, 293.66, 311.13, 349.23, 392.00, 415.30, 466.16, 523.25]  // C minor
-    ];
-    const scale = scales[variant % 2];
-    const patterns = [
-      [0, 2, 4, 2, 5, 4, 2, 0],
-      [0, 4, 7, 4, 5, 2, 4, 0],
-      [7, 5, 4, 2, 4, 5, 7, 5],
-      [0, 2, 4, 5, 4, 2, 0, 2],
-      [4, 5, 7, 5, 4, 2, 0, 2],
-      [0, 0, 4, 4, 5, 5, 4, 2]
-    ];
-    const pattern = patterns[variant % patterns.length];
+  // ═══════════════════════════════════════════════════════════════
+  // BEAT PATTERNS - 6 unique drum grooves at 16th note resolution
+  // ═══════════════════════════════════════════════════════════════
 
-    const notesPerBar = 2;
-    const bars = 4;
-    const totalNotes = notesPerBar * bars;
-    const samplesPerNote = samples / totalNotes;
+  getBeatPattern(variant) {
+    const patterns = {
+      afrobeat_drums: {
+        kick:      [1,0,0,0, 0,0,1,0, 0,0,0,0, 1,0,0,0, 0,0,1,0, 0,0,0,0, 1,0,0,0, 0,0,1,0],
+        snare:     [0,0,0,0, 1,0,0,1, 0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,1, 0,0,0,0, 1,0,0,0],
+        hihat:     [1,0,1,1, 0,1,1,0, 1,1,0,1, 1,0,1,0, 1,0,1,1, 0,1,1,0, 1,1,0,1, 1,0,1,0],
+        conga:     [0,0,1,0, 0,1,0,0, 1,0,0,1, 0,0,1,0, 0,0,1,0, 0,1,0,0, 1,0,0,1, 0,0,1,0],
+        hihatOpen: [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,1, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,1]
+      },
+      trap_808: {
+        kick:      [1,0,0,0, 0,0,0,0, 0,0,1,0, 0,0,0,0, 1,0,0,0, 0,0,0,1, 0,0,1,0, 0,0,0,0],
+        snare:     [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0],
+        hihat:     [1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1],
+        hihatOpen: [0,0,0,0, 0,0,0,1, 0,0,0,0, 0,0,0,1, 0,0,0,0, 0,0,0,1, 0,0,0,0, 0,0,0,1],
+        kickSub: true
+      },
+      house_kick: {
+        kick:      [1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0],
+        snare:     [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0],
+        hihat:     [0,0,1,0, 0,0,1,0, 0,0,1,0, 0,0,1,0, 0,0,1,0, 0,0,1,0, 0,0,1,0, 0,0,1,0],
+        hihatOpen: [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,1, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,1]
+      },
+      latin_perc: {
+        kick:      [1,0,0,0, 0,0,1,0, 0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,1,0, 0,0,0,0],
+        snare:     [0,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0, 0,0,1,0, 0,0,0,0, 0,0,0,0, 1,0,0,0],
+        hihat:     [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0],
+        conga:     [1,0,0,1, 0,0,1,0, 0,1,0,0, 1,0,0,1, 0,0,1,0, 0,1,0,0, 1,0,0,1, 0,0,1,0],
+        rimshot:   [0,0,1,0, 0,1,0,0, 1,0,0,1, 0,0,0,0, 0,0,1,0, 0,1,0,0, 1,0,0,1, 0,0,0,0]
+      },
+      breakbeat: {
+        kick:      [1,0,0,0, 0,0,1,0, 0,1,0,0, 0,0,0,0, 1,0,0,1, 0,0,0,0, 1,0,0,0, 0,0,1,0],
+        snare:     [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,1, 0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0],
+        hihat:     [1,1,0,1, 1,0,1,1, 0,1,1,0, 1,1,0,1, 1,0,1,1, 0,1,1,0, 1,1,0,1, 1,0,1,0],
+        hihatOpen: [0,0,0,0, 0,0,0,0, 0,0,0,1, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,1]
+      },
+      minimal_click: {
+        kick:      [1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+        snare:     [0,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0],
+        hihat:     [1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0],
+        rimshot:   [0,0,0,0, 0,0,1,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,1,0, 0,0,0,0, 0,0,0,0]
+      }
+    };
+    return patterns[variant] || patterns.house_kick;
+  }
 
-    for (let n = 0; n < totalNotes; n++) {
-      const startSample = Math.floor(n * samplesPerNote);
-      const noteIdx = pattern[n % pattern.length];
-      const freq = scale[noteIdx];
-      const noteDur = samplesPerNote * 0.8;
+  startBeatSequence(loopId) {
+    const pattern = this.getBeatPattern(loopId);
+    const subdivision = '16n';
 
-      for (let i = 0; i < noteDur && startSample + i < samples; i++) {
-        const t = i / sampleRate;
-        const env = Math.exp(-t * 3) * Math.min(1, t / 0.01);
+    if (this.sequences.beat) {
+      this.sequences.beat.forEach(seq => { try { seq.dispose(); } catch(e){} });
+    }
+    this.sequences.beat = [];
 
-        // Triangle wave for softer sound
-        let val = 0;
-        for (let h = 1; h <= 3; h += 2) {
-          val += Math.sin(2 * Math.PI * freq * h * t) / (h * h) * 0.3;
+    // Kick
+    const kickSeq = new Tone.Sequence((time, step) => {
+      if (pattern.kick[step]) {
+        this.instruments.kick.triggerAttackRelease(pattern.kickSub ? 'C0' : 'C1', '8n', time);
+        if (pattern.kickSub) this.instruments.kickSub.triggerAttackRelease('C1', '8n', time, 0.6);
+      }
+    }, [...Array(pattern.kick.length).keys()], subdivision);
+    kickSeq.loop = true; kickSeq.start(0);
+    this.sequences.beat.push(kickSeq);
+
+    // Snare
+    const snareSeq = new Tone.Sequence((time, step) => {
+      if (pattern.snare[step]) {
+        this.instruments.snareNoise.triggerAttackRelease('8n', time);
+        this.instruments.snareBody.triggerAttackRelease('E2', '8n', time);
+      }
+    }, [...Array(pattern.snare.length).keys()], subdivision);
+    snareSeq.loop = true; snareSeq.start(0);
+    this.sequences.beat.push(snareSeq);
+
+    // Hi-hats
+    const hihatSeq = new Tone.Sequence((time, step) => {
+      if (pattern.hihat[step]) this.instruments.hihatClosed.triggerAttackRelease('32n', time, 0.3);
+      if (pattern.hihatOpen && pattern.hihatOpen[step]) this.instruments.hihatOpen.triggerAttackRelease('8n', time, 0.25);
+    }, [...Array(pattern.hihat.length).keys()], subdivision);
+    hihatSeq.loop = true; hihatSeq.start(0);
+    this.sequences.beat.push(hihatSeq);
+
+    // Congas
+    if (pattern.conga) {
+      const congaSeq = new Tone.Sequence((time, step) => {
+        if (pattern.conga[step]) {
+          this.instruments.conga.triggerAttackRelease(['G3','A3','C4'][step%3], '16n', time, 0.6);
         }
-        val *= env;
+      }, [...Array(pattern.conga.length).keys()], subdivision);
+      congaSeq.loop = true; congaSeq.start(0);
+      this.sequences.beat.push(congaSeq);
+    }
 
-        left[startSample + i] += val;
-        right[startSample + i] += val;
-      }
+    // Rimshots
+    if (pattern.rimshot) {
+      const rimSeq = new Tone.Sequence((time, step) => {
+        if (pattern.rimshot[step]) this.instruments.rimshot.triggerAttackRelease('32n', time);
+      }, [...Array(pattern.rimshot.length).keys()], subdivision);
+      rimSeq.loop = true; rimSeq.start(0);
+      this.sequences.beat.push(rimSeq);
     }
   }
 
-  scheduleLoops() {
-    if (!this.isPlaying || !this.ctx) return;
+  // ═══════════════════════════════════════════════════════════════
+  // VIBE PATTERNS - 6 unique chord progressions
+  // ═══════════════════════════════════════════════════════════════
 
-    const now = this.ctx.currentTime;
-    if (this.nextLoopTime < now) {
-      this.nextLoopTime = now;
-    }
-
-    // Schedule next loop iteration
-    ['beat', 'vibe', 'melody'].forEach(cat => {
-      if (this.activeLoops[cat] && this.buffers[`${cat}_${this.activeLoops[cat]}`]) {
-        this.playLoop(cat, this.nextLoopTime);
+  getVibePattern(variant) {
+    const patterns = {
+      ambient_pad: {
+        chords: [['C3','E3','G3','B3'],['A2','C3','E3','G3'],['F2','A2','C3','E3'],['G2','B2','D3','F3']],
+        style: 'pad', attack: 1.2
+      },
+      lofi_texture: {
+        chords: [['D3','F3','A3','C4'],['G2','B2','D3','F3'],['C3','E3','G3','B3'],['A2','C3','E3','G3']],
+        style: 'lofi', attack: 0.8
+      },
+      strings_swell: {
+        chords: [['E3','G3','B3','D4'],['C3','E3','G3','C4'],['G2','B2','D3','G3'],['D3','F#3','A3','D4']],
+        style: 'strings', attack: 1.5
+      },
+      synth_wash: {
+        chords: [['F3','A3','C4','E4'],['E3','G3','B3','D4'],['D3','F3','A3','C4'],['C3','E3','G3','B3']],
+        style: 'synth', attack: 0.6
+      },
+      choir_hum: {
+        chords: [['A2','E3','A3','C4'],['F2','C3','F3','A3'],['C3','G3','C4','E4'],['G2','D3','G3','B3']],
+        style: 'choir', attack: 1.0
+      },
+      noise_bed: {
+        chords: [['C3','G3','C4'],['D3','A3','D4'],['E3','B3','E4'],['C3','G3','C4']],
+        style: 'noise', attack: 2.0
       }
-    });
-
-    this.nextLoopTime += this.loopDuration;
-
-    // Schedule next scheduling call
-    const scheduleAhead = this.loopDuration * 0.8;
-    setTimeout(() => this.scheduleLoops(), scheduleAhead * 1000);
+    };
+    return patterns[variant] || patterns.ambient_pad;
   }
 
-  playLoop(category, when) {
-    const loopId = this.activeLoops[category];
-    const buffer = this.buffers[`${category}_${loopId}`];
-    if (!buffer) return;
+  startVibeSequence(loopId) {
+    const pattern = this.getVibePattern(loopId);
 
-    const source = this.ctx.createBufferSource();
-    source.buffer = buffer;
-    source.connect(this.loopGains[category]);
-    source.start(when);
+    if (this.sequences.vibe) {
+      this.sequences.vibe.forEach(seq => { try { seq.dispose(); } catch(e){} });
+      try { if (this.instruments.noiseTexture.state === 'started') this.instruments.noiseTexture.stop(); } catch(e){}
+    }
+    this.sequences.vibe = [];
+
+    try {
+      this.instruments.pad.set({ envelope: { attack: pattern.attack, decay: 0.5, sustain: 0.8, release: 2 } });
+    } catch(e){}
+
+    const chordSeq = new Tone.Sequence((time, step) => {
+      const chord = pattern.chords[step];
+      try { this.instruments.pad.releaseAll(time); this.instruments.texture.releaseAll(time); } catch(e){}
+
+      if (pattern.style === 'lofi') {
+        chord.forEach((note, i) => this.instruments.pad.triggerAttack(note, time + i * 0.02));
+      } else if (pattern.style === 'noise') {
+        this.instruments.texture.triggerAttack(chord.slice(0, 2), time);
+        try { if (this.instruments.noiseTexture.state !== 'started') this.instruments.noiseTexture.start(time); } catch(e){}
+      } else {
+        this.instruments.pad.triggerAttack(chord, time);
+        const textureNotes = chord.map(n => Tone.Frequency(n).transpose(12).toNote());
+        this.instruments.texture.triggerAttack(textureNotes, time + 0.1);
+      }
+    }, [0, 1, 2, 3], '1m');
+
+    chordSeq.loop = true; chordSeq.start(0);
+    this.sequences.vibe.push(chordSeq);
   }
+
+  // ═══════════════════════════════════════════════════════════════
+  // MELODY PATTERNS - 6 unique arpeggios constrained to scales
+  // ═══════════════════════════════════════════════════════════════
+
+  getMelodyPattern(variant) {
+    const scales = {
+      major: ['C4','D4','E4','F4','G4','A4','B4','C5'],
+      minor: ['A3','B3','C4','D4','E4','F4','G4','A4'],
+      pentatonic: ['C4','D4','E4','G4','A4','C5','D5','E5'],
+      dorian: ['D4','E4','F4','G4','A4','B4','C5','D5']
+    };
+
+    const patterns = {
+      piano_riff: {
+        notes: [0,2,4,5,4,2,3,1,0,2,4,7,5,4,2,0], scale: scales.major, instrument: 'piano', subdivision: '8n',
+        velocity: [0.8,0.6,0.7,0.9,0.6,0.5,0.7,0.6,0.8,0.6,0.7,0.9,0.7,0.6,0.5,0.8]
+      },
+      synth_arp: {
+        notes: [0,2,4,7,4,2,0,2,4,7,9,7,4,2,4,0], scale: scales.pentatonic, instrument: 'arp', subdivision: '16n',
+        velocity: [0.7,0.5,0.6,0.8,0.5,0.4,0.7,0.5,0.6,0.8,0.9,0.7,0.5,0.4,0.6,0.7]
+      },
+      guitar_lick: {
+        notes: [0,-1,2,4,2,0,-1,2,4,5,4,2,0,2,4,0], scale: scales.dorian, instrument: 'pluck', subdivision: '8n',
+        velocity: [0.9,0,0.7,0.8,0.6,0.8,0,0.7,0.8,0.9,0.7,0.6,0.8,0.6,0.7,0.9]
+      },
+      brass_stab: {
+        notes: [0,-1,-1,4,-1,2,-1,-1,0,-1,-1,5,4,-1,2,0], scale: scales.minor, instrument: 'brass', subdivision: '8n',
+        velocity: [0.9,0,0,0.8,0,0.7,0,0,0.9,0,0,0.8,0.7,0,0.6,0.9]
+      },
+      pluck_melody: {
+        notes: [4,2,0,2,4,5,7,5,4,2,0,-1,0,2,4,2], scale: scales.pentatonic, instrument: 'pluck', subdivision: '8n',
+        velocity: [0.6,0.5,0.7,0.5,0.6,0.7,0.8,0.6,0.6,0.5,0.7,0.4,0.6,0.5,0.6,0.5]
+      },
+      bell_chime: {
+        notes: [7,-1,4,-1,5,-1,2,-1,7,-1,5,4,-1,2,-1,0], scale: scales.major, instrument: 'bell', subdivision: '8n',
+        velocity: [0.7,0,0.5,0,0.6,0,0.4,0,0.7,0,0.5,0.6,0,0.4,0,0.5]
+      }
+    };
+    return patterns[variant] || patterns.piano_riff;
+  }
+
+  startMelodySequence(loopId) {
+    const pattern = this.getMelodyPattern(loopId);
+
+    if (this.sequences.melody) {
+      this.sequences.melody.forEach(seq => { try { seq.dispose(); } catch(e){} });
+    }
+    this.sequences.melody = [];
+
+    const instrument = this.instruments[pattern.instrument];
+    if (!instrument) return;
+
+    const melodySeq = new Tone.Sequence((time, step) => {
+      const noteIdx = pattern.notes[step];
+      const velocity = pattern.velocity[step];
+
+      if (noteIdx >= 0 && velocity > 0) {
+        const note = pattern.scale[noteIdx % pattern.scale.length];
+        try {
+          if (pattern.instrument === 'pluck') instrument.triggerAttack(note, time);
+          else instrument.triggerAttackRelease(note, pattern.subdivision, time, velocity);
+        } catch(e){}
+      }
+    }, [...Array(pattern.notes.length).keys()], pattern.subdivision);
+
+    melodySeq.loop = true; melodySeq.start(0);
+    this.sequences.melody.push(melodySeq);
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // API METHODS (compatible with existing game code)
+  // ═══════════════════════════════════════════════════════════════
 
   addLoop(category, loopId) {
+    if (!this.initialized) return;
     if (this.activeLoops[category] === loopId) return;
 
-    const now = this.ctx ? this.ctx.currentTime : 0;
+    const now = Tone.now();
+    const categoryVolumes = { beat: 0.8, vibe: 0.6, melody: 0.7 };
 
-    // Crossfade out old loop
-    if (this.loopGains[category]) {
-      this.loopGains[category].gain.setTargetAtTime(0, now, this.crossfadeDuration / 3);
-    }
-
+    this.loopGains[category].gain.linearRampToValueAtTime(0, now + this.crossfadeDuration);
     this.activeLoops[category] = loopId;
 
-    // Crossfade in new loop
     setTimeout(() => {
-      if (this.loopGains[category] && this.activeLoops[category] === loopId) {
-        this.loopGains[category].gain.setTargetAtTime(0.8, this.ctx.currentTime, this.crossfadeDuration / 3);
-      }
-    }, this.crossfadeDuration * 500);
+      if (this.activeLoops[category] !== loopId) return;
+      if (category === 'beat') this.startBeatSequence(loopId);
+      else if (category === 'vibe') this.startVibeSequence(loopId);
+      else if (category === 'melody') this.startMelodySequence(loopId);
 
-    // Log event for session data
-    logSessionEvent('loop_add', { category, loopId });
+      this.loopGains[category].gain.linearRampToValueAtTime(categoryVolumes[category], Tone.now() + this.crossfadeDuration);
+    }, this.crossfadeDuration * 1000);
+
+    if (typeof logSessionEvent === 'function') logSessionEvent('loop_add', { category, loopId });
   }
 
   removeLoop(category) {
-    if (!this.activeLoops[category]) return;
+    if (!this.initialized || !this.activeLoops[category]) return;
 
-    const now = this.ctx ? this.ctx.currentTime : 0;
-    if (this.loopGains[category]) {
-      this.loopGains[category].gain.setTargetAtTime(0, now, this.crossfadeDuration / 3);
-    }
+    const now = Tone.now();
+    this.loopGains[category].gain.linearRampToValueAtTime(0, now + this.crossfadeDuration);
 
-    logSessionEvent('loop_remove', { category });
+    setTimeout(() => {
+      if (this.sequences[category]) {
+        this.sequences[category].forEach(seq => { try { seq.dispose(); } catch(e){} });
+        this.sequences[category] = [];
+      }
+      if (category === 'vibe') {
+        try { if (this.instruments.noiseTexture.state === 'started') this.instruments.noiseTexture.stop(); } catch(e){}
+      }
+    }, this.crossfadeDuration * 1000);
+
+    if (typeof logSessionEvent === 'function') logSessionEvent('loop_remove', { category });
     this.activeLoops[category] = null;
   }
 
   muteLoop(category, muted) {
-    if (this.loopGains[category]) {
-      const now = this.ctx ? this.ctx.currentTime : 0;
-      this.loopGains[category].gain.setTargetAtTime(muted ? 0 : 0.8, now, 0.1);
-    }
+    if (!this.initialized || !this.loopGains[category]) return;
+    const now = Tone.now();
+    const categoryVolumes = { beat: 0.8, vibe: 0.6, melody: 0.7 };
+    this.loopGains[category].gain.linearRampToValueAtTime(muted ? 0 : categoryVolumes[category], now + 0.1);
   }
 
   getActiveTints() {
@@ -692,6 +1091,18 @@ class SoundscapeEngine {
       }
     });
     return tints;
+  }
+
+  setMasterVolume(value) {
+    try { Tone.Destination.volume.value = Tone.gainToDb(value); } catch(e){}
+  }
+
+  dispose() {
+    ['beat', 'vibe', 'melody'].forEach(cat => {
+      if (this.sequences[cat]) this.sequences[cat].forEach(seq => { try { seq.dispose(); } catch(e){} });
+    });
+    try { Tone.Transport.stop(); } catch(e){}
+    this.isPlaying = false;
   }
 }
 
@@ -814,9 +1225,71 @@ function earnResources(tileType, clusterSize) {
   if (cat) {
     resources[cat] += total;
     logSessionEvent('cluster_clear', { category: cat, size: clusterSize, earned: total });
+
+    // Visual feedback - flash the stat block
+    flashStatBlock(cat, total);
   }
 
   return total;
+}
+
+// Flash stat block when earning resources
+function flashStatBlock(category, amount) {
+  const colorMap = { beat: '#ff2d6e', vibe: '#00e5ff', melody: '#39ff14' };
+  const valEl = document.getElementById(`${category}-val`);
+  const blocks = document.querySelectorAll('.stat-block');
+
+  // Find the correct stat block (beat=0, vibe=1, melody=2)
+  const blockIndex = { beat: 0, vibe: 1, melody: 2 }[category];
+  const block = blocks[blockIndex];
+
+  if (block) {
+    block.classList.add('flash');
+    setTimeout(() => block.classList.remove('flash'), 300);
+  }
+
+  // Animate the value with a pop effect
+  if (valEl) {
+    valEl.style.transform = 'scale(1.4)';
+    valEl.style.color = '#ffffff';
+    setTimeout(() => {
+      valEl.style.transform = 'scale(1)';
+      valEl.style.color = colorMap[category];
+    }, 200);
+  }
+
+  // Spawn floating particles from board toward HUD
+  spawnResourceParticles(category, amount);
+}
+
+// Spawn particles that fly toward the resource counter
+function spawnResourceParticles(category, amount) {
+  const colorMap = { beat: '#ff2d6e', vibe: '#00e5ff', melody: '#39ff14' };
+  const color = colorMap[category];
+
+  // Spawn particles from center of board flying toward top-left
+  const startX = boardCvs.width / 2;
+  const startY = boardCvs.height / 2;
+
+  const particleCount = Math.min(amount, 12);
+  for (let i = 0; i < particleCount; i++) {
+    setTimeout(() => {
+      particles.push({
+        x: startX + rnd(-30, 30),
+        y: startY + rnd(-30, 30),
+        vx: rnd(-8, -3),  // Move toward left (HUD)
+        vy: rnd(-6, -2),  // Move upward
+        life: 1.2,
+        decay: 0.025,
+        size: rnd(4, 8),
+        color: i % 2 === 0 ? color : '#ffffff',
+        shrink: 0.96,
+        glow: true,
+        shape: 'circle',
+        gravity: -0.05  // Float upward
+      });
+    }, i * 40);
+  }
 }
 
 function canUnlockLoop(category, loopIndex) {
@@ -888,37 +1361,62 @@ const STAGES = [
 ];
 
 // ── CANVAS & SIZING ──────────────────────────────────
-const boardCvs = document.getElementById('board-canvas');
-const boardCtx = boardCvs.getContext('2d');
-const nextCvs  = document.getElementById('next-canvas');
-const nextCtx  = nextCvs.getContext('2d');
-const bgCvs    = document.getElementById('bg-canvas');
-const bgCtx    = bgCvs.getContext('2d');
+let boardCvs, boardCtx, nextCvs, nextCtx, bgCvs, bgCtx;
+try {
+  boardCvs = document.getElementById('board-canvas');
+  boardCtx = boardCvs.getContext('2d');
+  nextCvs  = document.getElementById('next-canvas');
+  nextCtx  = nextCvs.getContext('2d');
+  bgCvs    = document.getElementById('bg-canvas');
+  bgCtx    = bgCvs.getContext('2d');
+} catch(e) {
+}
 
 // Column x positions and widths (computed on resize)
 let colX = [], colW = [], TS = 36;
 
 function recalcSize() {
   const playcol = document.getElementById('play-col') || document.getElementById('game-area');
-  const hudWidth = 64;
-  const availW  = (playcol ? playcol.clientWidth : window.innerWidth - hudWidth) * 0.95;
-  const availH  = window.innerHeight * 0.82; // Use 82% of screen height for board
+  // Get actual HUD width from CSS variable
+  const hudEl = document.getElementById('hud');
+  const hudWidth = hudEl ? hudEl.offsetWidth : 48;
+
+  // Calculate available space - use more width on mobile for better board visibility
+  const isMobile = window.innerWidth < 600;
+  const isTablet = window.innerWidth >= 600 && window.innerWidth < 1024;
+
+  // Board should fill most of available height
+  const heightPercent = isMobile ? 0.82 : isTablet ? 0.85 : 0.88;
+  const widthPercent = isMobile ? 0.98 : 0.96;
+
+  const availW = (playcol ? playcol.clientWidth : window.innerWidth - hudWidth) * widthPercent;
+  const availH = window.innerHeight * heightPercent;
+
+  // Calculate tile size to fit both dimensions
   TS = Math.floor(Math.min(availH / ROWS, availW / COLS));
-  TS = Math.max(28, Math.min(TS, 58)); // Larger min/max for better visibility
-  const totalGap   = COL_GAP * (COLS - 1);
+
+  // Responsive min/max tile sizes - bigger for better visuals
+  const minTS = isMobile ? 28 : 32;
+  const maxTS = isMobile ? 52 : isTablet ? 60 : 72;
+  TS = Math.max(minTS, Math.min(TS, maxTS));
+
+  const totalGap = COL_GAP * (COLS - 1);
   const totalTileW = COLS * TS;
-  boardCvs.width  = totalTileW + totalGap;
+  boardCvs.width = totalTileW + totalGap;
   boardCvs.height = ROWS * TS;
+
   colX = []; colW = [];
   for(let c=0;c<COLS;c++) {
     colX.push(c * (TS + COL_GAP));
     colW.push(TS);
   }
-  bgCvs.width  = window.innerWidth;
+
+  bgCvs.width = window.innerWidth;
   bgCvs.height = window.innerHeight;
 }
 recalcSize();
 window.addEventListener('resize', recalcSize);
+window.addEventListener('orientationchange', () => setTimeout(recalcSize, 100));
 
 // ── STATE ────────────────────────────────────────────
 let board, piece, nextPiece;
@@ -964,7 +1462,7 @@ const PIECE_POOL = [
 function mkPiece() {
   // Rare special tile (~12% chance)
   if(Math.random() < 0.12) return mkSpecialPiece();
-  const typePool  = [...TYPES,'BEAT','VOCAL','FLOW','HYPE'];
+  const typePool  = [...TYPES];
   const shapeName = PIECE_POOL[rndI(0,PIECE_POOL.length)];
   const rots      = PIECE_SHAPES[shapeName];
   const n         = rots[0].length;
@@ -1352,6 +1850,7 @@ function hardDrop() {
   piece=dropped;
   pieceYf=piece.y;
   gravTimer=0; lockTimer=0;
+  SFX.hardDrop(); // Play thud sound on hard drop
   commitPiece();
 }
 
@@ -1374,92 +1873,162 @@ const TILE_THEMES = {
 function drawTile(xc, px, py, w, h, type, alpha=1, flash=false, pulse=0) {
   if(!type||alpha<=0) return;
   const th = TILE_THEMES[type] || TILE_THEMES.GARBAGE;
-  const pad = Math.max(2, w*0.055);
+  const pad = Math.max(2, w*0.06);
   const iw = w-pad*2, ih=h-pad*2;
-  const rad = Math.min(iw,ih)*0.22;
+  const rad = Math.min(iw,ih)*0.24;
   const isSpecial = SPECIALS.includes(type);
+  const time = Date.now() * 0.001;
 
   xc.save();
   xc.globalAlpha = alpha;
 
   if(flash) {
-    xc.fillStyle='#ffffff';
-    xc.shadowColor='#ffffff'; xc.shadowBlur=20;
-    rrect(xc,px+pad,py+pad,iw,ih,rad); xc.fill();
-    xc.restore(); return;
+    // Enhanced flash with color burst
+    const flashGrad = xc.createRadialGradient(
+      px+w*0.5, py+h*0.5, 0,
+      px+w*0.5, py+h*0.5, w*0.7
+    );
+    flashGrad.addColorStop(0, '#ffffff');
+    flashGrad.addColorStop(0.5, th.light);
+    flashGrad.addColorStop(1, th.mid);
+    xc.fillStyle = flashGrad;
+    xc.shadowColor = '#ffffff';
+    xc.shadowBlur = 25;
+    rrect(xc, px+pad, py+pad, iw, ih, rad);
+    xc.fill();
+    xc.restore();
+    return;
   }
 
-  // Outer glow (for clustered/pulsing tiles)
+  // Outer glow for pulsing/special tiles - enhanced with multiple layers
   if(pulse>0 || isSpecial) {
-    const glowSize = 8 + (pulse||0.5)*6 + (isSpecial ? Math.sin(Date.now()*0.006)*4 : 0);
+    const glowPhase = isSpecial ? Math.sin(time * 3) * 0.5 + 0.5 : pulse;
+    const glowSize = 10 + glowPhase * 10;
+
+    // Outer soft glow
     xc.shadowColor = th.glow;
-    xc.shadowBlur  = glowSize;
-    xc.strokeStyle = th.glow;
-    xc.lineWidth   = 2;
-    rrect(xc,px+pad-1,py+pad-1,iw+2,ih+2,rad+1); xc.stroke();
-    xc.shadowBlur=0;
+    xc.shadowBlur = glowSize * 1.5;
+    xc.globalAlpha = alpha * 0.4;
+    xc.fillStyle = th.glow;
+    rrect(xc, px+pad, py+pad, iw, ih, rad);
+    xc.fill();
+    xc.globalAlpha = alpha;
+
+    // Sharp inner glow ring
+    xc.shadowBlur = glowSize;
+    xc.strokeStyle = th.light;
+    xc.lineWidth = 2 + glowPhase;
+    rrect(xc, px+pad-1, py+pad-1, iw+2, ih+2, rad+1);
+    xc.stroke();
+    xc.shadowBlur = 0;
   }
 
-  // Drop shadow
-  xc.shadowColor='rgba(0,0,0,0.6)';
-  xc.shadowBlur=4;
-  xc.shadowOffsetY=2;
+  // Enhanced drop shadow with blur
+  xc.shadowColor = 'rgba(0,0,0,0.7)';
+  xc.shadowBlur = 6;
+  xc.shadowOffsetX = 1;
+  xc.shadowOffsetY = 3;
 
-  // Base body — faceted gradient (dark bottom, mid body)
-  const bg=xc.createLinearGradient(px+pad,py+pad,px+pad,py+pad+ih);
-  bg.addColorStop(0,th.mid);
-  bg.addColorStop(0.45,th.base);
-  bg.addColorStop(1,th.dark);
-  xc.fillStyle=bg;
-  rrect(xc,px+pad,py+pad,iw,ih,rad); xc.fill();
-  xc.shadowBlur=0; xc.shadowOffsetY=0;
+  // Rich multi-stop gradient for gem body
+  const bg = xc.createLinearGradient(px+pad, py+pad, px+pad, py+pad+ih);
+  bg.addColorStop(0, th.light);
+  bg.addColorStop(0.15, th.mid);
+  bg.addColorStop(0.5, th.base);
+  bg.addColorStop(0.85, th.dark);
+  bg.addColorStop(1, 'rgba(0,0,0,0.3)');
+  xc.fillStyle = bg;
+  rrect(xc, px+pad, py+pad, iw, ih, rad);
+  xc.fill();
+  xc.shadowBlur = 0;
+  xc.shadowOffsetX = 0;
+  xc.shadowOffsetY = 0;
 
-  // Side facet — left-to-right lighter on left
-  const sg=xc.createLinearGradient(px+pad,py+pad,px+pad+iw,py+pad);
-  sg.addColorStop(0,'rgba(255,255,255,0.14)');
-  sg.addColorStop(0.4,'rgba(255,255,255,0.0)');
-  sg.addColorStop(1,'rgba(0,0,0,0.15)');
-  xc.fillStyle=sg;
-  rrect(xc,px+pad,py+pad,iw,ih,rad); xc.fill();
+  // Side facet gradient - creates 3D beveled look
+  const sg = xc.createLinearGradient(px+pad, py+pad, px+pad+iw, py+pad+ih);
+  sg.addColorStop(0, 'rgba(255,255,255,0.18)');
+  sg.addColorStop(0.3, 'rgba(255,255,255,0.05)');
+  sg.addColorStop(0.7, 'rgba(0,0,0,0.0)');
+  sg.addColorStop(1, 'rgba(0,0,0,0.2)');
+  xc.fillStyle = sg;
+  rrect(xc, px+pad, py+pad, iw, ih, rad);
+  xc.fill();
 
-  // Top specular highlight — large soft lozenge
-  const hg=xc.createRadialGradient(
-    px+pad+iw*0.38, py+pad+ih*0.22, 0,
-    px+pad+iw*0.38, py+pad+ih*0.22, iw*0.52);
-  hg.addColorStop(0,'rgba(255,255,255,0.55)');
-  hg.addColorStop(0.5,'rgba(255,255,255,0.15)');
-  hg.addColorStop(1,'rgba(255,255,255,0)');
-  xc.fillStyle=hg;
-  rrect(xc,px+pad,py+pad,iw,ih*0.55,rad); xc.fill();
+  // Premium specular highlight - asymmetric for realism
+  const specX = px+pad+iw*0.35;
+  const specY = py+pad+ih*0.2;
+  const hg = xc.createRadialGradient(specX, specY, 0, specX+iw*0.1, specY+ih*0.1, iw*0.55);
+  hg.addColorStop(0, 'rgba(255,255,255,0.65)');
+  hg.addColorStop(0.3, 'rgba(255,255,255,0.25)');
+  hg.addColorStop(0.6, 'rgba(255,255,255,0.08)');
+  hg.addColorStop(1, 'rgba(255,255,255,0)');
+  xc.fillStyle = hg;
+  rrect(xc, px+pad, py+pad, iw, ih*0.6, rad);
+  xc.fill();
 
-  // Small bright specular dot (top-left glint)
-  const dg=xc.createRadialGradient(
-    px+pad+iw*0.25,py+pad+ih*0.18,0,
-    px+pad+iw*0.25,py+pad+ih*0.18,iw*0.16);
-  dg.addColorStop(0,'rgba(255,255,255,0.9)');
-  dg.addColorStop(1,'rgba(255,255,255,0)');
-  xc.fillStyle=dg;
-  xc.beginPath(); xc.arc(px+pad+iw*0.25,py+pad+ih*0.2,iw*0.16,0,Math.PI*2); xc.fill();
+  // Sharp specular glint (top-left)
+  const glintSize = iw * 0.14;
+  const dg = xc.createRadialGradient(
+    px+pad+iw*0.22, py+pad+ih*0.16, 0,
+    px+pad+iw*0.22, py+pad+ih*0.16, glintSize
+  );
+  dg.addColorStop(0, 'rgba(255,255,255,0.95)');
+  dg.addColorStop(0.5, 'rgba(255,255,255,0.4)');
+  dg.addColorStop(1, 'rgba(255,255,255,0)');
+  xc.fillStyle = dg;
+  xc.beginPath();
+  xc.arc(px+pad+iw*0.22, py+pad+ih*0.16, glintSize, 0, Math.PI*2);
+  xc.fill();
 
-  // Thin bright border
-  xc.strokeStyle=th.light;
-  xc.lineWidth=1.2;
-  xc.globalAlpha=alpha*0.6;
-  rrect(xc,px+pad,py+pad,iw,ih,rad); xc.stroke();
+  // Secondary micro-glint
+  xc.fillStyle = 'rgba(255,255,255,0.8)';
+  xc.beginPath();
+  xc.arc(px+pad+iw*0.28, py+pad+ih*0.28, glintSize*0.25, 0, Math.PI*2);
+  xc.fill();
 
-  // Icon
-  xc.globalAlpha=alpha;
-  xc.shadowBlur=0;
-  drawTileIcon(xc, px+w*0.5, py+h*0.5, Math.min(w,h)*0.36, type, th);
+  // Inner shadow at bottom for depth
+  const innerShadow = xc.createLinearGradient(px+pad, py+pad+ih*0.7, px+pad, py+pad+ih);
+  innerShadow.addColorStop(0, 'rgba(0,0,0,0)');
+  innerShadow.addColorStop(1, 'rgba(0,0,0,0.25)');
+  xc.fillStyle = innerShadow;
+  rrect(xc, px+pad, py+pad, iw, ih, rad);
+  xc.fill();
 
-  // Special sparkle overlay
+  // Refined border with gradient
+  const borderGrad = xc.createLinearGradient(px+pad, py+pad, px+pad, py+pad+ih);
+  borderGrad.addColorStop(0, th.light);
+  borderGrad.addColorStop(0.5, 'rgba(255,255,255,0.3)');
+  borderGrad.addColorStop(1, th.dark);
+  xc.strokeStyle = borderGrad;
+  xc.lineWidth = 1.5;
+  xc.globalAlpha = alpha * 0.7;
+  rrect(xc, px+pad, py+pad, iw, ih, rad);
+  xc.stroke();
+
+  // Icon with enhanced shadow
+  xc.globalAlpha = alpha;
+  xc.shadowColor = 'rgba(0,0,0,0.5)';
+  xc.shadowBlur = 3;
+  xc.shadowOffsetY = 1;
+  drawTileIcon(xc, px+w*0.5, py+h*0.5, Math.min(w,h)*0.34, type, th);
+  xc.shadowBlur = 0;
+
+  // Special tiles get animated sparkles
   if(isSpecial) {
-    const t=Date.now()*0.003;
-    for(let i=0;i<4;i++){
-      const a=t+i*Math.PI/2, r2=iw*0.35;
-      const sx=px+pad+iw*0.5+Math.cos(a)*r2, sy=py+pad+ih*0.5+Math.sin(a)*r2;
-      xc.fillStyle=`rgba(255,255,255,${0.4+Math.sin(t*2+i)*0.3})`;
-      xc.beginPath(); xc.arc(sx,sy,1.5,0,Math.PI*2); xc.fill();
+    const sparkleCount = 6;
+    for(let i=0; i<sparkleCount; i++){
+      const angle = time*2 + i*(Math.PI*2/sparkleCount);
+      const dist = iw*0.32 + Math.sin(time*3+i)*iw*0.05;
+      const sx = px+pad+iw*0.5 + Math.cos(angle)*dist;
+      const sy = py+pad+ih*0.5 + Math.sin(angle)*dist;
+      const sparkleAlpha = 0.5 + Math.sin(time*4+i*1.5)*0.4;
+      const sparkleSize = 2 + Math.sin(time*5+i)*0.8;
+
+      xc.fillStyle = `rgba(255,255,255,${sparkleAlpha})`;
+      xc.shadowColor = th.glow;
+      xc.shadowBlur = 4;
+      xc.beginPath();
+      xc.arc(sx, sy, sparkleSize, 0, Math.PI*2);
+      xc.fill();
     }
   }
 
@@ -2013,36 +2582,77 @@ function updateScorePopups() {
 
 // ── MAIN DRAW ────────────────────────────────────────
 function drawAll() {
-  const now   = Date.now();
-  const pulse = 0.5+Math.sin(now*0.0045)*0.5;
-  const shake = screenShake>0.5 ? rnd(-screenShake,screenShake) : 0;
+  const now = Date.now();
+  const pulse = 0.5 + Math.sin(now * 0.0045) * 0.5;
+
+  // Enhanced screen shake with rotation and elastic decay
+  let shakeX = 0, shakeY = 0, shakeRot = 0;
+  if (screenShake > 0.3) {
+    const shakePhase = now * 0.025;
+    shakeX = Math.sin(shakePhase) * screenShake * 0.8;
+    shakeY = Math.cos(shakePhase * 1.3) * screenShake * 0.5;
+    shakeRot = Math.sin(shakePhase * 0.7) * screenShake * 0.002;
+  }
 
   boardCtx.save();
-  boardCtx.translate(shake, shake*0.4);
+  boardCtx.translate(boardCvs.width / 2 + shakeX, boardCvs.height / 2 + shakeY);
+  boardCtx.rotate(shakeRot);
+  boardCtx.translate(-boardCvs.width / 2, -boardCvs.height / 2);
 
-  // Board bg — deep seamless dark, no column lines at all
-  boardCtx.fillStyle='rgba(5,4,15,0.97)';
-  boardCtx.fillRect(-4,-4,boardCvs.width+8,boardCvs.height+8);
+  // Premium board background with depth
+  const bgGrad = boardCtx.createLinearGradient(0, 0, 0, boardCvs.height);
+  bgGrad.addColorStop(0, '#08071a');
+  bgGrad.addColorStop(0.3, '#050414');
+  bgGrad.addColorStop(0.7, '#040310');
+  bgGrad.addColorStop(1, '#02020a');
+  boardCtx.fillStyle = bgGrad;
+  boardCtx.fillRect(-4, -4, boardCvs.width+8, boardCvs.height+8);
 
-  // Subtle animated ambient glow — drifts around like neon light bleeding
-  const t=Date.now()*0.0008;
-  const glows=[
-    {x:boardCvs.width*0.3, y:boardCvs.height*0.7, r:boardCvs.width*0.5, col:'rgba(255,45,110,0.03)'},
-    {x:boardCvs.width*0.7, y:boardCvs.height*0.4, r:boardCvs.width*0.4, col:'rgba(0,220,255,0.025)'},
-    {x:boardCvs.width*(0.5+Math.sin(t)*0.2), y:boardCvs.height*(0.5+Math.cos(t*0.7)*0.2), r:boardCvs.width*0.35, col:'rgba(192,80,255,0.02)'},
+  // Subtle grid pattern for depth (very faint)
+  boardCtx.strokeStyle = 'rgba(255,255,255,0.015)';
+  boardCtx.lineWidth = 0.5;
+  for(let c=0; c<=COLS; c++) {
+    const gx = c * TS;
+    boardCtx.beginPath();
+    boardCtx.moveTo(gx, 0);
+    boardCtx.lineTo(gx, boardCvs.height);
+    boardCtx.stroke();
+  }
+  for(let r=0; r<=ROWS; r++) {
+    const gy = r * TS;
+    boardCtx.beginPath();
+    boardCtx.moveTo(0, gy);
+    boardCtx.lineTo(boardCvs.width, gy);
+    boardCtx.stroke();
+  }
+
+  // Animated ambient glows - more dynamic and colorful
+  const t = Date.now() * 0.0006;
+  const glows = [
+    {x:boardCvs.width*(0.25+Math.sin(t*0.7)*0.1), y:boardCvs.height*(0.7+Math.cos(t*0.5)*0.1), r:boardCvs.width*0.5, col:'rgba(255,45,110,0.04)'},
+    {x:boardCvs.width*(0.75+Math.cos(t*0.8)*0.1), y:boardCvs.height*(0.35+Math.sin(t*0.6)*0.1), r:boardCvs.width*0.45, col:'rgba(0,229,255,0.035)'},
+    {x:boardCvs.width*(0.5+Math.sin(t)*0.15), y:boardCvs.height*(0.5+Math.cos(t*0.7)*0.15), r:boardCvs.width*0.4, col:'rgba(57,255,20,0.025)'},
+    {x:boardCvs.width*(0.6+Math.cos(t*1.1)*0.1), y:boardCvs.height*(0.8+Math.sin(t*0.9)*0.08), r:boardCvs.width*0.35, col:'rgba(255,215,0,0.02)'},
   ];
-  glows.forEach(g=>{
-    const rg=boardCtx.createRadialGradient(g.x,g.y,0,g.x,g.y,g.r);
-    rg.addColorStop(0,g.col); rg.addColorStop(1,'rgba(0,0,0,0)');
-    boardCtx.fillStyle=rg; boardCtx.fillRect(0,0,boardCvs.width,boardCvs.height);
+  glows.forEach(g => {
+    const rg = boardCtx.createRadialGradient(g.x, g.y, 0, g.x, g.y, g.r);
+    rg.addColorStop(0, g.col);
+    rg.addColorStop(0.6, g.col.replace(/[\d.]+\)$/, '0.01)'));
+    rg.addColorStop(1, 'rgba(0,0,0,0)');
+    boardCtx.fillStyle = rg;
+    boardCtx.fillRect(0, 0, boardCvs.width, boardCvs.height);
   });
 
-  // Vignette — dark edges, bright centre
-  const vig=boardCtx.createRadialGradient(
-    boardCvs.width/2,boardCvs.height/2,boardCvs.height*0.2,
-    boardCvs.width/2,boardCvs.height/2,boardCvs.height*0.75);
-  vig.addColorStop(0,'rgba(0,0,0,0)'); vig.addColorStop(1,'rgba(0,0,0,0.35)');
-  boardCtx.fillStyle=vig; boardCtx.fillRect(0,0,boardCvs.width,boardCvs.height);
+  // Enhanced vignette for focus
+  const vig = boardCtx.createRadialGradient(
+    boardCvs.width/2, boardCvs.height/2, boardCvs.height*0.15,
+    boardCvs.width/2, boardCvs.height/2, boardCvs.height*0.8
+  );
+  vig.addColorStop(0, 'rgba(0,0,0,0)');
+  vig.addColorStop(0.6, 'rgba(0,0,0,0.15)');
+  vig.addColorStop(1, 'rgba(0,0,0,0.45)');
+  boardCtx.fillStyle = vig;
+  boardCtx.fillRect(0, 0, boardCvs.width, boardCvs.height);
 
   // Valid cluster glow — outer blooms, no grid lines
   if(!resolving) {
@@ -2157,25 +2767,156 @@ function drawAll() {
     }
   }
 
-  // Particles
+  // ══════════════════════════════════════════════════════════════
+  // AAA PARTICLE RENDERING - Premium visual effects
+  // ══════════════════════════════════════════════════════════════
   particles.forEach(p=>{
     boardCtx.save();
-    boardCtx.globalAlpha=Math.max(0,p.life);
-    if(p.glow){ boardCtx.shadowColor=p.color; boardCtx.shadowBlur=p.size*2.5; }
-    boardCtx.fillStyle=p.color;
+    const alpha = Math.max(0, p.life);
+    boardCtx.globalAlpha = alpha;
+
+    // Update rotation for sparkles and stars
+    if(p.rotation !== undefined && p.rotationSpeed) {
+      p.rotation += p.rotationSpeed;
+    }
+
+    if(p.glow) {
+      boardCtx.shadowColor = p.color;
+      boardCtx.shadowBlur = p.size * 4;
+    }
+
     if(p.shape==='streak') {
-      // Vertical streak — elongated in direction of travel
-      const len = Math.max(4, Math.abs(p.vy)*2.5);
-      boardCtx.strokeStyle=p.color; boardCtx.lineWidth=p.size;
-      boardCtx.lineCap='round';
+      // STREAK - Comet-like trail with gradient
+      const speed = Math.sqrt(p.vx*p.vx + p.vy*p.vy);
+      const trailMult = Math.min(1.2, speed * 0.08);
+      const grad = boardCtx.createLinearGradient(
+        p.x, p.y,
+        p.x - p.vx * trailMult, p.y - p.vy * trailMult
+      );
+      grad.addColorStop(0, '#ffffff');
+      grad.addColorStop(0.2, p.color);
+      grad.addColorStop(1, 'transparent');
+      boardCtx.strokeStyle = grad;
+      boardCtx.lineWidth = p.size * 1.5;
+      boardCtx.lineCap = 'round';
       boardCtx.beginPath();
       boardCtx.moveTo(p.x, p.y);
-      boardCtx.lineTo(p.x - p.vx*0.5, p.y - p.vy*0.5);
+      boardCtx.lineTo(p.x - p.vx * trailMult, p.y - p.vy * trailMult);
       boardCtx.stroke();
-    } else if(p.shape==='sq') {
-      boardCtx.fillRect(p.x-p.size/2,p.y-p.size/2,p.size,p.size);
-    } else {
-      boardCtx.beginPath(); boardCtx.arc(p.x,p.y,p.size,0,Math.PI*2); boardCtx.fill();
+      // Bright glowing tip
+      boardCtx.shadowBlur = p.size * 6;
+      boardCtx.fillStyle = '#ffffff';
+      boardCtx.globalAlpha = alpha * 0.9;
+      boardCtx.beginPath();
+      boardCtx.arc(p.x, p.y, p.size * 0.6, 0, Math.PI * 2);
+      boardCtx.fill();
+    }
+    else if(p.shape==='sparkle') {
+      // SPARKLE - 4-point diamond with rotation
+      const rot = p.rotation || 0;
+      boardCtx.save();
+      boardCtx.translate(p.x, p.y);
+      boardCtx.rotate(rot);
+      boardCtx.shadowBlur = p.size * 3;
+      boardCtx.fillStyle = p.color;
+      boardCtx.beginPath();
+      boardCtx.moveTo(0, -p.size);
+      boardCtx.lineTo(p.size * 0.3, 0);
+      boardCtx.lineTo(0, p.size);
+      boardCtx.lineTo(-p.size * 0.3, 0);
+      boardCtx.closePath();
+      boardCtx.fill();
+      boardCtx.beginPath();
+      boardCtx.moveTo(-p.size, 0);
+      boardCtx.lineTo(0, p.size * 0.3);
+      boardCtx.lineTo(p.size, 0);
+      boardCtx.lineTo(0, -p.size * 0.3);
+      boardCtx.closePath();
+      boardCtx.fill();
+      boardCtx.globalAlpha = alpha * 0.9;
+      boardCtx.fillStyle = '#ffffff';
+      boardCtx.beginPath();
+      boardCtx.arc(0, 0, p.size * 0.25, 0, Math.PI * 2);
+      boardCtx.fill();
+      boardCtx.restore();
+    }
+    else if(p.shape==='ring') {
+      // RING - Expanding circle outline with glow
+      boardCtx.strokeStyle = p.color;
+      boardCtx.lineWidth = Math.max(1.5, p.size * 0.4);
+      boardCtx.shadowBlur = p.size * 2;
+      boardCtx.beginPath();
+      boardCtx.arc(p.x, p.y, p.size * 1.5, 0, Math.PI * 2);
+      boardCtx.stroke();
+      boardCtx.globalAlpha = alpha * 0.6;
+      boardCtx.strokeStyle = '#ffffff';
+      boardCtx.lineWidth = Math.max(1, p.size * 0.2);
+      boardCtx.beginPath();
+      boardCtx.arc(p.x, p.y, p.size * 1.2, 0, Math.PI * 2);
+      boardCtx.stroke();
+    }
+    else if(p.shape==='star') {
+      // STAR - 5-point with rotation and glow
+      const rot = p.rotation || 0;
+      boardCtx.save();
+      boardCtx.translate(p.x, p.y);
+      boardCtx.rotate(rot);
+      boardCtx.shadowBlur = p.size * 4;
+      boardCtx.fillStyle = p.color;
+      boardCtx.beginPath();
+      for(let i = 0; i < 5; i++) {
+        const angle = (i * 4 * Math.PI / 5) - Math.PI / 2;
+        const innerAngle = angle + Math.PI / 5;
+        const outerR = p.size;
+        const innerR = p.size * 0.38;
+        if(i === 0) boardCtx.moveTo(Math.cos(angle) * outerR, Math.sin(angle) * outerR);
+        else boardCtx.lineTo(Math.cos(angle) * outerR, Math.sin(angle) * outerR);
+        boardCtx.lineTo(Math.cos(innerAngle) * innerR, Math.sin(innerAngle) * innerR);
+      }
+      boardCtx.closePath();
+      boardCtx.fill();
+      boardCtx.globalAlpha = alpha * 0.8;
+      boardCtx.fillStyle = '#ffffff';
+      boardCtx.beginPath();
+      for(let i = 0; i < 5; i++) {
+        const angle = (i * 4 * Math.PI / 5) - Math.PI / 2;
+        const innerAngle = angle + Math.PI / 5;
+        const outerR = p.size * 0.5;
+        const innerR = p.size * 0.2;
+        if(i === 0) boardCtx.moveTo(Math.cos(angle) * outerR, Math.sin(angle) * outerR);
+        else boardCtx.lineTo(Math.cos(angle) * outerR, Math.sin(angle) * outerR);
+        boardCtx.lineTo(Math.cos(innerAngle) * innerR, Math.sin(innerAngle) * innerR);
+      }
+      boardCtx.closePath();
+      boardCtx.fill();
+      boardCtx.restore();
+    }
+    else if(p.shape==='sq') {
+      // SQUARE - Confetti piece with gradient
+      const s = p.size;
+      const grad = boardCtx.createLinearGradient(p.x - s/2, p.y - s/2, p.x + s/2, p.y + s/2);
+      grad.addColorStop(0, '#ffffff');
+      grad.addColorStop(0.3, p.color);
+      grad.addColorStop(1, p.color);
+      boardCtx.fillStyle = grad;
+      boardCtx.beginPath();
+      boardCtx.roundRect(p.x - s/2, p.y - s/2, s, s, s * 0.15);
+      boardCtx.fill();
+    }
+    else {
+      // CIRCLE - Default with radial gradient glow
+      const grad = boardCtx.createRadialGradient(
+        p.x - p.size * 0.25, p.y - p.size * 0.25, 0,
+        p.x, p.y, p.size * 1.2
+      );
+      grad.addColorStop(0, '#ffffff');
+      grad.addColorStop(0.25, p.color);
+      grad.addColorStop(0.8, p.color);
+      grad.addColorStop(1, 'transparent');
+      boardCtx.fillStyle = p.glow ? grad : p.color;
+      boardCtx.beginPath();
+      boardCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      boardCtx.fill();
     }
     boardCtx.restore();
   });
@@ -2300,9 +3041,8 @@ function drawSceneBedroom(W,H) {
   bgCtx.strokeRect(W*0.35,H*0.55,W*0.3,H*0.17);
   // Keyboard
   bgCtx.fillStyle='#1a1a2e'; bgCtx.fillRect(W*0.32,H*0.73,W*0.36,H*0.04);
-  // Poster on wall
-  bgCtx.fillStyle='rgba(255,45,110,0.15)'; bgCtx.fillRect(W*0.1,H*0.58,W*0.15,H*0.12);
-  bgCtx.strokeStyle='rgba(255,45,110,0.3)'; bgCtx.lineWidth=1;
+  // Poster on wall (subtle glow only, no solid fill)
+  bgCtx.strokeStyle='rgba(255,45,110,0.08)'; bgCtx.lineWidth=1;
   bgCtx.strokeRect(W*0.1,H*0.58,W*0.15,H*0.12);
 }
 
@@ -2581,7 +3321,9 @@ function updateParticles() {
     p.size *= p.shrink;
   });
   particles=particles.filter(p=>p.life>0&&p.size>0.3);
-  if(screenShake>0) screenShake*=0.74;
+  // Smoother elastic screen shake decay
+  if(screenShake>0) screenShake *= 0.88;
+  if(screenShake < 0.2) screenShake = 0;
 }
 
 // ── HUD ──────────────────────────────────────────────
@@ -2660,64 +3402,107 @@ let touchLastMoveX=0;
 // Touch anywhere in play column
 const playCol = document.getElementById('play-col');
 
-playCol.addEventListener('touchstart',e=>{
-  e.preventDefault();
-  touchStartX=e.touches[0].clientX;
-  touchStartY=e.touches[0].clientY;
-  touchLastMoveX=touchStartX;
-  touchMoved=false;
-},{passive:false});
+// Haptic feedback helper (mobile vibration)
+function haptic(duration = 10) {
+  if (navigator.vibrate) navigator.vibrate(duration);
+}
 
-playCol.addEventListener('touchmove',e=>{
+playCol && playCol.addEventListener('touchstart', e => {
   e.preventDefault();
-  if(paused||gameOver||!piece||resolving) return;
-  const cx=e.touches[0].clientX, cy=e.touches[0].clientY;
-  const dx=cx-touchLastMoveX;
-  const totalDy=cy-touchStartY;
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+  touchLastMoveX = touchStartX;
+  touchMoved = false;
+}, { passive: false });
 
-  // Horizontal swipe — move piece, threshold per tile
-  if(Math.abs(dx) > TS*0.45) {
-    touchMoved=true;
-    moveH(dx>0?1:-1);
-    touchLastMoveX=cx;
+playCol && playCol.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (paused || gameOver || !piece || resolving) return;
+
+  const cx = e.touches[0].clientX;
+  const cy = e.touches[0].clientY;
+  const dx = cx - touchLastMoveX;
+  const totalDx = cx - touchStartX;
+  const totalDy = cy - touchStartY;
+
+  // Mobile-optimized swipe thresholds (smaller for responsiveness)
+  const swipeThreshold = Math.max(TS * 0.35, 20);
+
+  // Horizontal swipe to move piece
+  if (Math.abs(dx) > swipeThreshold) {
+    touchMoved = true;
+    moveH(dx > 0 ? 1 : -1);
+    haptic(5);
+    touchLastMoveX = cx;
   }
-  // Swipe down hard = drop
-  if(!touchMoved && totalDy>TS*1.2) {
-    touchMoved=true;
+
+  // Swipe down to hard drop (need significant vertical movement)
+  if (!touchMoved && totalDy > TS * 1.0 && Math.abs(totalDx) < TS * 0.5) {
+    touchMoved = true;
+    haptic(20);
     hardDrop();
   }
-},{passive:false});
+}, { passive: false });
 
-playCol.addEventListener('touchend',e=>{
+playCol && playCol.addEventListener('touchend', e => {
   e.preventDefault();
-  if(paused||gameOver) return;
-  if(touchMoved) return;
+  if (paused || gameOver) return;
+  if (touchMoved) return;
 
-  // Tap — check if on board
-  const rect=boardCvs.getBoundingClientRect();
-  const tx=e.changedTouches[0].clientX-rect.left;
-  const ty=e.changedTouches[0].clientY-rect.top;
-  let col=-1;
-  for(let c=0;c<COLS;c++) if(tx>=colX[c]&&tx<colX[c]+colW[c]){col=c;break;}
-  const row=Math.floor(ty/TS);
+  // Calculate tap position relative to board
+  const rect = boardCvs.getBoundingClientRect();
+  const tx = e.changedTouches[0].clientX - rect.left;
+  const ty = e.changedTouches[0].clientY - rect.top;
 
-  if(col>=0&&row>=0&&row<ROWS) {
-    const onBoard=board[row]?.[col];
-    if(onBoard&&!resolving) { tapCollapse(row,col); return; }
+  // Scale touch coordinates to canvas space (handles devicePixelRatio)
+  const scaleX = boardCvs.width / rect.width;
+  const scaleY = boardCvs.height / rect.height;
+  const canvasX = tx * scaleX;
+  const canvasY = ty * scaleY;
+
+  // Find which column was tapped
+  let col = -1;
+  for (let c = 0; c < COLS; c++) {
+    if (canvasX >= colX[c] && canvasX < colX[c] + colW[c]) {
+      col = c;
+      break;
+    }
   }
-  // Tap on piece or empty = rotate
-  if(piece&&!resolving) rotate();
-},{passive:false});
+  const row = Math.floor(canvasY / TS);
+
+  // Check if tap is on a board tile
+  if (col >= 0 && row >= 0 && row < ROWS) {
+    const onBoard = board[row]?.[col];
+    if (onBoard && !resolving) {
+      haptic(15);
+      tapCollapse(row, col);
+      return;
+    }
+  }
+
+  // Tap on empty space or falling piece = rotate
+  if (piece && !resolving) {
+    haptic(8);
+    rotate();
+  }
+}, { passive: false });
 
 // Mouse click support for desktop
-boardCvs.addEventListener('click', e => {
+boardCvs && boardCvs.addEventListener('click', e => {
   if(paused||gameOver||resolving) return;
   const rect = boardCvs.getBoundingClientRect();
   const mx = e.clientX - rect.left;
   const my = e.clientY - rect.top;
+
+  // Scale mouse coordinates to canvas space (handles devicePixelRatio and CSS scaling)
+  const scaleX = boardCvs.width / rect.width;
+  const scaleY = boardCvs.height / rect.height;
+  const canvasX = mx * scaleX;
+  const canvasY = my * scaleY;
+
   let col = -1;
-  for(let c=0;c<COLS;c++) if(mx>=colX[c]&&mx<colX[c]+colW[c]){col=c;break;}
-  const row = Math.floor(my/TS);
+  for(let c=0;c<COLS;c++) if(canvasX>=colX[c]&&canvasX<colX[c]+colW[c]){col=c;break;}
+  const row = Math.floor(canvasY/TS);
 
   if(col>=0&&row>=0&&row<ROWS) {
     const onBoard = board[row]?.[col];
@@ -2736,17 +3521,39 @@ document.addEventListener('keydown',e=>{
   if(e.code==='Space'){e.preventDefault();hardDrop();}
 });
 
-document.getElementById('overlay-btn').addEventListener('click',()=>{
-  getAudio(); // unlock audio on first interaction
+function startSession() {
+  // Hide overlay
   document.getElementById('overlay').classList.remove('show');
-  if(gameOver) initGame(); else paused=false;
 
-  // Initialize soundscape on first interaction
+  // Audio unlock
+  try { getAudio(); } catch(err) { console.warn('Audio init:', err); }
+
+  // Play collapse sound as feedback
+  SFX.tap();
+
+  // Start or resume
+  if(gameOver) {
+    initGame();
+  } else {
+    paused = false;
+  }
+
+  // Soundscape init (async, non-blocking)
   if (!soundscape) {
     soundscape = new SoundscapeEngine();
-    soundscape.init();
+    soundscape.init().catch(err => console.warn('Soundscape:', err));
   }
-});
+}
+
+// Support both click and touch
+const startBtn = document.getElementById('overlay-btn');
+if (startBtn) {
+  startBtn.addEventListener('click', startSession);
+  startBtn.addEventListener('touchend', function(e) {
+    e.preventDefault();
+    startSession();
+  });
+}
 
 // ── GAME LOOP ────────────────────────────────────────
 let bgRedrawTimer=0;
@@ -2864,6 +3671,11 @@ document.getElementById('loop-panel-close')?.addEventListener('click', () => {
   document.getElementById('loop-panel').classList.remove('open');
 });
 
+// Close loop panel when clicking backdrop
+document.getElementById('loop-panel-backdrop')?.addEventListener('click', () => {
+  document.getElementById('loop-panel').classList.remove('open');
+});
+
 // ── INIT ────────────────────────────────────────────
 function initGame() {
   board=mkBoard(); piece=mkPiece(); nextPiece=mkPiece();
@@ -2900,7 +3712,10 @@ function initGame() {
 }
 
 initGame();
+// Start paused until user clicks Start Session
+paused = true;
 requestAnimationFrame(loop);
+
 </script>
 </body>
 </html>

@@ -11,13 +11,14 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "pixi.js": "^8.2.6",
-    "tone": "^15.0.4",
+    "eventemitter3": "^5.0.1",
     "gsap": "^3.12.5",
-    "eventemitter3": "^5.0.1"
+    "pixi.js": "^8.2.6",
+    "tone": "^15.0.4"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
+    "acorn": "^8.16.0",
     "typescript": "^5.4.5",
     "vite": "^5.3.1"
   },
