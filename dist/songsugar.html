@@ -17,7 +17,6 @@
       touch-action: none;
       -webkit-user-select: none;
       user-select: none;
-      -webkit-touch-callout: none;
     }
     #game-container {
       width: 100%;
@@ -25,11 +24,6 @@
       position: fixed;
       top: 0;
       left: 0;
-    }
-    canvas {
-      display: block;
-      width: 100% !important;
-      height: 100% !important;
     }
   </style>
 </head>
@@ -44,9 +38,7 @@
 const CONFIG = {
   GRID_COLS: 8,
   GRID_ROWS: 12,
-  BASE_TILE_SIZE: 38,
-  TILE_SIZE: 38,
-  TILE_GAP: 2,
+  TILE_SIZE: 36,
 
   COLORS: {
     BEAT: 0xff2d6e,
@@ -59,25 +51,21 @@ const CONFIG = {
     HUD_BG: 0x1a1a2e,
     TEXT: 0xffffff,
     TEXT_DIM: 0x888899,
-    DANGER: 0xff3333
+    DANGER: 0xff4444
   },
 
-  DANGER_LINE: 2, // Row index for pressure line
+  DANGER_ROW: 2,
   FALL_SPEED: 1.2,
   CLUSTER_MIN: 3,
   WILD_CHANCE: 0.10,
   SPECIAL_CHANCE: 0.04,
-  MAX_LAYERS_PER_CATEGORY: 3,
-  BPM: 115,
-  COLLAPSE_DELAY: 120,
-  CHAIN_DELAY: 150
+  MAX_LAYERS: 3,
+  BPM: 115
 };
 
-const TILE_TYPES = ['BEAT', 'VIBE', 'MELODY', 'WILD', 'BOMB', 'FREEZE'];
 const CATEGORY_TYPES = ['BEAT', 'VIBE', 'MELODY'];
 const SPECIAL_TYPES = ['BOMB', 'FREEZE'];
 
-// Loop definitions
 const LOOPS = {
   BEAT: [
     { id: 'trap_808', name: 'TRAP 808s', unlocked: true },
@@ -115,138 +103,110 @@ const LOOPS = {
 // GAME STATE
 // ============================================================================
 
-const GameState = {
+const Game = {
   screen: 'HOME',
   score: 0,
   resources: { BEAT: 0, VIBE: 0, MELODY: 0 },
-  resourcesForUnlock: 50,
+  unlockCost: 50,
   activeLayers: { BEAT: [], VIBE: [], MELODY: [] },
   loops: JSON.parse(JSON.stringify(LOOPS)),
   grid: [],
-  currentPiece: null,
+  piece: null,
   nextPiece: null,
   gameOver: false,
   paused: false,
-  combo: 0,
-  comboTimer: 0,
+  isCollapsing: false,
+  clusters: [],
+  frozen: false,
+  freezeEnd: 0,
+  inDanger: false,
   bpm: CONFIG.BPM,
   pitch: 0,
-  screenShake: { active: false, intensity: 0, startTime: 0 },
-  previewingLoop: null,
-  isCollapsing: false,
-  validClusters: [],
-  frozen: false,
-  freezeEndTime: 0,
-  inDanger: false,
-  lastTapTime: 0,
-  comboPopups: []
+  previewLoop: null,
+  shake: { active: false, intensity: 0, start: 0 }
 };
 
-// Layout calculations
-let gridOffsetX = 0;
-let gridOffsetY = 0;
-let scaleFactor = 1;
-
-// Background visualization
-const visualizerState = { beatPulse: 0, vibeWave: 0, melodyFlow: 0 };
+// Layout
+let gridX = 0, gridY = 0, tileSize = 36, screenW = 0, screenH = 0;
 
 // ============================================================================
-// PIXI APPLICATION
+// PIXI
 // ============================================================================
 
-let app, bgContainer, gameContainer, hudContainer, overlayContainer, particleContainer;
+let app, containers = {};
 
 function initPixi() {
-  const container = document.getElementById('game-container');
-  const width = window.innerWidth;
-  const height = window.innerHeight;
+  screenW = window.innerWidth;
+  screenH = window.innerHeight;
 
   app = new PIXI.Application({
-    width,
-    height,
+    width: screenW,
+    height: screenH,
     backgroundColor: CONFIG.COLORS.BACKGROUND,
     antialias: true,
     resolution: Math.min(window.devicePixelRatio || 1, 2),
     autoDensity: true
   });
 
-  container.appendChild(app.view);
+  document.getElementById('game-container').appendChild(app.view);
 
-  bgContainer = new PIXI.Container();
-  gameContainer = new PIXI.Container();
-  particleContainer = new PIXI.Container();
-  hudContainer = new PIXI.Container();
-  overlayContainer = new PIXI.Container();
+  containers.bg = new PIXI.Container();
+  containers.game = new PIXI.Container();
+  containers.particles = new PIXI.Container();
+  containers.hud = new PIXI.Container();
+  containers.overlay = new PIXI.Container();
 
-  app.stage.addChild(bgContainer);
-  app.stage.addChild(gameContainer);
-  app.stage.addChild(particleContainer);
-  app.stage.addChild(hudContainer);
-  app.stage.addChild(overlayContainer);
+  app.stage.addChild(containers.bg);
+  app.stage.addChild(containers.game);
+  app.stage.addChild(containers.particles);
+  app.stage.addChild(containers.hud);
+  app.stage.addChild(containers.overlay);
 
-  window.addEventListener('resize', onResize);
-  window.addEventListener('orientationchange', () => setTimeout(onResize, 150));
-
+  window.addEventListener('resize', handleResize);
   calculateLayout();
+}
+
+function handleResize() {
+  screenW = window.innerWidth;
+  screenH = window.innerHeight;
+  app.renderer.resize(screenW, screenH);
+  calculateLayout();
+  render();
 }
 
 function calculateLayout() {
-  const width = window.innerWidth;
-  const height = window.innerHeight;
+  // Reserve space for HUD: 65px top, 90px bottom
+  const topHUD = 65;
+  const bottomHUD = 90;
+  const padding = 15;
 
-  // Calculate tile size to fit screen
-  const hudHeight = 140; // Top + bottom HUD
-  const padding = 20;
+  const availH = screenH - topHUD - bottomHUD - padding * 2;
+  const availW = screenW - padding * 2;
 
-  const availableWidth = width - padding * 2;
-  const availableHeight = height - hudHeight - padding;
+  // Calculate tile size to fit
+  const tileByHeight = Math.floor(availH / CONFIG.GRID_ROWS);
+  const tileByWidth = Math.floor(availW / CONFIG.GRID_COLS);
+  tileSize = Math.min(tileByHeight, tileByWidth, 50);
+  tileSize = Math.max(tileSize, 24);
 
-  const gridAspect = CONFIG.GRID_COLS / CONFIG.GRID_ROWS;
-  const screenAspect = availableWidth / availableHeight;
+  CONFIG.TILE_SIZE = tileSize;
 
-  if (screenAspect > gridAspect) {
-    // Height constrained
-    CONFIG.TILE_SIZE = Math.floor((availableHeight - CONFIG.GRID_ROWS * CONFIG.TILE_GAP) / CONFIG.GRID_ROWS);
-  } else {
-    // Width constrained
-    CONFIG.TILE_SIZE = Math.floor((availableWidth - CONFIG.GRID_COLS * CONFIG.TILE_GAP) / CONFIG.GRID_COLS);
-  }
+  const gridW = CONFIG.GRID_COLS * tileSize;
+  const gridH = CONFIG.GRID_ROWS * tileSize;
 
-  CONFIG.TILE_SIZE = Math.max(25, Math.min(CONFIG.TILE_SIZE, 55));
-
-  const gridWidth = CONFIG.GRID_COLS * (CONFIG.TILE_SIZE + CONFIG.TILE_GAP) - CONFIG.TILE_GAP;
-  const gridHeight = CONFIG.GRID_ROWS * (CONFIG.TILE_SIZE + CONFIG.TILE_GAP) - CONFIG.TILE_GAP;
-
-  gridOffsetX = Math.floor((width - gridWidth) / 2);
-  gridOffsetY = Math.floor(70 + (availableHeight - gridHeight) / 2);
-
-  scaleFactor = CONFIG.TILE_SIZE / CONFIG.BASE_TILE_SIZE;
-}
-
-function onResize() {
-  if (!app) return;
-
-  const width = window.innerWidth;
-  const height = window.innerHeight;
-
-  app.renderer.resize(width, height);
-  calculateLayout();
-
-  if (GameState.screen !== 'HOME') {
-    renderCurrentScreen();
-  }
+  gridX = Math.floor((screenW - gridW) / 2);
+  gridY = topHUD + Math.floor((availH - gridH) / 2) + padding;
 }
 
 // ============================================================================
 // AUDIO ENGINE
 // ============================================================================
 
-class AudioEngine {
-  constructor() {
-    this.initialized = false;
-    this.masterGain = null;
-    this.activeSequences = { BEAT: [], VIBE: [], MELODY: [] };
-  }
+const Audio = {
+  initialized: false,
+  sequences: { BEAT: [], VIBE: [], MELODY: [] },
+  synths: {},
+  sfx: {},
 
   async init() {
     if (this.initialized) return;
@@ -254,19 +214,17 @@ class AudioEngine {
     await Tone.start();
     Tone.Transport.bpm.value = CONFIG.BPM;
 
-    this.compressor = new Tone.Compressor(-20, 3).toDestination();
-    this.limiter = new Tone.Limiter(-1).connect(this.compressor);
-    this.masterGain = new Tone.Gain(0.8).connect(this.limiter);
+    const master = new Tone.Gain(0.8).toDestination();
 
-    this.categorySynths = {
-      BEAT: new Tone.MembraneSynth({ pitchDecay: 0.05, octaves: 4 }).connect(this.masterGain),
-      VIBE: new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'sine' }, envelope: { attack: 0.5, decay: 0.3, sustain: 0.8, release: 1 } }).connect(this.masterGain),
-      MELODY: new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'triangle' }, envelope: { attack: 0.02, decay: 0.1, sustain: 0.3, release: 0.4 } }).connect(this.masterGain)
+    this.synths = {
+      BEAT: new Tone.MembraneSynth().connect(master),
+      VIBE: new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'sine' }, envelope: { attack: 0.4, decay: 0.3, sustain: 0.8, release: 1 } }).connect(master),
+      MELODY: new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'triangle' }, envelope: { attack: 0.02, decay: 0.1, sustain: 0.3, release: 0.4 } }).connect(master)
     };
 
-    this.categorySynths.BEAT.volume.value = -6;
-    this.categorySynths.VIBE.volume.value = -12;
-    this.categorySynths.MELODY.volume.value = -8;
+    this.synths.BEAT.volume.value = -6;
+    this.synths.VIBE.volume.value = -12;
+    this.synths.MELODY.volume.value = -8;
 
     this.patterns = {
       BEAT: {
@@ -302,500 +260,316 @@ class AudioEngine {
     };
 
     this.sfx = {
-      collapse: new Tone.PolySynth(Tone.Synth).connect(this.masterGain),
-      combo: new Tone.PolySynth(Tone.Synth).connect(this.masterGain),
-      unlock: new Tone.PolySynth(Tone.Synth).connect(this.masterGain),
-      land: new Tone.MembraneSynth().connect(this.masterGain),
-      bomb: new Tone.NoiseSynth({ noise: { type: 'white' }, envelope: { attack: 0.01, decay: 0.3, sustain: 0 }}).connect(this.masterGain),
-      freeze: new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'sine' }}).connect(this.masterGain),
-      rotate: new Tone.Synth({ oscillator: { type: 'square' }, envelope: { attack: 0.001, decay: 0.05, sustain: 0, release: 0.05 }}).connect(this.masterGain)
+      collapse: new Tone.PolySynth(Tone.Synth).connect(master),
+      land: new Tone.MembraneSynth().connect(master),
+      rotate: new Tone.Synth({ oscillator: { type: 'square' }, envelope: { attack: 0.001, decay: 0.03, sustain: 0 }}).connect(master)
     };
-
-    this.sfx.collapse.set({ envelope: { attack: 0.01, decay: 0.2, sustain: 0.1, release: 0.3 } });
-    this.sfx.rotate.volume.value = -20;
+    this.sfx.rotate.volume.value = -18;
 
     this.initialized = true;
     Tone.Transport.start();
-  }
+  },
 
-  startLoop(category, loopId) {
-    const synth = this.categorySynths[category];
-    const pattern = this.patterns[category][loopId];
+  startLoop(cat, id) {
+    const synth = this.synths[cat];
+    const pattern = this.patterns[cat][id];
     if (!pattern) return;
 
-    let sequence;
-    if (category === 'VIBE') {
-      sequence = new Tone.Loop((time) => {
-        synth.triggerAttackRelease(pattern, '2n', time);
-        visualizerState.vibeWave = 1;
-      }, '1m');
-    } else if (category === 'BEAT') {
-      sequence = new Tone.Sequence((time, note) => {
-        if (note) {
-          synth.triggerAttackRelease(note, '16n', time);
-          visualizerState.beatPulse = 1;
-        }
-      }, pattern, '8n');
+    let seq;
+    if (cat === 'VIBE') {
+      seq = new Tone.Loop(t => synth.triggerAttackRelease(pattern, '2n', t), '1m');
     } else {
-      sequence = new Tone.Sequence((time, note) => {
-        if (note) {
-          synth.triggerAttackRelease(note, '8n', time);
-          visualizerState.melodyFlow = 1;
-        }
-      }, pattern, '8n');
+      seq = new Tone.Sequence((t, n) => { if (n) synth.triggerAttackRelease(n, '16n', t); }, pattern, '8n');
     }
+    seq.start(0);
+    this.sequences[cat].push({ id, seq });
+  },
 
-    sequence.start(0);
-    this.activeSequences[category].push({ loopId, sequence });
-  }
-
-  stopLoop(category, loopId) {
-    const index = this.activeSequences[category].findIndex(s => s.loopId === loopId);
-    if (index !== -1) {
-      this.activeSequences[category][index].sequence.stop();
-      this.activeSequences[category][index].sequence.dispose();
-      this.activeSequences[category].splice(index, 1);
+  stopLoop(cat, id) {
+    const idx = this.sequences[cat].findIndex(s => s.id === id);
+    if (idx !== -1) {
+      this.sequences[cat][idx].seq.stop();
+      this.sequences[cat][idx].seq.dispose();
+      this.sequences[cat].splice(idx, 1);
     }
-  }
+  },
 
-  stopAllLoops() {
-    for (const category of CATEGORY_TYPES) {
-      for (const seq of this.activeSequences[category]) {
-        seq.sequence.stop();
-        seq.sequence.dispose();
-      }
-      this.activeSequences[category] = [];
-    }
-  }
-
-  playCollapse(category, size) {
-    const chord = ['C', 'Eb', 'G'].map(n => n + (category === 'BEAT' ? '3' : category === 'VIBE' ? '4' : '5'));
-    this.sfx.collapse.triggerAttackRelease(chord, '8n', Tone.now(), 0.3 + (size * 0.05));
-  }
-
-  playCombo(level) {
-    const notes = ['C4', 'Eb4', 'G4', 'Bb4', 'C5'].slice(0, Math.min(level + 1, 5));
-    notes.forEach((note, i) => {
-      this.sfx.combo.triggerAttackRelease(note, '16n', Tone.now() + i * 0.05, 0.3);
+  stopAll() {
+    CATEGORY_TYPES.forEach(cat => {
+      this.sequences[cat].forEach(s => { s.seq.stop(); s.seq.dispose(); });
+      this.sequences[cat] = [];
     });
-  }
+  },
 
-  playUnlock() {
-    const notes = ['C5', 'Eb5', 'G5', 'C6'];
-    notes.forEach((note, i) => {
-      this.sfx.unlock.triggerAttackRelease(note, '8n', Tone.now() + i * 0.1, 0.3);
-    });
-  }
+  playCollapse(cat, size) {
+    const chord = ['C', 'Eb', 'G'].map(n => n + (cat === 'BEAT' ? '3' : cat === 'VIBE' ? '4' : '5'));
+    this.sfx.collapse.triggerAttackRelease(chord, '8n', Tone.now(), 0.25 + size * 0.04);
+  },
 
   playLand() {
-    this.sfx.land.triggerAttackRelease('C1', '32n', Tone.now(), 0.15);
-  }
+    this.sfx.land.triggerAttackRelease('C1', '32n', Tone.now(), 0.12);
+  },
 
   playRotate() {
-    this.sfx.rotate.triggerAttackRelease('C5', '32n', Tone.now());
+    this.sfx.rotate.triggerAttackRelease('C5', '32n');
   }
-
-  playBomb() {
-    this.sfx.bomb.triggerAttackRelease('8n', Tone.now(), 0.5);
-  }
-
-  playFreeze() {
-    this.sfx.freeze.triggerAttackRelease(['C6', 'G6', 'C7'], '4n', Tone.now(), 0.3);
-  }
-
-  setBPM(bpm) {
-    Tone.Transport.bpm.value = bpm;
-    GameState.bpm = bpm;
-  }
-
-  startPreview(category, loopId) {
-    this.stopPreview();
-    const synth = this.categorySynths[category];
-    const pattern = this.patterns[category][loopId];
-    if (!pattern) return;
-
-    if (category === 'VIBE') {
-      this.previewSequence = new Tone.Loop((time) => {
-        synth.triggerAttackRelease(pattern, '2n', time, 0.5);
-      }, '1m');
-    } else {
-      this.previewSequence = new Tone.Sequence((time, note) => {
-        if (note) synth.triggerAttackRelease(note, '8n', time, 0.5);
-      }, pattern, '8n');
-    }
-    this.previewSequence.start(0);
-  }
-
-  stopPreview() {
-    if (this.previewSequence) {
-      this.previewSequence.stop();
-      this.previewSequence.dispose();
-      this.previewSequence = null;
-    }
-  }
-}
-
-const audioEngine = new AudioEngine();
+};
 
 // ============================================================================
-// GRID & TILES
+// GRID
 // ============================================================================
 
 function initGrid() {
-  GameState.grid = [];
-  for (let row = 0; row < CONFIG.GRID_ROWS; row++) {
-    GameState.grid[row] = [];
-    for (let col = 0; col < CONFIG.GRID_COLS; col++) {
-      GameState.grid[row][col] = null;
-    }
+  Game.grid = [];
+  for (let r = 0; r < CONFIG.GRID_ROWS; r++) {
+    Game.grid[r] = new Array(CONFIG.GRID_COLS).fill(null);
   }
 }
 
-function getRandomTileType() {
-  const rand = Math.random();
-  if (rand < CONFIG.SPECIAL_CHANCE) {
-    return SPECIAL_TYPES[Math.floor(Math.random() * SPECIAL_TYPES.length)];
-  }
-  if (rand < CONFIG.SPECIAL_CHANCE + CONFIG.WILD_CHANCE) {
-    return 'WILD';
-  }
-  return CATEGORY_TYPES[Math.floor(Math.random() * CATEGORY_TYPES.length)];
+function getTileType() {
+  const r = Math.random();
+  if (r < CONFIG.SPECIAL_CHANCE) return SPECIAL_TYPES[Math.floor(Math.random() * 2)];
+  if (r < CONFIG.SPECIAL_CHANCE + CONFIG.WILD_CHANCE) return 'WILD';
+  return CATEGORY_TYPES[Math.floor(Math.random() * 3)];
 }
 
 function createPiece() {
   const shapes = [
-    [[0, 0], [1, 0]],
-    [[0, 0], [0, 1]],
-    [[0, 0], [1, 0], [2, 0]],
-    [[0, 0], [0, 1], [0, 2]],
-    [[0, 0], [1, 0], [0, 1]],
-    [[0, 0], [1, 0], [1, 1]],
-    [[0, 0], [1, 1]],
-    [[0, 0], [1, 0], [0, 1], [1, 1]]
+    [[0,0],[1,0]], [[0,0],[0,1]],
+    [[0,0],[1,0],[2,0]], [[0,0],[0,1],[0,2]],
+    [[0,0],[1,0],[0,1]], [[0,0],[1,0],[1,1]],
+    [[0,0],[1,1]], [[0,0],[1,0],[0,1],[1,1]]
   ];
-
   const shape = shapes[Math.floor(Math.random() * shapes.length)];
-  const tiles = shape.map(([dx, dy]) => ({
-    type: getRandomTileType(),
-    dx,
-    dy
-  }));
-
   return {
     x: Math.floor(CONFIG.GRID_COLS / 2) - 1,
     y: 0,
-    tiles
+    tiles: shape.map(([dx, dy]) => ({ type: getTileType(), dx, dy }))
   };
 }
 
-function rotatePiece(piece) {
-  if (!piece || piece.tiles.length < 2) return false;
+function rotatePiece() {
+  if (!Game.piece || Game.piece.tiles.length < 2) return false;
 
-  const originalTiles = piece.tiles.map(t => ({...t}));
-  const originalX = piece.x;
+  const orig = Game.piece.tiles.map(t => ({ ...t }));
+  const origX = Game.piece.x;
 
   // Rotate
-  piece.tiles = piece.tiles.map(tile => ({
-    ...tile,
-    dx: -tile.dy,
-    dy: tile.dx
-  }));
+  Game.piece.tiles = Game.piece.tiles.map(t => ({ ...t, dx: -t.dy, dy: t.dx }));
 
   // Normalize
-  const minDx = Math.min(...piece.tiles.map(t => t.dx));
-  const minDy = Math.min(...piece.tiles.map(t => t.dy));
-  piece.tiles = piece.tiles.map(tile => ({
-    ...tile,
-    dx: tile.dx - minDx,
-    dy: tile.dy - minDy
-  }));
+  const minDx = Math.min(...Game.piece.tiles.map(t => t.dx));
+  const minDy = Math.min(...Game.piece.tiles.map(t => t.dy));
+  Game.piece.tiles.forEach(t => { t.dx -= minDx; t.dy -= minDy; });
 
   // Wall kicks
-  const kicks = [0, -1, 1, -2, 2];
-  for (const kick of kicks) {
-    if (canPlacePiece(piece, piece.x + kick, piece.y)) {
-      piece.x += kick;
-      audioEngine.playRotate();
+  for (const kick of [0, -1, 1, -2, 2]) {
+    if (canPlace(Game.piece, Game.piece.x + kick, Game.piece.y)) {
+      Game.piece.x += kick;
+      Audio.playRotate();
       return true;
     }
   }
 
-  // Revert
-  piece.tiles = originalTiles;
-  piece.x = originalX;
+  Game.piece.tiles = orig;
+  Game.piece.x = origX;
   return false;
 }
 
-function canPlacePiece(piece, x, y) {
-  for (const tile of piece.tiles) {
-    const col = x + tile.dx;
-    const row = y + tile.dy;
-    if (col < 0 || col >= CONFIG.GRID_COLS || row >= CONFIG.GRID_ROWS) return false;
-    if (row >= 0 && GameState.grid[row][col] !== null) return false;
+function canPlace(piece, x, y) {
+  for (const t of piece.tiles) {
+    const c = x + t.dx, r = y + t.dy;
+    if (c < 0 || c >= CONFIG.GRID_COLS || r >= CONFIG.GRID_ROWS) return false;
+    if (r >= 0 && Game.grid[r][c]) return false;
   }
   return true;
 }
 
-function getGhostY(piece) {
-  let ghostY = piece.y;
-  while (canPlacePiece(piece, piece.x, ghostY + 1)) {
-    ghostY++;
-  }
-  return ghostY;
+function getGhostY() {
+  if (!Game.piece) return 0;
+  let y = Game.piece.y;
+  while (canPlace(Game.piece, Game.piece.x, y + 1)) y++;
+  return y;
 }
 
-function placePiece(piece) {
-  for (const tile of piece.tiles) {
-    const col = piece.x + tile.dx;
-    const row = piece.y + tile.dy;
-    if (row >= 0 && row < CONFIG.GRID_ROWS && col >= 0 && col < CONFIG.GRID_COLS) {
-      GameState.grid[row][col] = { type: tile.type };
+function placePiece() {
+  for (const t of Game.piece.tiles) {
+    const c = Game.piece.x + t.dx;
+    const r = Game.piece.y + t.dy;
+    if (r >= 0 && r < CONFIG.GRID_ROWS) {
+      Game.grid[r][c] = { type: t.type };
     }
   }
-
-  audioEngine.playLand();
+  Audio.playLand();
   applyGravity();
-  updateValidClusters();
-  checkDangerLine();
+  findClusters();
+  checkDanger();
 }
 
-function checkDangerLine() {
-  GameState.inDanger = false;
-  for (let col = 0; col < CONFIG.GRID_COLS; col++) {
-    if (GameState.grid[CONFIG.DANGER_LINE][col] !== null) {
-      GameState.inDanger = true;
+function applyGravity() {
+  for (let c = 0; c < CONFIG.GRID_COLS; c++) {
+    let write = CONFIG.GRID_ROWS - 1;
+    for (let r = CONFIG.GRID_ROWS - 1; r >= 0; r--) {
+      if (Game.grid[r][c]) {
+        if (r !== write) {
+          Game.grid[write][c] = Game.grid[r][c];
+          Game.grid[r][c] = null;
+        }
+        write--;
+      }
+    }
+  }
+}
+
+function checkDanger() {
+  Game.inDanger = false;
+  for (let c = 0; c < CONFIG.GRID_COLS; c++) {
+    if (Game.grid[CONFIG.DANGER_ROW][c]) {
+      Game.inDanger = true;
       break;
     }
   }
 }
 
 // ============================================================================
-// CLUSTER DETECTION
+// CLUSTERS
 // ============================================================================
 
-function findAllClusters() {
+function findClusters() {
   const visited = new Set();
-  const clusters = [];
+  Game.clusters = [];
 
-  for (let row = 0; row < CONFIG.GRID_ROWS; row++) {
-    for (let col = 0; col < CONFIG.GRID_COLS; col++) {
-      const key = `${row},${col}`;
-      if (visited.has(key) || !GameState.grid[row][col]) continue;
-
-      const cluster = findClusterAt(row, col, new Set());
-      if (cluster.tiles.length >= CONFIG.CLUSTER_MIN) {
-        clusters.push(cluster);
+  for (let r = 0; r < CONFIG.GRID_ROWS; r++) {
+    for (let c = 0; c < CONFIG.GRID_COLS; c++) {
+      const key = `${r},${c}`;
+      if (visited.has(key) || !Game.grid[r][c]) continue;
+      if (SPECIAL_TYPES.includes(Game.grid[r][c].type)) {
+        visited.add(key);
+        continue;
       }
-      cluster.tiles.forEach(t => visited.add(`${t.row},${t.col}`));
+
+      const cluster = floodFill(r, c, visited);
+      if (cluster.tiles.length >= CONFIG.CLUSTER_MIN) {
+        Game.clusters.push(cluster);
+      }
     }
   }
-
-  return clusters;
 }
 
-function findClusterAt(startRow, startCol, visited) {
-  const tile = GameState.grid[startRow][startCol];
-  if (!tile) return { tiles: [], type: null, hasWild: false };
-
-  if (SPECIAL_TYPES.includes(tile.type)) {
-    return { tiles: [{ row: startRow, col: startCol, type: tile.type }], type: tile.type, hasWild: false };
-  }
-
-  const cluster = {
-    tiles: [],
-    type: tile.type === 'WILD' ? null : tile.type,
-    hasWild: tile.type === 'WILD'
-  };
-  const queue = [[startRow, startCol]];
+function floodFill(startR, startC, visited) {
+  const tile = Game.grid[startR][startC];
+  const cluster = { tiles: [], type: tile.type === 'WILD' ? null : tile.type };
+  const queue = [[startR, startC]];
 
   while (queue.length > 0) {
-    const [row, col] = queue.shift();
-    const key = `${row},${col}`;
-
+    const [r, c] = queue.shift();
+    const key = `${r},${c}`;
     if (visited.has(key)) continue;
 
-    const currentTile = GameState.grid[row][col];
-    if (!currentTile || SPECIAL_TYPES.includes(currentTile.type)) continue;
+    const cell = Game.grid[r][c];
+    if (!cell || SPECIAL_TYPES.includes(cell.type)) continue;
 
-    const isWild = currentTile.type === 'WILD';
-    const matchesType = isWild || cluster.type === null || currentTile.type === cluster.type;
-
-    if (!matchesType) continue;
+    const isWild = cell.type === 'WILD';
+    const matches = isWild || cluster.type === null || cell.type === cluster.type;
+    if (!matches) continue;
 
     visited.add(key);
-    cluster.tiles.push({ row, col, type: currentTile.type });
+    cluster.tiles.push({ r, c, type: cell.type });
+    if (!isWild && !cluster.type) cluster.type = cell.type;
 
-    if (isWild) cluster.hasWild = true;
-    if (!isWild && cluster.type === null) cluster.type = currentTile.type;
-
-    const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
-    for (const [dr, dc] of directions) {
-      const newRow = row + dr;
-      const newCol = col + dc;
-      if (newRow >= 0 && newRow < CONFIG.GRID_ROWS && newCol >= 0 && newCol < CONFIG.GRID_COLS) {
-        const newKey = `${newRow},${newCol}`;
-        if (!visited.has(newKey) && GameState.grid[newRow][newCol]) {
-          const newTile = GameState.grid[newRow][newCol];
-          if (!SPECIAL_TYPES.includes(newTile.type)) {
-            const newIsWild = newTile.type === 'WILD';
-            const newMatches = newIsWild || cluster.type === null || newTile.type === cluster.type;
-            if (newMatches) queue.push([newRow, newCol]);
-          }
+    [[r-1,c],[r+1,c],[r,c-1],[r,c+1]].forEach(([nr, nc]) => {
+      if (nr >= 0 && nr < CONFIG.GRID_ROWS && nc >= 0 && nc < CONFIG.GRID_COLS) {
+        const nkey = `${nr},${nc}`;
+        if (!visited.has(nkey) && Game.grid[nr][nc] && !SPECIAL_TYPES.includes(Game.grid[nr][nc].type)) {
+          const nWild = Game.grid[nr][nc].type === 'WILD';
+          const nMatch = nWild || cluster.type === null || Game.grid[nr][nc].type === cluster.type;
+          if (nMatch) queue.push([nr, nc]);
         }
       }
-    }
+    });
   }
 
   return cluster;
 }
 
-function updateValidClusters() {
-  GameState.validClusters = findAllClusters();
+function getClusterAt(r, c) {
+  return Game.clusters.find(cl => cl.tiles.some(t => t.r === r && t.c === c));
 }
 
-function getClusterAtPosition(row, col) {
-  for (const cluster of GameState.validClusters) {
-    if (cluster.tiles.some(t => t.row === row && t.col === col)) {
-      return cluster;
-    }
-  }
-  return null;
-}
+async function collapseAt(r, c) {
+  if (Game.isCollapsing) return;
 
-// Tap to collapse - NO chain reactions
-async function collapseClusterAt(row, col) {
-  if (GameState.isCollapsing) return;
-
-  const tile = GameState.grid[row][col];
-  if (!tile) return;
+  const cell = Game.grid[r][c];
+  if (!cell) return;
 
   // Special tiles
-  if (tile.type === 'BOMB') {
-    GameState.isCollapsing = true;
-    await triggerBomb(row, col);
-    GameState.isCollapsing = false;
+  if (cell.type === 'BOMB') {
+    Game.isCollapsing = true;
+    for (let dr = -1; dr <= 1; dr++) {
+      for (let dc = -1; dc <= 1; dc++) {
+        const nr = r + dr, nc = c + dc;
+        if (nr >= 0 && nr < CONFIG.GRID_ROWS && nc >= 0 && nc < CONFIG.GRID_COLS && Game.grid[nr][nc]) {
+          createParticles(nr, nc, 'BOMB');
+          Game.grid[nr][nc] = null;
+          Game.score += 5;
+        }
+      }
+    }
+    triggerShake(8);
+    render();
+    await sleep(150);
     applyGravity();
-    updateValidClusters();
-    checkDangerLine();
-    renderGame();
+    findClusters();
+    checkDanger();
+    Game.isCollapsing = false;
+    render();
     return;
   }
 
-  if (tile.type === 'FREEZE') {
-    GameState.isCollapsing = true;
-    await triggerFreeze(row, col);
-    GameState.isCollapsing = false;
+  if (cell.type === 'FREEZE') {
+    Game.isCollapsing = true;
+    Game.grid[r][c] = null;
+    createParticles(r, c, 'FREEZE');
+    Game.frozen = true;
+    Game.freezeEnd = Date.now() + 5000;
+    render();
+    await sleep(100);
     applyGravity();
-    updateValidClusters();
-    checkDangerLine();
-    renderGame();
+    findClusters();
+    checkDanger();
+    Game.isCollapsing = false;
+    render();
     return;
   }
 
-  const cluster = getClusterAtPosition(row, col);
+  const cluster = getClusterAt(r, c);
   if (!cluster || cluster.tiles.length < CONFIG.CLUSTER_MIN) return;
 
-  GameState.isCollapsing = true;
+  Game.isCollapsing = true;
 
-  // Clear cluster
+  // Collapse
   for (const t of cluster.tiles) {
-    createCollapseParticles(t.row, t.col, cluster.type || 'WILD');
-    GameState.grid[t.row][t.col] = null;
+    createParticles(t.r, t.c, cluster.type || 'WILD');
+    Game.grid[t.r][t.c] = null;
   }
 
-  // Combo system
-  const now = Date.now();
-  if (now - GameState.comboTimer < 2000) {
-    GameState.combo++;
-    audioEngine.playCombo(GameState.combo);
-    addComboPopup(GameState.combo);
-  } else {
-    GameState.combo = 1;
-  }
-  GameState.comboTimer = now;
-
-  const points = calculatePoints(cluster.tiles.length, GameState.combo);
-  GameState.score += points;
-
+  const pts = cluster.tiles.length * 3 + Math.max(0, cluster.tiles.length - 3) * 2;
+  Game.score += pts;
   if (cluster.type && cluster.type !== 'WILD') {
-    GameState.resources[cluster.type] += points;
+    Game.resources[cluster.type] += pts;
   }
 
-  audioEngine.playCollapse(cluster.type || 'BEAT', cluster.tiles.length);
+  Audio.playCollapse(cluster.type || 'BEAT', cluster.tiles.length);
+  if (cluster.tiles.length >= 5) triggerShake(cluster.tiles.length);
 
-  if (cluster.tiles.length >= 5) {
-    triggerScreenShake(cluster.tiles.length);
-  }
-
-  renderGame();
-  await sleep(CONFIG.COLLAPSE_DELAY);
+  render();
+  await sleep(120);
 
   applyGravity();
-
-  GameState.isCollapsing = false;
-  updateValidClusters();
-  checkDangerLine();
-  renderGame();
-}
-
-function addComboPopup(level) {
-  GameState.comboPopups.push({
-    text: `${level}x`,
-    x: app.screen.width / 2,
-    y: app.screen.height / 2 - 50,
-    life: 1,
-    vy: -2
-  });
-}
-
-async function triggerBomb(row, col) {
-  audioEngine.playBomb();
-
-  for (let dr = -1; dr <= 1; dr++) {
-    for (let dc = -1; dc <= 1; dc++) {
-      const r = row + dr;
-      const c = col + dc;
-      if (r >= 0 && r < CONFIG.GRID_ROWS && c >= 0 && c < CONFIG.GRID_COLS && GameState.grid[r][c]) {
-        createCollapseParticles(r, c, 'BOMB');
-        GameState.grid[r][c] = null;
-        GameState.score += 5;
-      }
-    }
-  }
-
-  triggerScreenShake(10);
-  renderGame();
-  await sleep(200);
-}
-
-async function triggerFreeze(row, col) {
-  audioEngine.playFreeze();
-  GameState.grid[row][col] = null;
-  createCollapseParticles(row, col, 'FREEZE');
-  GameState.frozen = true;
-  GameState.freezeEndTime = Date.now() + 5000;
-  renderGame();
-  await sleep(100);
-}
-
-function calculatePoints(size, combo) {
-  const base = size * 3 + Math.max(0, (size - 3) * 2);
-  return Math.floor(base * (1 + (combo - 1) * 0.25));
-}
-
-function applyGravity() {
-  for (let col = 0; col < CONFIG.GRID_COLS; col++) {
-    let writeRow = CONFIG.GRID_ROWS - 1;
-    for (let row = CONFIG.GRID_ROWS - 1; row >= 0; row--) {
-      if (GameState.grid[row][col] !== null) {
-        if (row !== writeRow) {
-          GameState.grid[writeRow][col] = GameState.grid[row][col];
-          GameState.grid[row][col] = null;
-        }
-        writeRow--;
-      }
-    }
-  }
+  findClusters();
+  checkDanger();
+  Game.isCollapsing = false;
+  render();
 }
 
 // ============================================================================
@@ -804,26 +578,23 @@ function applyGravity() {
 
 const particles = [];
 
-function createCollapseParticles(row, col, type) {
+function createParticles(r, c, type) {
   const color = CONFIG.COLORS[type] || CONFIG.COLORS.WILD;
-  const tileUnit = CONFIG.TILE_SIZE + CONFIG.TILE_GAP;
-  const x = gridOffsetX + col * tileUnit + CONFIG.TILE_SIZE / 2;
-  const y = gridOffsetY + row * tileUnit + CONFIG.TILE_SIZE / 2;
+  const x = gridX + c * tileSize + tileSize / 2;
+  const y = gridY + r * tileSize + tileSize / 2;
 
-  for (let i = 0; i < 10; i++) {
-    const particle = new PIXI.Graphics();
-    particle.beginFill(color);
-    particle.drawCircle(0, 0, 2 + Math.random() * 4);
-    particle.endFill();
-    particle.x = x;
-    particle.y = y;
-    particle.vx = (Math.random() - 0.5) * 10;
-    particle.vy = (Math.random() - 0.5) * 10 - 3;
-    particle.life = 1;
-    particle.decay = 0.025 + Math.random() * 0.02;
-
-    particleContainer.addChild(particle);
-    particles.push(particle);
+  for (let i = 0; i < 8; i++) {
+    const p = new PIXI.Graphics();
+    p.beginFill(color);
+    p.drawCircle(0, 0, 2 + Math.random() * 3);
+    p.endFill();
+    p.x = x; p.y = y;
+    p.vx = (Math.random() - 0.5) * 8;
+    p.vy = (Math.random() - 0.5) * 8 - 3;
+    p.life = 1;
+    p.decay = 0.03 + Math.random() * 0.02;
+    containers.particles.addChild(p);
+    particles.push(p);
   }
 }
 
@@ -836,469 +607,322 @@ function updateParticles() {
     p.life -= p.decay;
     p.alpha = p.life;
     p.scale.set(p.life);
-
     if (p.life <= 0) {
-      particleContainer.removeChild(p);
+      containers.particles.removeChild(p);
       particles.splice(i, 1);
     }
   }
-
-  // Combo popups
-  for (let i = GameState.comboPopups.length - 1; i >= 0; i--) {
-    const popup = GameState.comboPopups[i];
-    popup.y += popup.vy;
-    popup.life -= 0.02;
-    if (popup.life <= 0) {
-      GameState.comboPopups.splice(i, 1);
-    }
-  }
 }
 
-function triggerScreenShake(intensity) {
-  GameState.screenShake = { active: true, intensity: Math.min(intensity * 2, 12), startTime: Date.now() };
+function triggerShake(intensity) {
+  Game.shake = { active: true, intensity: Math.min(intensity * 1.5, 10), start: Date.now() };
 }
 
-function updateScreenShake() {
-  if (!GameState.screenShake.active) return;
-
-  const elapsed = Date.now() - GameState.screenShake.startTime;
-  if (elapsed > 250) {
-    GameState.screenShake.active = false;
-    gameContainer.x = 0;
-    gameContainer.y = 0;
+function updateShake() {
+  if (!Game.shake.active) return;
+  const elapsed = Date.now() - Game.shake.start;
+  if (elapsed > 200) {
+    Game.shake.active = false;
+    containers.game.x = 0;
+    containers.game.y = 0;
     return;
   }
-
-  const intensity = GameState.screenShake.intensity * (1 - elapsed / 250);
-  gameContainer.x = (Math.random() - 0.5) * intensity;
-  gameContainer.y = (Math.random() - 0.5) * intensity;
-}
-
-// ============================================================================
-// BACKGROUND VISUALIZATION
-// ============================================================================
-
-function renderBackground() {
-  bgContainer.removeChildren();
-
-  const width = app.screen.width;
-  const height = app.screen.height;
-  const time = Date.now() / 1000;
-
-  const bg = new PIXI.Graphics();
-  bg.beginFill(CONFIG.COLORS.BACKGROUND);
-  bg.drawRect(0, 0, width, height);
-  bg.endFill();
-
-  // Danger tint
-  if (GameState.inDanger) {
-    const dangerPulse = 0.1 + Math.sin(time * 4) * 0.05;
-    bg.beginFill(CONFIG.COLORS.DANGER, dangerPulse);
-    bg.drawRect(0, 0, width, height);
-    bg.endFill();
-  }
-
-  bgContainer.addChild(bg);
-
-  const hasBeat = GameState.activeLayers.BEAT.length > 0;
-  const hasVibe = GameState.activeLayers.VIBE.length > 0;
-  const hasMelody = GameState.activeLayers.MELODY.length > 0;
-
-  if (!hasBeat && !hasVibe && !hasMelody) return;
-
-  const visuals = new PIXI.Graphics();
-
-  if (hasBeat) {
-    const pulse = visualizerState.beatPulse;
-    for (let i = 0; i < 3; i++) {
-      const radius = 60 + i * 70 + pulse * 80;
-      const alpha = (0.12 - i * 0.03) * (0.5 + pulse * 0.5);
-      visuals.lineStyle(2, CONFIG.COLORS.BEAT, alpha);
-      visuals.drawCircle(width / 2, gridOffsetY + (CONFIG.GRID_ROWS * (CONFIG.TILE_SIZE + CONFIG.TILE_GAP)) / 2, radius);
-    }
-  }
-
-  if (hasVibe) {
-    const wave = visualizerState.vibeWave;
-    visuals.lineStyle(1.5, CONFIG.COLORS.VIBE, 0.1 + wave * 0.1);
-    for (let w = 0; w < 2; w++) {
-      visuals.moveTo(0, height * (0.3 + w * 0.25));
-      for (let x = 0; x <= width; x += 15) {
-        const y = height * (0.3 + w * 0.25) + Math.sin(x * 0.015 + time * (1.2 + w * 0.2)) * (15 + wave * 20);
-        visuals.lineTo(x, y);
-      }
-    }
-  }
-
-  if (hasMelody) {
-    const flow = visualizerState.melodyFlow;
-    for (let i = 0; i < 4; i++) {
-      const offset = (time * 40 + i * 120) % (width + height);
-      visuals.lineStyle(1, CONFIG.COLORS.MELODY, 0.08 + flow * 0.08);
-      visuals.moveTo(offset, 0);
-      visuals.lineTo(offset - height * 0.7, height);
-    }
-  }
-
-  bgContainer.addChild(visuals);
-
-  visualizerState.beatPulse *= 0.9;
-  visualizerState.vibeWave *= 0.93;
-  visualizerState.melodyFlow *= 0.92;
+  const i = Game.shake.intensity * (1 - elapsed / 200);
+  containers.game.x = (Math.random() - 0.5) * i;
+  containers.game.y = (Math.random() - 0.5) * i;
 }
 
 // ============================================================================
 // RENDERING
 // ============================================================================
 
-function renderCurrentScreen() {
-  bgContainer.removeChildren();
-  gameContainer.removeChildren();
-  hudContainer.removeChildren();
-  overlayContainer.removeChildren();
+function render() {
+  Object.values(containers).forEach(c => c.removeChildren());
 
-  switch (GameState.screen) {
-    case 'HOME': renderHomeScreen(); break;
-    case 'PLAY': renderBackground(); renderGame(); renderHUD(); break;
-    case 'PAUSE': renderBackground(); renderGame(); renderHUD(); renderPauseOverlay(); break;
-    case 'MIX': renderMixScreen(); break;
-    case 'SETTINGS': renderSettingsScreen(); break;
+  switch (Game.screen) {
+    case 'HOME': renderHome(); break;
+    case 'PLAY': renderBg(); renderGameplay(); renderHUD(); break;
+    case 'PAUSE': renderBg(); renderGameplay(); renderHUD(); renderPause(); break;
+    case 'MIX': renderMix(); break;
+    case 'SETTINGS': renderSettings(); break;
   }
 }
 
-function renderHomeScreen() {
-  const width = app.screen.width;
-  const height = app.screen.height;
-
-  const bg = new PIXI.Graphics();
-  bg.beginFill(CONFIG.COLORS.BACKGROUND);
-  bg.drawRect(0, 0, width, height);
-  bg.endFill();
-  overlayContainer.addChild(bg);
-
-  const time = Date.now() / 1000;
-  const circles = new PIXI.Graphics();
-  for (let i = 0; i < 4; i++) {
-    const radius = 80 + i * 50 + Math.sin(time + i) * 15;
-    circles.lineStyle(2, [CONFIG.COLORS.BEAT, CONFIG.COLORS.VIBE, CONFIG.COLORS.MELODY][i % 3], 0.1);
-    circles.drawCircle(width / 2, height * 0.32, radius);
-  }
-  overlayContainer.addChild(circles);
+function renderHome() {
+  const g = new PIXI.Graphics();
+  g.beginFill(CONFIG.COLORS.BACKGROUND);
+  g.drawRect(0, 0, screenW, screenH);
+  g.endFill();
+  containers.overlay.addChild(g);
 
   const title = new PIXI.Text('SONGSUGAR', {
-    fontFamily: 'system-ui',
-    fontSize: Math.min(44, width * 0.11),
-    fontWeight: 'bold',
-    fill: [CONFIG.COLORS.BEAT, CONFIG.COLORS.VIBE, CONFIG.COLORS.MELODY],
-    fillGradientType: 1,
-    fillGradientStops: [0, 0.5, 1]
+    fontFamily: 'system-ui', fontSize: Math.min(42, screenW * 0.1),
+    fontWeight: 'bold', fill: [CONFIG.COLORS.BEAT, CONFIG.COLORS.VIBE, CONFIG.COLORS.MELODY],
+    fillGradientType: 1, fillGradientStops: [0, 0.5, 1]
   });
   title.anchor.set(0.5);
-  title.x = width / 2;
-  title.y = height * 0.18;
-  overlayContainer.addChild(title);
+  title.x = screenW / 2;
+  title.y = screenH * 0.22;
+  containers.overlay.addChild(title);
 
-  const subtitle = new PIXI.Text('Tap clusters to clear\nSwipe to move • Tap piece to rotate', {
-    fontFamily: 'system-ui',
-    fontSize: Math.min(14, width * 0.035),
-    fill: CONFIG.COLORS.TEXT_DIM,
-    align: 'center'
+  const sub = new PIXI.Text('Tap clusters to clear\nTap piece to rotate', {
+    fontFamily: 'system-ui', fontSize: 14, fill: CONFIG.COLORS.TEXT_DIM, align: 'center'
   });
-  subtitle.anchor.set(0.5);
-  subtitle.x = width / 2;
-  subtitle.y = height * 0.27;
-  overlayContainer.addChild(subtitle);
+  sub.anchor.set(0.5);
+  sub.x = screenW / 2;
+  sub.y = screenH * 0.32;
+  containers.overlay.addChild(sub);
 
-  const startBtn = createButton('START', width / 2, height * 0.42, startGame, 180, 55);
-  overlayContainer.addChild(startBtn);
-
-  const settingsBtn = createButton('SETTINGS', width / 2, height * 0.52, () => setScreen('SETTINGS'), 150, 48);
-  overlayContainer.addChild(settingsBtn);
+  containers.overlay.addChild(makeButton('START', screenW / 2, screenH * 0.45, startGame, 170, 55));
+  containers.overlay.addChild(makeButton('SETTINGS', screenW / 2, screenH * 0.55, () => setScreen('SETTINGS'), 140, 45));
 }
 
-function renderGame() {
-  gameContainer.removeChildren();
+function renderBg() {
+  const g = new PIXI.Graphics();
+  g.beginFill(CONFIG.COLORS.BACKGROUND);
+  g.drawRect(0, 0, screenW, screenH);
+  g.endFill();
 
-  const width = app.screen.width;
-  const tileUnit = CONFIG.TILE_SIZE + CONFIG.TILE_GAP;
-  const gridWidth = CONFIG.GRID_COLS * tileUnit - CONFIG.TILE_GAP;
-  const gridHeight = CONFIG.GRID_ROWS * tileUnit - CONFIG.TILE_GAP;
+  // Danger tint
+  if (Game.inDanger) {
+    const pulse = 0.08 + Math.sin(Date.now() / 120) * 0.04;
+    g.beginFill(CONFIG.COLORS.DANGER, pulse);
+    g.drawRect(0, 0, screenW, screenH);
+    g.endFill();
+  }
+
+  containers.bg.addChild(g);
+}
+
+function renderGameplay() {
+  const g = new PIXI.Graphics();
+  const gridW = CONFIG.GRID_COLS * tileSize;
+  const gridH = CONFIG.GRID_ROWS * tileSize;
 
   // Grid background
-  const gridBg = new PIXI.Graphics();
-  gridBg.beginFill(CONFIG.COLORS.HUD_BG, 0.5);
-  gridBg.drawRoundedRect(gridOffsetX - 8, gridOffsetY - 8, gridWidth + 16, gridHeight + 16, 10);
-  gridBg.endFill();
-  gameContainer.addChild(gridBg);
+  g.beginFill(CONFIG.COLORS.HUD_BG, 0.5);
+  g.drawRoundedRect(gridX - 6, gridY - 6, gridW + 12, gridH + 12, 8);
+  g.endFill();
 
   // Danger line
-  const dangerY = gridOffsetY + CONFIG.DANGER_LINE * tileUnit - CONFIG.TILE_GAP / 2;
-  const dangerLine = new PIXI.Graphics();
-  const dangerAlpha = GameState.inDanger ? 0.4 + Math.sin(Date.now() / 100) * 0.2 : 0.15;
-  dangerLine.lineStyle(2, CONFIG.COLORS.DANGER, dangerAlpha);
-  dangerLine.moveTo(gridOffsetX, dangerY);
-  dangerLine.lineTo(gridOffsetX + gridWidth, dangerY);
-  gameContainer.addChild(dangerLine);
+  const dangerY = gridY + CONFIG.DANGER_ROW * tileSize;
+  const dangerAlpha = Game.inDanger ? 0.5 + Math.sin(Date.now() / 100) * 0.3 : 0.2;
+  g.lineStyle(2, CONFIG.COLORS.DANGER, dangerAlpha);
+  g.moveTo(gridX, dangerY);
+  g.lineTo(gridX + gridW, dangerY);
+  g.lineStyle(0);
 
-  // Build cluster map
-  const clusterMap = new Map();
-  const clusterTileSet = new Set();
-  for (const cluster of GameState.validClusters) {
-    if (cluster.tiles.length >= CONFIG.CLUSTER_MIN) {
-      for (const tile of cluster.tiles) {
-        const key = `${tile.row},${tile.col}`;
-        clusterMap.set(key, cluster);
-        clusterTileSet.add(key);
+  // Build cluster tile set
+  const clusterTiles = new Map();
+  for (const cl of Game.clusters) {
+    if (cl.tiles.length >= CONFIG.CLUSTER_MIN) {
+      for (const t of cl.tiles) {
+        clusterTiles.set(`${t.r},${t.c}`, cl);
       }
     }
   }
 
-  const gridGraphics = new PIXI.Graphics();
+  // Draw cluster backgrounds (SOLID FILL, NO GAPS)
+  for (const cl of Game.clusters) {
+    if (cl.tiles.length >= CONFIG.CLUSTER_MIN) {
+      const color = CONFIG.COLORS[cl.type] || CONFIG.COLORS.WILD;
+      g.beginFill(color, 0.35);
 
-  // Draw cluster fills (merged, no gaps)
-  for (const cluster of GameState.validClusters) {
-    if (cluster.tiles.length >= CONFIG.CLUSTER_MIN) {
-      const color = CONFIG.COLORS[cluster.type] || CONFIG.COLORS.WILD;
-      const pulseAlpha = 0.25 + Math.sin(Date.now() / 180) * 0.1;
-
-      // Draw filled background for entire cluster
-      gridGraphics.beginFill(color, pulseAlpha);
-      for (const tile of cluster.tiles) {
-        const x = gridOffsetX + tile.col * tileUnit - 1;
-        const y = gridOffsetY + tile.row * tileUnit - 1;
-        gridGraphics.drawRect(x, y, CONFIG.TILE_SIZE + 2, CONFIG.TILE_SIZE + 2);
+      // Draw as single connected region - fill entire area
+      for (const t of cl.tiles) {
+        const x = gridX + t.c * tileSize;
+        const y = gridY + t.r * tileSize;
+        // Draw slightly larger to eliminate gaps
+        g.drawRect(x - 1, y - 1, tileSize + 2, tileSize + 2);
       }
-      gridGraphics.endFill();
+      g.endFill();
 
       // Draw outline
-      gridGraphics.lineStyle(3, color, 0.9);
-      for (const tile of cluster.tiles) {
-        const x = gridOffsetX + tile.col * tileUnit;
-        const y = gridOffsetY + tile.row * tileUnit;
+      g.lineStyle(3, color, 0.95);
+      for (const t of cl.tiles) {
+        const x = gridX + t.c * tileSize;
+        const y = gridY + t.r * tileSize;
 
-        const hasTop = cluster.tiles.some(t => t.row === tile.row - 1 && t.col === tile.col);
-        const hasBottom = cluster.tiles.some(t => t.row === tile.row + 1 && t.col === tile.col);
-        const hasLeft = cluster.tiles.some(t => t.row === tile.row && t.col === tile.col - 1);
-        const hasRight = cluster.tiles.some(t => t.row === tile.row && t.col === tile.col + 1);
+        const hasTop = cl.tiles.some(o => o.r === t.r - 1 && o.c === t.c);
+        const hasBot = cl.tiles.some(o => o.r === t.r + 1 && o.c === t.c);
+        const hasLeft = cl.tiles.some(o => o.r === t.r && o.c === t.c - 1);
+        const hasRight = cl.tiles.some(o => o.r === t.r && o.c === t.c + 1);
 
-        if (!hasTop) {
-          gridGraphics.moveTo(x - 1, y - 1);
-          gridGraphics.lineTo(x + CONFIG.TILE_SIZE + 1, y - 1);
-        }
-        if (!hasBottom) {
-          gridGraphics.moveTo(x - 1, y + CONFIG.TILE_SIZE + 1);
-          gridGraphics.lineTo(x + CONFIG.TILE_SIZE + 1, y + CONFIG.TILE_SIZE + 1);
-        }
-        if (!hasLeft) {
-          gridGraphics.moveTo(x - 1, y - 1);
-          gridGraphics.lineTo(x - 1, y + CONFIG.TILE_SIZE + 1);
-        }
-        if (!hasRight) {
-          gridGraphics.moveTo(x + CONFIG.TILE_SIZE + 1, y - 1);
-          gridGraphics.lineTo(x + CONFIG.TILE_SIZE + 1, y + CONFIG.TILE_SIZE + 1);
-        }
+        if (!hasTop) { g.moveTo(x, y); g.lineTo(x + tileSize, y); }
+        if (!hasBot) { g.moveTo(x, y + tileSize); g.lineTo(x + tileSize, y + tileSize); }
+        if (!hasLeft) { g.moveTo(x, y); g.lineTo(x, y + tileSize); }
+        if (!hasRight) { g.moveTo(x + tileSize, y); g.lineTo(x + tileSize, y + tileSize); }
       }
-      gridGraphics.lineStyle(0);
+      g.lineStyle(0);
     }
   }
 
-  // Draw empty cells and tiles
-  for (let row = 0; row < CONFIG.GRID_ROWS; row++) {
-    for (let col = 0; col < CONFIG.GRID_COLS; col++) {
-      const x = gridOffsetX + col * tileUnit;
-      const y = gridOffsetY + row * tileUnit;
+  // Draw tiles
+  for (let r = 0; r < CONFIG.GRID_ROWS; r++) {
+    for (let c = 0; c < CONFIG.GRID_COLS; c++) {
+      const x = gridX + c * tileSize;
+      const y = gridY + r * tileSize;
 
       // Empty cell
-      if (!GameState.grid[row][col]) {
-        gridGraphics.beginFill(0x1a1a2e, 0.25);
-        gridGraphics.drawRoundedRect(x, y, CONFIG.TILE_SIZE, CONFIG.TILE_SIZE, 5);
-        gridGraphics.endFill();
+      if (!Game.grid[r][c]) {
+        g.beginFill(0x1a1a2e, 0.25);
+        g.drawRoundedRect(x + 1, y + 1, tileSize - 2, tileSize - 2, 4);
+        g.endFill();
+        continue;
       }
 
-      const tile = GameState.grid[row][col];
-      if (tile) {
-        const color = CONFIG.COLORS[tile.type];
+      const tile = Game.grid[r][c];
+      const color = CONFIG.COLORS[tile.type];
 
-        // Main tile
-        gridGraphics.beginFill(color);
-        gridGraphics.drawRoundedRect(x, y, CONFIG.TILE_SIZE, CONFIG.TILE_SIZE, 5);
-        gridGraphics.endFill();
+      // Tile
+      g.beginFill(color);
+      g.drawRoundedRect(x + 1, y + 1, tileSize - 2, tileSize - 2, 4);
+      g.endFill();
 
-        // Highlight
-        gridGraphics.beginFill(0xffffff, 0.28);
-        gridGraphics.drawRoundedRect(x + 2, y + 2, CONFIG.TILE_SIZE - 4, CONFIG.TILE_SIZE * 0.35, 3);
-        gridGraphics.endFill();
+      // Highlight
+      g.beginFill(0xffffff, 0.25);
+      g.drawRoundedRect(x + 3, y + 3, tileSize - 6, tileSize * 0.3, 2);
+      g.endFill();
 
-        // Special icons
-        const cx = x + CONFIG.TILE_SIZE / 2;
-        const cy = y + CONFIG.TILE_SIZE / 2;
-        const iconSize = CONFIG.TILE_SIZE * 0.25;
+      // Icons for special tiles
+      const cx = x + tileSize / 2;
+      const cy = y + tileSize / 2;
+      const iconR = tileSize * 0.22;
 
-        if (tile.type === 'WILD') {
-          // Star
-          gridGraphics.beginFill(0xffffff, 0.85);
-          for (let i = 0; i < 5; i++) {
-            const angle = (i * 72 - 90) * Math.PI / 180;
-            const innerAngle = ((i * 72) + 36 - 90) * Math.PI / 180;
-            if (i === 0) gridGraphics.moveTo(cx + Math.cos(angle) * iconSize, cy + Math.sin(angle) * iconSize);
-            else gridGraphics.lineTo(cx + Math.cos(angle) * iconSize, cy + Math.sin(angle) * iconSize);
-            gridGraphics.lineTo(cx + Math.cos(innerAngle) * iconSize * 0.4, cy + Math.sin(innerAngle) * iconSize * 0.4);
-          }
-          gridGraphics.closePath();
-          gridGraphics.endFill();
-        } else if (tile.type === 'BOMB') {
-          gridGraphics.beginFill(0x000000, 0.6);
-          gridGraphics.drawCircle(cx, cy, iconSize * 0.8);
-          gridGraphics.endFill();
-          gridGraphics.lineStyle(2, 0xffaa00);
-          gridGraphics.moveTo(cx, cy - iconSize * 0.6);
-          gridGraphics.lineTo(cx + iconSize * 0.4, cy - iconSize);
-          gridGraphics.lineStyle(0);
-        } else if (tile.type === 'FREEZE') {
-          gridGraphics.lineStyle(2, 0xffffff, 0.8);
-          for (let i = 0; i < 6; i++) {
-            const angle = i * Math.PI / 3;
-            gridGraphics.moveTo(cx, cy);
-            gridGraphics.lineTo(cx + Math.cos(angle) * iconSize, cy + Math.sin(angle) * iconSize);
-          }
-          gridGraphics.lineStyle(0);
+      if (tile.type === 'WILD') {
+        g.beginFill(0xffffff, 0.85);
+        for (let i = 0; i < 5; i++) {
+          const a = (i * 72 - 90) * Math.PI / 180;
+          const ia = ((i * 72) + 36 - 90) * Math.PI / 180;
+          if (i === 0) g.moveTo(cx + Math.cos(a) * iconR, cy + Math.sin(a) * iconR);
+          else g.lineTo(cx + Math.cos(a) * iconR, cy + Math.sin(a) * iconR);
+          g.lineTo(cx + Math.cos(ia) * iconR * 0.4, cy + Math.sin(ia) * iconR * 0.4);
         }
+        g.closePath();
+        g.endFill();
+      } else if (tile.type === 'BOMB') {
+        g.beginFill(0x000000, 0.5);
+        g.drawCircle(cx, cy, iconR * 0.7);
+        g.endFill();
+        g.lineStyle(2, 0xffaa00);
+        g.moveTo(cx, cy - iconR * 0.5);
+        g.lineTo(cx + iconR * 0.3, cy - iconR * 0.9);
+        g.lineStyle(0);
+      } else if (tile.type === 'FREEZE') {
+        g.lineStyle(2, 0xffffff, 0.8);
+        for (let i = 0; i < 6; i++) {
+          const a = i * Math.PI / 3;
+          g.moveTo(cx, cy);
+          g.lineTo(cx + Math.cos(a) * iconR, cy + Math.sin(a) * iconR);
+        }
+        g.lineStyle(0);
       }
     }
   }
-  gameContainer.addChild(gridGraphics);
+
+  containers.game.addChild(g);
 
   // Ghost piece
-  if (GameState.currentPiece && !GameState.paused && !GameState.isCollapsing) {
-    const ghostY = getGhostY(GameState.currentPiece);
-    if (ghostY > GameState.currentPiece.y) {
-      const ghostGraphics = new PIXI.Graphics();
-      for (const tile of GameState.currentPiece.tiles) {
-        const col = GameState.currentPiece.x + tile.dx;
-        const row = ghostY + tile.dy;
-        if (row < 0 || row >= CONFIG.GRID_ROWS) continue;
-
-        const x = gridOffsetX + col * tileUnit;
-        const y = gridOffsetY + row * tileUnit;
-        const color = CONFIG.COLORS[tile.type];
-
-        ghostGraphics.lineStyle(2, color, 0.3);
-        ghostGraphics.beginFill(color, 0.1);
-        ghostGraphics.drawRoundedRect(x, y, CONFIG.TILE_SIZE, CONFIG.TILE_SIZE, 5);
-        ghostGraphics.endFill();
+  if (Game.piece && !Game.paused && !Game.isCollapsing) {
+    const ghostY = getGhostY();
+    if (ghostY > Game.piece.y) {
+      const ghost = new PIXI.Graphics();
+      for (const t of Game.piece.tiles) {
+        const c = Game.piece.x + t.dx;
+        const r = ghostY + t.dy;
+        if (r < 0 || r >= CONFIG.GRID_ROWS) continue;
+        const x = gridX + c * tileSize;
+        const y = gridY + r * tileSize;
+        ghost.lineStyle(2, CONFIG.COLORS[t.type], 0.3);
+        ghost.drawRoundedRect(x + 1, y + 1, tileSize - 2, tileSize - 2, 4);
       }
-      gameContainer.addChild(ghostGraphics);
+      containers.game.addChild(ghost);
     }
   }
 
-  // Current piece - tap to rotate
-  if (GameState.currentPiece && !GameState.paused && !GameState.isCollapsing) {
-    const pieceContainer = new PIXI.Container();
+  // Current piece with tap-to-rotate
+  if (Game.piece && !Game.paused && !Game.isCollapsing) {
+    const pieceG = new PIXI.Graphics();
+    let minX = Infinity, minY = Infinity, maxX = 0, maxY = 0;
 
-    const pieceGraphics = new PIXI.Graphics();
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const t of Game.piece.tiles) {
+      const c = Game.piece.x + t.dx;
+      const r = Game.piece.y + t.dy;
+      if (r < 0) continue;
 
-    for (const tile of GameState.currentPiece.tiles) {
-      const col = GameState.currentPiece.x + tile.dx;
-      const row = GameState.currentPiece.y + tile.dy;
-      if (row < 0) continue;
-
-      const x = gridOffsetX + col * tileUnit;
-      const y = gridOffsetY + row * tileUnit;
-      const color = CONFIG.COLORS[tile.type];
+      const x = gridX + c * tileSize;
+      const y = gridY + r * tileSize;
+      const color = CONFIG.COLORS[t.type];
 
       minX = Math.min(minX, x);
       minY = Math.min(minY, y);
-      maxX = Math.max(maxX, x + CONFIG.TILE_SIZE);
-      maxY = Math.max(maxY, y + CONFIG.TILE_SIZE);
+      maxX = Math.max(maxX, x + tileSize);
+      maxY = Math.max(maxY, y + tileSize);
 
       // Glow
-      pieceGraphics.beginFill(color, 0.35);
-      pieceGraphics.drawRoundedRect(x - 2, y - 2, CONFIG.TILE_SIZE + 4, CONFIG.TILE_SIZE + 4, 7);
-      pieceGraphics.endFill();
+      pieceG.beginFill(color, 0.3);
+      pieceG.drawRoundedRect(x - 2, y - 2, tileSize + 4, tileSize + 4, 6);
+      pieceG.endFill();
 
       // Tile
-      pieceGraphics.beginFill(color);
-      pieceGraphics.drawRoundedRect(x, y, CONFIG.TILE_SIZE, CONFIG.TILE_SIZE, 5);
-      pieceGraphics.endFill();
+      pieceG.beginFill(color);
+      pieceG.drawRoundedRect(x + 1, y + 1, tileSize - 2, tileSize - 2, 4);
+      pieceG.endFill();
 
       // Highlight
-      pieceGraphics.beginFill(0xffffff, 0.35);
-      pieceGraphics.drawRoundedRect(x + 2, y + 2, CONFIG.TILE_SIZE - 4, CONFIG.TILE_SIZE * 0.35, 3);
-      pieceGraphics.endFill();
+      pieceG.beginFill(0xffffff, 0.3);
+      pieceG.drawRoundedRect(x + 3, y + 3, tileSize - 6, tileSize * 0.3, 2);
+      pieceG.endFill();
     }
 
-    pieceContainer.addChild(pieceGraphics);
+    containers.game.addChild(pieceG);
 
-    // Hit area for tap-to-rotate
+    // Tap area for rotation
     if (minX !== Infinity) {
       const hitArea = new PIXI.Graphics();
       hitArea.beginFill(0x000000, 0.001);
-      hitArea.drawRect(minX - 10, minY - 10, maxX - minX + 20, maxY - minY + 20);
+      hitArea.drawRect(minX - 15, minY - 15, maxX - minX + 30, maxY - minY + 30);
       hitArea.endFill();
       hitArea.interactive = true;
-      hitArea.cursor = 'pointer';
       hitArea.on('pointerdown', (e) => {
         e.stopPropagation();
-        rotatePiece(GameState.currentPiece);
-        renderGame();
+        rotatePiece();
+        render();
       });
-      pieceContainer.addChild(hitArea);
+      containers.game.addChild(hitArea);
     }
-
-    gameContainer.addChild(pieceContainer);
   }
 
-  // Grid tap area for collapse
-  const gridHitArea = new PIXI.Graphics();
-  gridHitArea.beginFill(0x000000, 0.001);
-  gridHitArea.drawRect(gridOffsetX, gridOffsetY, gridWidth, gridHeight);
-  gridHitArea.endFill();
-  gridHitArea.interactive = true;
-  gridHitArea.on('pointerdown', (e) => {
-    if (GameState.isCollapsing || GameState.paused) return;
-
-    const localX = e.data.global.x - gridOffsetX;
-    const localY = e.data.global.y - gridOffsetY;
-    const col = Math.floor(localX / tileUnit);
-    const row = Math.floor(localY / tileUnit);
-
-    if (row >= 0 && row < CONFIG.GRID_ROWS && col >= 0 && col < CONFIG.GRID_COLS) {
-      collapseClusterAt(row, col);
+  // Grid tap for collapse
+  const gridHit = new PIXI.Graphics();
+  gridHit.beginFill(0x000000, 0.001);
+  gridHit.drawRect(gridX, gridY, CONFIG.GRID_COLS * tileSize, CONFIG.GRID_ROWS * tileSize);
+  gridHit.endFill();
+  gridHit.interactive = true;
+  gridHit.on('pointerdown', (e) => {
+    if (Game.isCollapsing || Game.paused) return;
+    const lx = e.data.global.x - gridX;
+    const ly = e.data.global.y - gridY;
+    const c = Math.floor(lx / tileSize);
+    const r = Math.floor(ly / tileSize);
+    if (r >= 0 && r < CONFIG.GRID_ROWS && c >= 0 && c < CONFIG.GRID_COLS) {
+      collapseAt(r, c);
     }
   });
-  gameContainer.addChild(gridHitArea);
+  containers.game.addChild(gridHit);
 
   // Freeze indicator
-  if (GameState.frozen && Date.now() < GameState.freezeEndTime) {
-    const remaining = Math.ceil((GameState.freezeEndTime - Date.now()) / 1000);
-    const freezeText = new PIXI.Text(`FREEZE ${remaining}s`, {
-      fontFamily: 'system-ui',
-      fontSize: 16,
-      fontWeight: 'bold',
-      fill: CONFIG.COLORS.FREEZE
+  if (Game.frozen && Date.now() < Game.freezeEnd) {
+    const rem = Math.ceil((Game.freezeEnd - Date.now()) / 1000);
+    const freezeT = new PIXI.Text(`FREEZE ${rem}s`, {
+      fontFamily: 'system-ui', fontSize: 15, fontWeight: 'bold', fill: CONFIG.COLORS.FREEZE
     });
-    freezeText.anchor.set(0.5);
-    freezeText.x = width / 2;
-    freezeText.y = gridOffsetY - 22;
-    gameContainer.addChild(freezeText);
-  } else if (GameState.frozen) {
-    GameState.frozen = false;
-  }
-
-  // Combo popups
-  for (const popup of GameState.comboPopups) {
-    const comboText = new PIXI.Text(popup.text + ' COMBO', {
-      fontFamily: 'system-ui',
-      fontSize: 28 + popup.life * 8,
-      fontWeight: 'bold',
-      fill: CONFIG.COLORS.WILD
-    });
-    comboText.anchor.set(0.5);
-    comboText.x = popup.x;
-    comboText.y = popup.y;
-    comboText.alpha = popup.life;
-    gameContainer.addChild(comboText);
+    freezeT.anchor.set(0.5);
+    freezeT.x = screenW / 2;
+    freezeT.y = gridY - 18;
+    containers.game.addChild(freezeT);
+  } else if (Game.frozen) {
+    Game.frozen = false;
   }
 
   // Next piece preview
@@ -1306,618 +930,351 @@ function renderGame() {
 }
 
 function renderNextPiece() {
-  if (!GameState.nextPiece) return;
+  if (!Game.nextPiece) return;
 
-  const width = app.screen.width;
-  const previewSize = CONFIG.TILE_SIZE * 0.6;
-  const previewX = width - 60;
-  const previewY = 85;
+  const previewSize = Math.min(tileSize * 0.55, 22);
+  const px = screenW - 55;
+  const py = 80;
 
-  const previewBg = new PIXI.Graphics();
-  previewBg.beginFill(CONFIG.COLORS.HUD_BG, 0.7);
-  previewBg.drawRoundedRect(previewX - 35, previewY - 10, 70, 60, 8);
-  previewBg.endFill();
-  gameContainer.addChild(previewBg);
+  const bg = new PIXI.Graphics();
+  bg.beginFill(CONFIG.COLORS.HUD_BG, 0.8);
+  bg.drawRoundedRect(px - 30, py - 8, 60, 55, 6);
+  bg.endFill();
+  containers.game.addChild(bg);
 
-  const nextLabel = new PIXI.Text('NEXT', {
-    fontFamily: 'system-ui',
-    fontSize: 9,
-    fill: CONFIG.COLORS.TEXT_DIM
-  });
-  nextLabel.anchor.set(0.5);
-  nextLabel.x = previewX;
-  nextLabel.y = previewY - 2;
-  gameContainer.addChild(nextLabel);
+  const label = new PIXI.Text('NEXT', { fontFamily: 'system-ui', fontSize: 9, fill: CONFIG.COLORS.TEXT_DIM });
+  label.anchor.set(0.5);
+  label.x = px;
+  label.y = py;
+  containers.game.addChild(label);
 
-  const previewGraphics = new PIXI.Graphics();
-  const maxDx = Math.max(...GameState.nextPiece.tiles.map(t => t.dx));
-  const maxDy = Math.max(...GameState.nextPiece.tiles.map(t => t.dy));
-  const offsetX = previewX - ((maxDx + 1) * previewSize) / 2;
-  const offsetY = previewY + 12;
+  const g = new PIXI.Graphics();
+  const maxDx = Math.max(...Game.nextPiece.tiles.map(t => t.dx));
+  const ox = px - ((maxDx + 1) * previewSize) / 2;
+  const oy = py + 12;
 
-  for (const tile of GameState.nextPiece.tiles) {
-    const x = offsetX + tile.dx * previewSize;
-    const y = offsetY + tile.dy * previewSize;
-    const color = CONFIG.COLORS[tile.type];
-
-    previewGraphics.beginFill(color);
-    previewGraphics.drawRoundedRect(x, y, previewSize - 2, previewSize - 2, 3);
-    previewGraphics.endFill();
+  for (const t of Game.nextPiece.tiles) {
+    g.beginFill(CONFIG.COLORS[t.type]);
+    g.drawRoundedRect(ox + t.dx * previewSize, oy + t.dy * previewSize, previewSize - 2, previewSize - 2, 2);
+    g.endFill();
   }
-  gameContainer.addChild(previewGraphics);
+  containers.game.addChild(g);
 }
 
 function renderHUD() {
-  hudContainer.removeChildren();
-
-  const width = app.screen.width;
-  const height = app.screen.height;
+  const g = new PIXI.Graphics();
 
   // Top bar
-  const topBar = new PIXI.Graphics();
-  topBar.beginFill(CONFIG.COLORS.HUD_BG, 0.95);
-  topBar.drawRect(0, 0, width, 62);
-  topBar.endFill();
-  hudContainer.addChild(topBar);
-
-  // Score
-  const scoreText = new PIXI.Text(GameState.score.toLocaleString(), {
-    fontFamily: 'system-ui',
-    fontSize: 26,
-    fontWeight: 'bold',
-    fill: CONFIG.COLORS.TEXT
-  });
-  scoreText.x = 18;
-  scoreText.y = 10;
-  hudContainer.addChild(scoreText);
-
-  const ptsLabel = new PIXI.Text('pts', {
-    fontFamily: 'system-ui',
-    fontSize: 11,
-    fill: CONFIG.COLORS.TEXT_DIM
-  });
-  ptsLabel.x = 18;
-  ptsLabel.y = 40;
-  hudContainer.addChild(ptsLabel);
-
-  // Pause button
-  const pauseBtn = createButton('II', width - 45, 31, () => setScreen('PAUSE'), 48, 38);
-  hudContainer.addChild(pauseBtn);
+  g.beginFill(CONFIG.COLORS.HUD_BG, 0.95);
+  g.drawRect(0, 0, screenW, 60);
+  g.endFill();
 
   // Bottom bar
-  const bottomY = height - 82;
-  const bottomBar = new PIXI.Graphics();
-  bottomBar.beginFill(CONFIG.COLORS.HUD_BG, 0.95);
-  bottomBar.drawRect(0, bottomY, width, 82);
-  bottomBar.endFill();
-  hudContainer.addChild(bottomBar);
+  g.beginFill(CONFIG.COLORS.HUD_BG, 0.95);
+  g.drawRect(0, screenH - 85, screenW, 85);
+  g.endFill();
 
-  // Progress bars with full names
-  const barWidth = Math.min(110, (width - 130) * 0.4);
-  const barHeight = 10;
+  containers.hud.addChild(g);
+
+  // Score
+  const score = new PIXI.Text(Game.score.toLocaleString(), {
+    fontFamily: 'system-ui', fontSize: 24, fontWeight: 'bold', fill: CONFIG.COLORS.TEXT
+  });
+  score.x = 15;
+  score.y = 12;
+  containers.hud.addChild(score);
+
+  const pts = new PIXI.Text('pts', { fontFamily: 'system-ui', fontSize: 11, fill: CONFIG.COLORS.TEXT_DIM });
+  pts.x = 15;
+  pts.y = 40;
+  containers.hud.addChild(pts);
+
+  // Pause button
+  containers.hud.addChild(makeButton('II', screenW - 42, 30, () => setScreen('PAUSE'), 44, 36));
+
+  // Resource bars
+  const barW = Math.min(100, (screenW - 130) * 0.35);
+  const barH = 10;
   const startX = 12;
+  const bottomY = screenH - 85;
 
-  const categoryNames = ['BEAT', 'VIBE', 'MELODY'];
-  categoryNames.forEach((category, i) => {
-    const y = bottomY + 10 + i * 24;
-    const progress = Math.min(GameState.resources[category] / GameState.resourcesForUnlock, 1);
-    const color = CONFIG.COLORS[category];
+  ['BEAT', 'VIBE', 'MELODY'].forEach((cat, i) => {
+    const y = bottomY + 10 + i * 25;
+    const progress = Math.min(Game.resources[cat] / Game.unlockCost, 1);
+    const color = CONFIG.COLORS[cat];
 
-    const label = new PIXI.Text(category, {
-      fontFamily: 'system-ui',
-      fontSize: 10,
-      fontWeight: 'bold',
-      fill: color
+    const label = new PIXI.Text(cat, {
+      fontFamily: 'system-ui', fontSize: 10, fontWeight: 'bold', fill: color
     });
     label.x = startX;
     label.y = y;
-    hudContainer.addChild(label);
+    containers.hud.addChild(label);
 
-    const labelWidth = category === 'MELODY' ? 52 : 38;
+    const labelW = cat === 'MELODY' ? 52 : cat === 'VIBE' ? 32 : 36;
 
     const barBg = new PIXI.Graphics();
     barBg.beginFill(0x333344);
-    barBg.drawRoundedRect(startX + labelWidth, y, barWidth, barHeight, 4);
+    barBg.drawRoundedRect(startX + labelW, y + 1, barW, barH, 4);
     barBg.endFill();
-    hudContainer.addChild(barBg);
+    containers.hud.addChild(barBg);
 
     if (progress > 0) {
-      const barFill = new PIXI.Graphics();
-      barFill.beginFill(color);
-      barFill.drawRoundedRect(startX + labelWidth, y, barWidth * progress, barHeight, 4);
-      barFill.endFill();
-      if (progress >= 1) barFill.alpha = 0.7 + Math.sin(Date.now() / 100) * 0.3;
-      hudContainer.addChild(barFill);
+      const fill = new PIXI.Graphics();
+      fill.beginFill(color);
+      fill.drawRoundedRect(startX + labelW, y + 1, barW * progress, barH, 4);
+      fill.endFill();
+      if (progress >= 1) fill.alpha = 0.7 + Math.sin(Date.now() / 100) * 0.3;
+      containers.hud.addChild(fill);
     }
 
-    if (progress >= 1) {
-      const readyText = new PIXI.Text('READY', {
-        fontFamily: 'system-ui',
-        fontSize: 9,
-        fontWeight: 'bold',
-        fill: color
-      });
-      readyText.x = startX + labelWidth + barWidth + 6;
-      readyText.y = y;
-      hudContainer.addChild(readyText);
-    }
+    // Points text
+    const ptsText = new PIXI.Text(`${Game.resources[cat]}`, {
+      fontFamily: 'system-ui', fontSize: 9, fill: CONFIG.COLORS.TEXT_DIM
+    });
+    ptsText.x = startX + labelW + barW + 5;
+    ptsText.y = y + 1;
+    containers.hud.addChild(ptsText);
   });
 
-  // MIX button - flash if any category is ready
-  const anyReady = CATEGORY_TYPES.some(cat => GameState.resources[cat] >= GameState.resourcesForUnlock);
-  const mixColor = anyReady ? (Math.sin(Date.now() / 150) > 0 ? CONFIG.COLORS.WILD : CONFIG.COLORS.VIBE) : CONFIG.COLORS.VIBE;
-
-  const mixBtn = createButton('MIX', width - 50, bottomY + 41, () => setScreen('MIX'), 75, 50, mixColor);
-  hudContainer.addChild(mixBtn);
+  // MIX button - flash if any ready
+  const anyReady = CATEGORY_TYPES.some(cat => Game.resources[cat] >= Game.unlockCost);
+  const mixColor = anyReady && Math.sin(Date.now() / 120) > 0 ? CONFIG.COLORS.WILD : CONFIG.COLORS.VIBE;
+  containers.hud.addChild(makeButton('MIX', screenW - 48, bottomY + 42, () => setScreen('MIX'), 70, 48, mixColor));
 }
 
-function renderPauseOverlay() {
-  const width = app.screen.width;
-  const height = app.screen.height;
-
+function renderPause() {
   const bg = new PIXI.Graphics();
   bg.beginFill(0x000000, 0.75);
-  bg.drawRect(0, 0, width, height);
+  bg.drawRect(0, 0, screenW, screenH);
   bg.endFill();
   bg.interactive = true;
-  overlayContainer.addChild(bg);
+  containers.overlay.addChild(bg);
 
   const panel = new PIXI.Graphics();
   panel.beginFill(CONFIG.COLORS.HUD_BG);
-  panel.drawRoundedRect(width / 2 - 115, height / 2 - 120, 230, 240, 18);
+  panel.drawRoundedRect(screenW / 2 - 110, screenH / 2 - 110, 220, 220, 16);
   panel.endFill();
-  overlayContainer.addChild(panel);
+  containers.overlay.addChild(panel);
 
   const title = new PIXI.Text('PAUSED', {
-    fontFamily: 'system-ui',
-    fontSize: 28,
-    fontWeight: 'bold',
-    fill: CONFIG.COLORS.TEXT
+    fontFamily: 'system-ui', fontSize: 26, fontWeight: 'bold', fill: CONFIG.COLORS.TEXT
   });
   title.anchor.set(0.5);
-  title.x = width / 2;
-  title.y = height / 2 - 80;
-  overlayContainer.addChild(title);
+  title.x = screenW / 2;
+  title.y = screenH / 2 - 70;
+  containers.overlay.addChild(title);
 
-  const resumeBtn = createButton('RESUME', width / 2, height / 2 - 15, () => setScreen('PLAY'), 155, 48);
-  overlayContainer.addChild(resumeBtn);
-
-  const exitBtn = createButton('EXIT', width / 2, height / 2 + 50, () => {
-    audioEngine.stopAllLoops();
-    setScreen('HOME');
-  }, 155, 48);
-  overlayContainer.addChild(exitBtn);
+  containers.overlay.addChild(makeButton('RESUME', screenW / 2, screenH / 2 - 10, () => setScreen('PLAY'), 150, 46));
+  containers.overlay.addChild(makeButton('EXIT', screenW / 2, screenH / 2 + 50, () => { Audio.stopAll(); setScreen('HOME'); }, 150, 46));
 }
 
-function renderMixScreen() {
-  const width = app.screen.width;
-  const height = app.screen.height;
-
-  overlayContainer.removeChildren();
-
+function renderMix() {
   const bg = new PIXI.Graphics();
   bg.beginFill(CONFIG.COLORS.BACKGROUND);
-  bg.drawRect(0, 0, width, height);
+  bg.drawRect(0, 0, screenW, screenH);
   bg.endFill();
-  overlayContainer.addChild(bg);
+  containers.overlay.addChild(bg);
 
   // Header
   const header = new PIXI.Graphics();
   header.beginFill(CONFIG.COLORS.HUD_BG);
-  header.drawRect(0, 0, width, 52);
+  header.drawRect(0, 0, screenW, 50);
   header.endFill();
-  overlayContainer.addChild(header);
+  containers.overlay.addChild(header);
 
-  const title = new PIXI.Text('MIX', {
-    fontFamily: 'system-ui',
-    fontSize: 24,
-    fontWeight: 'bold',
-    fill: CONFIG.COLORS.TEXT
-  });
+  const title = new PIXI.Text('MIX', { fontFamily: 'system-ui', fontSize: 22, fontWeight: 'bold', fill: CONFIG.COLORS.TEXT });
   title.anchor.set(0.5);
-  title.x = width / 2;
-  title.y = 26;
-  overlayContainer.addChild(title);
+  title.x = screenW / 2;
+  title.y = 25;
+  containers.overlay.addChild(title);
 
-  const closeBtn = createButton('X', width - 35, 26, () => setScreen('PLAY'), 42, 36);
-  overlayContainer.addChild(closeBtn);
+  containers.overlay.addChild(makeButton('X', screenW - 32, 25, () => setScreen('PLAY'), 38, 32));
 
-  // Active loops grid
-  const gridY = 68;
-  const slotSize = Math.min(52, (width - 70) / 3);
-  const slotGap = 8;
-  const totalW = 3 * slotSize + 2 * slotGap;
-  const gridStartX = (width - totalW) / 2;
+  // Active layers grid
+  const gridTop = 65;
+  const slotS = Math.min(48, (screenW - 60) / 3);
+  const gap = 8;
+  const totalW = 3 * slotS + 2 * gap;
+  const startX = (screenW - totalW) / 2;
 
-  CATEGORY_TYPES.forEach((category, col) => {
-    const color = CONFIG.COLORS[category];
-    const active = GameState.activeLayers[category];
+  CATEGORY_TYPES.forEach((cat, col) => {
+    const color = CONFIG.COLORS[cat];
+    const active = Game.activeLayers[cat];
 
-    const label = new PIXI.Text(category, {
-      fontFamily: 'system-ui',
-      fontSize: 11,
-      fontWeight: 'bold',
-      fill: color
-    });
+    const label = new PIXI.Text(cat, { fontFamily: 'system-ui', fontSize: 10, fontWeight: 'bold', fill: color });
     label.anchor.set(0.5);
-    label.x = gridStartX + col * (slotSize + slotGap) + slotSize / 2;
-    label.y = gridY;
-    overlayContainer.addChild(label);
+    label.x = startX + col * (slotS + gap) + slotS / 2;
+    label.y = gridTop;
+    containers.overlay.addChild(label);
 
     for (let row = 0; row < 3; row++) {
-      const x = gridStartX + col * (slotSize + slotGap);
-      const y = gridY + 16 + row * (slotSize + slotGap);
-
-      const slot = new PIXI.Graphics();
+      const x = startX + col * (slotS + gap);
+      const y = gridTop + 14 + row * (slotS + gap);
       const isActive = row < active.length;
 
+      const slot = new PIXI.Graphics();
       if (isActive) {
-        slot.beginFill(color, 0.7);
+        slot.beginFill(color, 0.65);
         slot.lineStyle(2, color);
       } else {
-        slot.lineStyle(1, CONFIG.COLORS.TEXT_DIM, 0.35);
+        slot.lineStyle(1, CONFIG.COLORS.TEXT_DIM, 0.3);
       }
-      slot.drawRoundedRect(x, y, slotSize, slotSize, 7);
+      slot.drawRoundedRect(x, y, slotS, slotS, 6);
       slot.endFill();
+      containers.overlay.addChild(slot);
 
       if (isActive) {
         const loop = active[row];
         const name = loop.name.split(' ')[0];
-        const slotText = new PIXI.Text(name, {
-          fontFamily: 'system-ui',
-          fontSize: 9,
-          fill: CONFIG.COLORS.TEXT
-        });
-        slotText.anchor.set(0.5);
-        slotText.x = x + slotSize / 2;
-        slotText.y = y + slotSize / 2;
-        overlayContainer.addChild(slotText);
+        const txt = new PIXI.Text(name, { fontFamily: 'system-ui', fontSize: 8, fill: CONFIG.COLORS.TEXT });
+        txt.anchor.set(0.5);
+        txt.x = x + slotS / 2;
+        txt.y = y + slotS / 2;
+        containers.overlay.addChild(txt);
 
         slot.interactive = true;
-        slot.cursor = 'pointer';
-        slot.on('pointerdown', () => toggleLoop(category, loop.id));
+        slot.on('pointerdown', () => { toggleLoop(cat, loop.id); renderMix(); });
       }
-
-      overlayContainer.addChild(slot);
     }
   });
 
   // Loop cards
-  const cardsY = gridY + 195;
-  const cardH = 40;
-  const cardGap = 5;
-  const cardW = (width - 50) / 3;
+  const cardsY = gridTop + 180;
+  const cardH = 38;
+  const cardGap = 4;
+  const cardW = (screenW - 45) / 3;
 
-  CATEGORY_TYPES.forEach((category, col) => {
-    const loops = GameState.loops[category];
-    const color = CONFIG.COLORS[category];
-    const colX = 15 + col * (cardW + 10);
-    const canUnlock = Math.floor(GameState.resources[category] / GameState.resourcesForUnlock);
-
-    if (canUnlock > 0) {
-      const readyText = new PIXI.Text(`${canUnlock} ready`, {
-        fontFamily: 'system-ui',
-        fontSize: 10,
-        fill: color
-      });
-      readyText.anchor.set(0.5);
-      readyText.x = colX + cardW / 2;
-      readyText.y = cardsY - 12;
-      overlayContainer.addChild(readyText);
-    }
+  CATEGORY_TYPES.forEach((cat, col) => {
+    const loops = Game.loops[cat];
+    const color = CONFIG.COLORS[cat];
+    const colX = 12 + col * (cardW + 10);
 
     loops.forEach((loop, i) => {
       const y = cardsY + i * (cardH + cardGap);
-      if (y > height - 145) return;
+      if (y > screenH - 60) return;
 
-      const isActive = GameState.activeLayers[category].some(l => l.id === loop.id);
+      const isActive = Game.activeLayers[cat].some(l => l.id === loop.id);
       const isUnlocked = loop.unlocked;
-      const isPreviewing = GameState.previewingLoop === loop.id;
 
       const card = new PIXI.Graphics();
-
       if (isActive) {
-        card.beginFill(color, 0.85);
+        card.beginFill(color, 0.8);
         card.lineStyle(2, color);
       } else if (isUnlocked) {
-        card.beginFill(color, 0.25);
-        card.lineStyle(1, color, 0.5);
+        card.beginFill(color, 0.2);
+        card.lineStyle(1, color, 0.4);
       } else {
-        card.beginFill(0x2a2a3e, 0.6);
-        card.lineStyle(1, CONFIG.COLORS.TEXT_DIM, 0.3);
+        card.beginFill(0x2a2a3e, 0.5);
+        card.lineStyle(1, CONFIG.COLORS.TEXT_DIM, 0.25);
       }
-      card.drawRoundedRect(colX, y, cardW, cardH, 5);
+      card.drawRoundedRect(colX, y, cardW, cardH, 4);
       card.endFill();
-
       card.interactive = true;
-      card.cursor = 'pointer';
 
       if (isUnlocked) {
-        card.on('pointerdown', () => {
-          toggleLoop(category, loop.id);
-          renderMixScreen();
-        });
+        card.on('pointerdown', () => { toggleLoop(cat, loop.id); renderMix(); });
       } else {
-        card.on('pointerdown', () => {
-          unlockLoop(category, loop.id);
-        });
+        card.on('pointerdown', () => { unlockLoop(cat, loop.id); });
       }
+      containers.overlay.addChild(card);
 
-      overlayContainer.addChild(card);
-
-      const nameText = new PIXI.Text(loop.name, {
-        fontFamily: 'system-ui',
-        fontSize: 10,
+      const name = new PIXI.Text(loop.name, {
+        fontFamily: 'system-ui', fontSize: 9,
         fontWeight: isActive ? 'bold' : 'normal',
         fill: isUnlocked ? CONFIG.COLORS.TEXT : CONFIG.COLORS.TEXT_DIM
       });
-      nameText.x = colX + 6;
-      nameText.y = y + 6;
-      overlayContainer.addChild(nameText);
+      name.x = colX + 5;
+      name.y = y + 5;
+      containers.overlay.addChild(name);
 
-      const status = isActive ? 'ON' : isUnlocked ? 'OFF' : `${GameState.resourcesForUnlock}`;
-      const statusText = new PIXI.Text(status, {
-        fontFamily: 'system-ui',
-        fontSize: 9,
-        fill: isActive ? 0x00ff00 : CONFIG.COLORS.TEXT_DIM
+      const status = isActive ? 'ON' : isUnlocked ? 'OFF' : `${Game.unlockCost}`;
+      const statusT = new PIXI.Text(status, {
+        fontFamily: 'system-ui', fontSize: 8, fill: isActive ? 0x00ff00 : CONFIG.COLORS.TEXT_DIM
       });
-      statusText.x = colX + 6;
-      statusText.y = y + 24;
-      overlayContainer.addChild(statusText);
-
-      if (!isUnlocked) {
-        const previewBtn = new PIXI.Graphics();
-        previewBtn.beginFill(isPreviewing ? color : 0x444455, 0.8);
-        previewBtn.drawRoundedRect(colX + cardW - 28, y + 6, 22, 28, 3);
-        previewBtn.endFill();
-
-        previewBtn.beginFill(0xffffff);
-        if (isPreviewing) {
-          previewBtn.drawRect(colX + cardW - 22, y + 12, 3, 14);
-          previewBtn.drawRect(colX + cardW - 15, y + 12, 3, 14);
-        } else {
-          previewBtn.moveTo(colX + cardW - 22, y + 11);
-          previewBtn.lineTo(colX + cardW - 22, y + 27);
-          previewBtn.lineTo(colX + cardW - 10, y + 19);
-          previewBtn.closePath();
-        }
-        previewBtn.endFill();
-
-        previewBtn.interactive = true;
-        previewBtn.cursor = 'pointer';
-        previewBtn.on('pointerdown', (e) => {
-          e.stopPropagation();
-          togglePreview(category, loop.id);
-        });
-        overlayContainer.addChild(previewBtn);
-      }
+      statusT.x = colX + 5;
+      statusT.y = y + 22;
+      containers.overlay.addChild(statusT);
     });
   });
 
-  // BPM/Pitch
-  const ctrlY = height - 110;
-
-  const bpmLabel = new PIXI.Text(`BPM: ${GameState.bpm}`, {
-    fontFamily: 'system-ui',
-    fontSize: 13,
-    fill: CONFIG.COLORS.TEXT
-  });
-  bpmLabel.x = 18;
-  bpmLabel.y = ctrlY;
-  overlayContainer.addChild(bpmLabel);
-
-  const bpmSlider = createSlider(18, ctrlY + 22, width - 36, GameState.bpm, 95, 135, (val) => {
-    audioEngine.setBPM(Math.round(val));
-    renderMixScreen();
-  });
-  overlayContainer.addChild(bpmSlider);
-
-  const pitchLabel = new PIXI.Text(`PITCH: ${GameState.pitch >= 0 ? '+' : ''}${GameState.pitch}`, {
-    fontFamily: 'system-ui',
-    fontSize: 13,
-    fill: CONFIG.COLORS.TEXT
-  });
-  pitchLabel.x = 18;
-  pitchLabel.y = ctrlY + 45;
-  overlayContainer.addChild(pitchLabel);
-
-  const pitchSlider = createSlider(18, ctrlY + 67, width - 36, GameState.pitch + 5, 0, 10, (val) => {
-    GameState.pitch = Math.round(val) - 5;
-    renderMixScreen();
-  });
-  overlayContainer.addChild(pitchSlider);
-
-  const backBtn = createButton('BACK TO GAME', width / 2, height - 26, () => setScreen('PLAY'), 170, 40);
-  overlayContainer.addChild(backBtn);
+  // Back button
+  containers.overlay.addChild(makeButton('BACK', screenW / 2, screenH - 30, () => setScreen('PLAY'), 150, 38));
 }
 
-function togglePreview(category, loopId) {
-  if (GameState.previewingLoop === loopId) {
-    audioEngine.stopPreview();
-    GameState.previewingLoop = null;
-  } else {
-    audioEngine.stopPreview();
-    audioEngine.startPreview(category, loopId);
-    GameState.previewingLoop = loopId;
-  }
-  renderMixScreen();
-}
-
-function renderSettingsScreen() {
-  const width = app.screen.width;
-  const height = app.screen.height;
-
+function renderSettings() {
   const bg = new PIXI.Graphics();
   bg.beginFill(CONFIG.COLORS.BACKGROUND);
-  bg.drawRect(0, 0, width, height);
+  bg.drawRect(0, 0, screenW, screenH);
   bg.endFill();
-  overlayContainer.addChild(bg);
+  containers.overlay.addChild(bg);
 
-  const title = new PIXI.Text('SETTINGS', {
-    fontFamily: 'system-ui',
-    fontSize: 28,
-    fontWeight: 'bold',
-    fill: CONFIG.COLORS.TEXT
-  });
+  const title = new PIXI.Text('SETTINGS', { fontFamily: 'system-ui', fontSize: 26, fontWeight: 'bold', fill: CONFIG.COLORS.TEXT });
   title.anchor.set(0.5);
-  title.x = width / 2;
-  title.y = 65;
-  overlayContainer.addChild(title);
+  title.x = screenW / 2;
+  title.y = 60;
+  containers.overlay.addChild(title);
 
-  const infoText = new PIXI.Text('Volume and other settings\ncoming soon!', {
-    fontFamily: 'system-ui',
-    fontSize: 15,
-    fill: CONFIG.COLORS.TEXT_DIM,
-    align: 'center'
-  });
-  infoText.anchor.set(0.5);
-  infoText.x = width / 2;
-  infoText.y = height / 2;
-  overlayContainer.addChild(infoText);
+  const info = new PIXI.Text('Coming soon!', { fontFamily: 'system-ui', fontSize: 14, fill: CONFIG.COLORS.TEXT_DIM });
+  info.anchor.set(0.5);
+  info.x = screenW / 2;
+  info.y = screenH / 2;
+  containers.overlay.addChild(info);
 
-  const backBtn = createButton('BACK', width / 2, height - 90, () => {
-    setScreen(GameState.score > 0 ? 'PAUSE' : 'HOME');
-  }, 150, 48);
-  overlayContainer.addChild(backBtn);
+  containers.overlay.addChild(makeButton('BACK', screenW / 2, screenH - 80, () => setScreen(Game.score > 0 ? 'PAUSE' : 'HOME'), 140, 44));
 }
 
-// ============================================================================
-// UI HELPERS
-// ============================================================================
-
-function createButton(text, x, y, action, w = 160, h = 45, borderColor = CONFIG.COLORS.VIBE) {
-  const container = new PIXI.Container();
+function makeButton(text, x, y, action, w = 150, h = 44, borderColor = CONFIG.COLORS.VIBE) {
+  const c = new PIXI.Container();
 
   const bg = new PIXI.Graphics();
   bg.beginFill(CONFIG.COLORS.HUD_BG);
   bg.lineStyle(2, borderColor);
-  bg.drawRoundedRect(-w/2, -h/2, w, h, 9);
+  bg.drawRoundedRect(-w/2, -h/2, w, h, 8);
   bg.endFill();
-  container.addChild(bg);
+  c.addChild(bg);
 
-  const label = new PIXI.Text(text, {
-    fontFamily: 'system-ui',
-    fontSize: Math.min(15, h * 0.38),
-    fontWeight: 'bold',
-    fill: CONFIG.COLORS.TEXT
-  });
+  const label = new PIXI.Text(text, { fontFamily: 'system-ui', fontSize: Math.min(14, h * 0.35), fontWeight: 'bold', fill: CONFIG.COLORS.TEXT });
   label.anchor.set(0.5);
-  container.addChild(label);
+  c.addChild(label);
 
-  container.x = x;
-  container.y = y;
-  container.interactive = true;
-  container.cursor = 'pointer';
+  c.x = x;
+  c.y = y;
+  c.interactive = true;
+  c.cursor = 'pointer';
 
-  container.on('pointerdown', () => container.scale.set(0.94));
-  container.on('pointerup', () => { container.scale.set(1); action(); });
-  container.on('pointerupoutside', () => container.scale.set(1));
+  c.on('pointerdown', () => c.scale.set(0.94));
+  c.on('pointerup', () => { c.scale.set(1); action(); });
+  c.on('pointerupoutside', () => c.scale.set(1));
 
-  return container;
-}
-
-function createSlider(x, y, width, value, min, max, onChange) {
-  const container = new PIXI.Container();
-  container.x = x;
-  container.y = y;
-
-  const track = new PIXI.Graphics();
-  track.beginFill(0x333344);
-  track.drawRoundedRect(0, 0, width, 7, 3);
-  track.endFill();
-  container.addChild(track);
-
-  const percent = (value - min) / (max - min);
-
-  const fill = new PIXI.Graphics();
-  fill.beginFill(CONFIG.COLORS.VIBE);
-  fill.drawRoundedRect(0, 0, width * percent, 7, 3);
-  fill.endFill();
-  container.addChild(fill);
-
-  const handle = new PIXI.Graphics();
-  handle.beginFill(CONFIG.COLORS.TEXT);
-  handle.drawCircle(width * percent, 3.5, 9);
-  handle.endFill();
-  container.addChild(handle);
-
-  track.interactive = true;
-  track.hitArea = new PIXI.Rectangle(0, -12, width, 30);
-  track.on('pointerdown', (e) => {
-    const localX = e.data.global.x - x;
-    const newPercent = Math.max(0, Math.min(1, localX / width));
-    onChange(min + (max - min) * newPercent);
-  });
-
-  return container;
-}
-
-let toastTimeout;
-function showToast(message) {
-  const existing = overlayContainer.children.find(c => c.isToast);
-  if (existing) overlayContainer.removeChild(existing);
-
-  const width = app.screen.width;
-
-  const container = new PIXI.Container();
-  container.isToast = true;
-
-  const bg = new PIXI.Graphics();
-  bg.beginFill(CONFIG.COLORS.HUD_BG, 0.95);
-  bg.drawRoundedRect(0, 0, width - 40, 48, 9);
-  bg.endFill();
-  container.addChild(bg);
-
-  const text = new PIXI.Text(message, {
-    fontFamily: 'system-ui',
-    fontSize: 14,
-    fill: CONFIG.COLORS.TEXT
-  });
-  text.anchor.set(0.5);
-  text.x = (width - 40) / 2;
-  text.y = 24;
-  container.addChild(text);
-
-  container.x = 20;
-  container.y = 72;
-  overlayContainer.addChild(container);
-
-  clearTimeout(toastTimeout);
-  toastTimeout = setTimeout(() => {
-    if (container.parent) overlayContainer.removeChild(container);
-  }, 2000);
+  return c;
 }
 
 // ============================================================================
 // GAME LOGIC
 // ============================================================================
 
-function setScreen(screen) {
-  GameState.screen = screen;
-  GameState.paused = (screen === 'PAUSE' || screen === 'MIX');
-  renderCurrentScreen();
+function setScreen(s) {
+  Game.screen = s;
+  Game.paused = s === 'PAUSE' || s === 'MIX';
+  render();
 }
 
 async function startGame() {
-  await audioEngine.init();
+  await Audio.init();
 
-  GameState.score = 0;
-  GameState.resources = { BEAT: 0, VIBE: 0, MELODY: 0 };
-  GameState.activeLayers = { BEAT: [], VIBE: [], MELODY: [] };
-  GameState.loops = JSON.parse(JSON.stringify(LOOPS));
-  GameState.gameOver = false;
-  GameState.paused = false;
-  GameState.combo = 0;
-  GameState.comboTimer = 0;
-  GameState.isCollapsing = false;
-  GameState.validClusters = [];
-  GameState.frozen = false;
-  GameState.inDanger = false;
-  GameState.comboPopups = [];
+  Game.score = 0;
+  Game.resources = { BEAT: 0, VIBE: 0, MELODY: 0 };
+  Game.activeLayers = { BEAT: [], VIBE: [], MELODY: [] };
+  Game.loops = JSON.parse(JSON.stringify(LOOPS));
+  Game.gameOver = false;
+  Game.paused = false;
+  Game.isCollapsing = false;
+  Game.clusters = [];
+  Game.frozen = false;
+  Game.inDanger = false;
 
   initGrid();
   spawnPiece();
-
   setScreen('PLAY');
 
   toggleLoop('BEAT', 'trap_808');
@@ -1926,255 +1283,182 @@ async function startGame() {
 }
 
 function spawnPiece() {
-  if (GameState.nextPiece) {
-    GameState.currentPiece = GameState.nextPiece;
-  } else {
-    GameState.currentPiece = createPiece();
-  }
-  GameState.nextPiece = createPiece();
+  Game.piece = Game.nextPiece || createPiece();
+  Game.nextPiece = createPiece();
 
-  if (!canPlacePiece(GameState.currentPiece, GameState.currentPiece.x, GameState.currentPiece.y)) {
-    GameState.gameOver = true;
-    audioEngine.stopAllLoops();
+  if (!canPlace(Game.piece, Game.piece.x, Game.piece.y)) {
+    Game.gameOver = true;
+    Audio.stopAll();
     showGameOver();
   }
 }
 
 function showGameOver() {
-  const width = app.screen.width;
-  const height = app.screen.height;
-
   const bg = new PIXI.Graphics();
   bg.beginFill(0x000000, 0.8);
-  bg.drawRect(0, 0, width, height);
+  bg.drawRect(0, 0, screenW, screenH);
   bg.endFill();
   bg.interactive = true;
-  overlayContainer.addChild(bg);
+  containers.overlay.addChild(bg);
 
   const panel = new PIXI.Graphics();
   panel.beginFill(CONFIG.COLORS.HUD_BG);
   panel.lineStyle(3, CONFIG.COLORS.BEAT);
-  panel.drawRoundedRect(width / 2 - 135, height / 2 - 140, 270, 280, 16);
+  panel.drawRoundedRect(screenW / 2 - 125, screenH / 2 - 130, 250, 260, 14);
   panel.endFill();
-  overlayContainer.addChild(panel);
+  containers.overlay.addChild(panel);
 
-  const title = new PIXI.Text('GAME OVER', {
-    fontFamily: 'system-ui',
-    fontSize: 30,
-    fontWeight: 'bold',
-    fill: CONFIG.COLORS.BEAT
-  });
+  const title = new PIXI.Text('GAME OVER', { fontFamily: 'system-ui', fontSize: 28, fontWeight: 'bold', fill: CONFIG.COLORS.BEAT });
   title.anchor.set(0.5);
-  title.x = width / 2;
-  title.y = height / 2 - 100;
-  overlayContainer.addChild(title);
+  title.x = screenW / 2;
+  title.y = screenH / 2 - 90;
+  containers.overlay.addChild(title);
 
-  const scoreText = new PIXI.Text(GameState.score.toLocaleString(), {
-    fontFamily: 'system-ui',
-    fontSize: 40,
-    fontWeight: 'bold',
-    fill: CONFIG.COLORS.WILD
-  });
-  scoreText.anchor.set(0.5);
-  scoreText.x = width / 2;
-  scoreText.y = height / 2 - 45;
-  overlayContainer.addChild(scoreText);
+  const scoreT = new PIXI.Text(Game.score.toLocaleString(), { fontFamily: 'system-ui', fontSize: 36, fontWeight: 'bold', fill: CONFIG.COLORS.WILD });
+  scoreT.anchor.set(0.5);
+  scoreT.x = screenW / 2;
+  scoreT.y = screenH / 2 - 40;
+  containers.overlay.addChild(scoreT);
 
-  const playAgainBtn = createButton('PLAY AGAIN', width / 2, height / 2 + 25, () => {
-    overlayContainer.removeChildren();
-    startGame();
-  }, 170, 50);
-  overlayContainer.addChild(playAgainBtn);
-
-  const homeBtn = createButton('HOME', width / 2, height / 2 + 90, () => {
-    overlayContainer.removeChildren();
-    setScreen('HOME');
-  }, 135, 45);
-  overlayContainer.addChild(homeBtn);
+  containers.overlay.addChild(makeButton('PLAY AGAIN', screenW / 2, screenH / 2 + 25, () => { containers.overlay.removeChildren(); startGame(); }, 160, 48));
+  containers.overlay.addChild(makeButton('HOME', screenW / 2, screenH / 2 + 85, () => { containers.overlay.removeChildren(); setScreen('HOME'); }, 130, 42));
 }
 
-function toggleLoop(category, loopId) {
-  const activeLayers = GameState.activeLayers[category];
-  const index = activeLayers.findIndex(l => l.id === loopId);
+function toggleLoop(cat, id) {
+  const active = Game.activeLayers[cat];
+  const idx = active.findIndex(l => l.id === id);
 
-  if (index !== -1) {
-    audioEngine.stopLoop(category, loopId);
-    activeLayers.splice(index, 1);
+  if (idx !== -1) {
+    Audio.stopLoop(cat, id);
+    active.splice(idx, 1);
   } else {
-    if (activeLayers.length >= CONFIG.MAX_LAYERS_PER_CATEGORY) {
-      showToast(`Max ${category} layers!`);
-      return;
-    }
-
-    const loop = GameState.loops[category].find(l => l.id === loopId);
+    if (active.length >= CONFIG.MAX_LAYERS) return;
+    const loop = Game.loops[cat].find(l => l.id === id);
     if (loop && loop.unlocked) {
-      audioEngine.startLoop(category, loopId);
-      activeLayers.push(loop);
+      Audio.startLoop(cat, id);
+      active.push(loop);
     }
   }
-
-  if (GameState.screen === 'MIX') renderMixScreen();
 }
 
-function unlockLoop(category, loopId) {
-  const cost = GameState.resourcesForUnlock;
+function unlockLoop(cat, id) {
+  if (Game.resources[cat] < Game.unlockCost) return;
 
-  if (GameState.resources[category] < cost) {
-    showToast(`Need ${cost - GameState.resources[category]} more ${category} pts!`);
-    return;
-  }
-
-  const loop = GameState.loops[category].find(l => l.id === loopId);
+  const loop = Game.loops[cat].find(l => l.id === id);
   if (loop && !loop.unlocked) {
-    GameState.resources[category] -= cost;
+    Game.resources[cat] -= Game.unlockCost;
     loop.unlocked = true;
-    audioEngine.playUnlock();
-    showToast(`${loop.name} unlocked!`);
-    renderMixScreen();
+    renderMix();
   }
 }
 
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 // ============================================================================
 // INPUT
 // ============================================================================
 
-function handleInput(key) {
-  if (GameState.screen !== 'PLAY' || GameState.paused || GameState.gameOver || GameState.isCollapsing) return;
-  if (!GameState.currentPiece) return;
+function handleKey(key) {
+  if (Game.screen !== 'PLAY' || Game.paused || Game.gameOver || Game.isCollapsing || !Game.piece) return;
 
   switch (key) {
     case 'ArrowLeft':
-      if (canPlacePiece(GameState.currentPiece, GameState.currentPiece.x - 1, GameState.currentPiece.y)) {
-        GameState.currentPiece.x--;
-      }
+      if (canPlace(Game.piece, Game.piece.x - 1, Game.piece.y)) Game.piece.x--;
       break;
     case 'ArrowRight':
-      if (canPlacePiece(GameState.currentPiece, GameState.currentPiece.x + 1, GameState.currentPiece.y)) {
-        GameState.currentPiece.x++;
-      }
+      if (canPlace(Game.piece, Game.piece.x + 1, Game.piece.y)) Game.piece.x++;
       break;
     case 'ArrowDown':
-      while (canPlacePiece(GameState.currentPiece, GameState.currentPiece.x, GameState.currentPiece.y + 1)) {
-        GameState.currentPiece.y++;
-      }
+      while (canPlace(Game.piece, Game.piece.x, Game.piece.y + 1)) Game.piece.y++;
       break;
     case 'ArrowUp':
     case ' ':
     case 'r':
     case 'R':
-      rotatePiece(GameState.currentPiece);
+      rotatePiece();
       break;
   }
-
-  renderGame();
+  render();
 }
 
-document.addEventListener('keydown', (e) => {
+document.addEventListener('keydown', e => {
   if (['ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp', ' ', 'r', 'R'].includes(e.key)) {
     e.preventDefault();
-    handleInput(e.key);
+    handleKey(e.key);
   }
 });
 
-// Touch controls
-let touchStartX = null, touchStartY = null, touchStartTime = null;
+// Touch
+let touchX = null, touchY = null;
 
-document.addEventListener('touchstart', (e) => {
+document.addEventListener('touchstart', e => {
   if (e.touches.length === 1) {
-    touchStartX = e.touches[0].clientX;
-    touchStartY = e.touches[0].clientY;
-    touchStartTime = Date.now();
+    touchX = e.touches[0].clientX;
+    touchY = e.touches[0].clientY;
   }
 }, { passive: true });
 
-document.addEventListener('touchend', (e) => {
-  if (GameState.screen !== 'PLAY' || !touchStartX) return;
+document.addEventListener('touchend', e => {
+  if (Game.screen !== 'PLAY' || !touchX) return;
 
-  const dx = e.changedTouches[0].clientX - touchStartX;
-  const dy = e.changedTouches[0].clientY - touchStartY;
-  const elapsed = Date.now() - touchStartTime;
+  const dx = e.changedTouches[0].clientX - touchX;
+  const dy = e.changedTouches[0].clientY - touchY;
 
-  // Quick tap = let PixiJS handlers process it
-  if (Math.abs(dx) < 15 && Math.abs(dy) < 15 && elapsed < 250) {
-    // Double tap = quick drop
-    const now = Date.now();
-    if (now - GameState.lastTapTime < 300) {
-      if (GameState.currentPiece && !GameState.isCollapsing && !GameState.paused) {
-        handleInput('ArrowDown');
-      }
-    }
-    GameState.lastTapTime = now;
-    touchStartX = null;
+  // Short tap - let PIXI handlers handle it
+  if (Math.abs(dx) < 15 && Math.abs(dy) < 15) {
+    touchX = null;
     return;
   }
 
-  // Swipe gestures
-  if (!GameState.isCollapsing && !GameState.paused && GameState.currentPiece) {
-    if (Math.abs(dx) > Math.abs(dy)) {
-      if (Math.abs(dx) > 25) {
-        handleInput(dx > 0 ? 'ArrowRight' : 'ArrowLeft');
-      }
-    } else {
-      if (dy > 35) {
-        handleInput('ArrowDown');
-      }
+  // Swipe
+  if (!Game.isCollapsing && !Game.paused && Game.piece) {
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 25) {
+      handleKey(dx > 0 ? 'ArrowRight' : 'ArrowLeft');
+    } else if (dy > 35) {
+      handleKey('ArrowDown');
     }
   }
 
-  touchStartX = null;
-  touchStartY = null;
-  touchStartTime = null;
+  touchX = null;
+  touchY = null;
 }, { passive: true });
 
 // ============================================================================
 // GAME LOOP
 // ============================================================================
 
-let lastTime = 0;
-let fallAccumulator = 0;
+let lastTime = 0, fallAcc = 0;
 
-function gameLoop(currentTime) {
-  const deltaTime = Math.min(currentTime - lastTime, 100); // Cap delta to prevent freeze issues
-  lastTime = currentTime;
+function gameLoop(now) {
+  const dt = Math.min(now - lastTime, 100);
+  lastTime = now;
 
   updateParticles();
-  updateScreenShake();
+  updateShake();
 
-  if (GameState.screen === 'PLAY' && !GameState.paused && !GameState.gameOver && !GameState.isCollapsing && GameState.currentPiece) {
-    const fallSpeed = GameState.frozen ? CONFIG.FALL_SPEED * 0.3 : CONFIG.FALL_SPEED;
+  if (Game.screen === 'PLAY' && !Game.paused && !Game.gameOver && !Game.isCollapsing && Game.piece) {
+    const speed = Game.frozen ? CONFIG.FALL_SPEED * 0.3 : CONFIG.FALL_SPEED;
+    fallAcc += dt;
 
-    fallAccumulator += deltaTime;
-    const fallInterval = 1000 / fallSpeed;
+    if (fallAcc >= 1000 / speed) {
+      fallAcc = 0;
 
-    if (fallAccumulator >= fallInterval) {
-      fallAccumulator = 0;
-
-      if (canPlacePiece(GameState.currentPiece, GameState.currentPiece.x, GameState.currentPiece.y + 1)) {
-        GameState.currentPiece.y++;
-        renderGame();
+      if (canPlace(Game.piece, Game.piece.x, Game.piece.y + 1)) {
+        Game.piece.y++;
+        render();
       } else {
-        placePiece(GameState.currentPiece);
-        GameState.currentPiece = null;
-
-        renderGame();
+        placePiece();
+        Game.piece = null;
+        render();
 
         setTimeout(() => {
-          if (!GameState.gameOver && !GameState.isCollapsing && GameState.screen === 'PLAY') {
+          if (!Game.gameOver && !Game.isCollapsing && Game.screen === 'PLAY') {
             spawnPiece();
-            renderGame();
+            render();
           }
         }, 80);
       }
     }
-  }
-
-  // Continuous background update during play
-  if (GameState.screen === 'PLAY' && !GameState.paused) {
-    renderBackground();
   }
 
   requestAnimationFrame(gameLoop);
@@ -2185,11 +1469,10 @@ function gameLoop(currentTime) {
 // ============================================================================
 
 initPixi();
-renderCurrentScreen();
+render();
 requestAnimationFrame(gameLoop);
 
-console.log('SONGSUGAR initialized');
-console.log('Controls: Tap piece to rotate, swipe to move, double-tap to drop, tap clusters to clear');
+console.log('SONGSUGAR loaded - Tap piece to rotate, tap clusters to clear');
 </script>
 </body>
 </html>
