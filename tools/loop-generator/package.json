@@ -1,0 +1,27 @@
+{
+  "name": "songsugar-loop-generator",
+  "version": "1.0.0",
+  "description": "Generate themed loop packs for SONGSUGAR using Suno AI",
+  "main": "index.js",
+  "bin": {
+    "loop-gen": "./index.js"
+  },
+  "scripts": {
+    "list": "node index.js list",
+    "generate:mock": "node index.js generate-all --mock",
+    "generate:starter": "node index.js generate-starter",
+    "generate:all": "node index.js generate-all",
+    "manifest": "node index.js manifest"
+  },
+  "keywords": [
+    "music",
+    "ai",
+    "suno",
+    "loops",
+    "game-audio"
+  ],
+  "author": "NPI Labs",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {}
+}

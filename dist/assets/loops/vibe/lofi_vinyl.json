@@ -1,0 +1,20 @@
+{
+  "id": "lofi_vinyl",
+  "name": "VINYL WARM",
+  "category": "VIBE",
+  "prompt": "lofi warm pad, vinyl crackle texture, cozy atmospheric synth, C minor chord, nostalgic, 115 bpm, 4 bars, no drums, no melody",
+  "tags": [
+    "lofi",
+    "warm",
+    "vinyl"
+  ],
+  "audio": {
+    "bpm": 115,
+    "key": "C",
+    "scale": "minor",
+    "duration": 8.347826086956522,
+    "bars": 4
+  },
+  "generated": "2026-03-12T21:35:17.854Z",
+  "source": "suno"
+}

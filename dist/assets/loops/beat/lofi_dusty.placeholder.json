@@ -1,0 +1,11 @@
+{
+  "type": "placeholder",
+  "message": "Replace with real audio from Suno API",
+  "generatedAt": "2026-03-12T21:35:17.852Z",
+  "config": {
+    "bpm": 115,
+    "key": "C",
+    "scale": "minor",
+    "duration": 8.347826086956522
+  }
+}

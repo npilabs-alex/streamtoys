@@ -1,0 +1,79 @@
+{
+  "id": "starter",
+  "name": "Starter Pack",
+  "description": "Essential loops to get started",
+  "loops": [
+    "trap_808",
+    "lofi_dusty",
+    "house_groove",
+    "lofi_vinyl",
+    "dream_pad",
+    "dark_ambient",
+    "lofi_keys",
+    "trap_bells",
+    "synth_pluck"
+  ],
+  "unlocked": true,
+  "generated": "2026-03-12T21:35:17.856Z",
+  "audio": {
+    "bpm": 115,
+    "key": "C",
+    "scale": "minor"
+  },
+  "files": [
+    {
+      "id": "trap_808",
+      "category": "BEAT",
+      "path": "beat/trap_808.mp3",
+      "name": "TRAP 808"
+    },
+    {
+      "id": "lofi_dusty",
+      "category": "BEAT",
+      "path": "beat/lofi_dusty.mp3",
+      "name": "LOFI DUSTY"
+    },
+    {
+      "id": "house_groove",
+      "category": "BEAT",
+      "path": "beat/house_groove.mp3",
+      "name": "HOUSE"
+    },
+    {
+      "id": "lofi_vinyl",
+      "category": "VIBE",
+      "path": "vibe/lofi_vinyl.mp3",
+      "name": "VINYL WARM"
+    },
+    {
+      "id": "dream_pad",
+      "category": "VIBE",
+      "path": "vibe/dream_pad.mp3",
+      "name": "DREAM PAD"
+    },
+    {
+      "id": "dark_ambient",
+      "category": "VIBE",
+      "path": "vibe/dark_ambient.mp3",
+      "name": "DARK CLOUD"
+    },
+    {
+      "id": "lofi_keys",
+      "category": "MELODY",
+      "path": "melody/lofi_keys.mp3",
+      "name": "LOFI KEYS"
+    },
+    {
+      "id": "trap_bells",
+      "category": "MELODY",
+      "path": "melody/trap_bells.mp3",
+      "name": "TRAP BELLS"
+    },
+    {
+      "id": "synth_pluck",
+      "category": "MELODY",
+      "path": "melody/synth_pluck.mp3",
+      "name": "PLUCK"
+    }
+  ]
+}

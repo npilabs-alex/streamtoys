@@ -1,0 +1,20 @@
+{
+  "id": "synth_pluck",
+  "name": "PLUCK",
+  "category": "MELODY",
+  "prompt": "synth pluck melody, bright staccato synth, catchy arpeggio, C minor, energetic, 115 bpm, 4 bars, no drums",
+  "tags": [
+    "pluck",
+    "synth",
+    "arpeggio"
+  ],
+  "audio": {
+    "bpm": 115,
+    "key": "C",
+    "scale": "minor",
+    "duration": 8.347826086956522,
+    "bars": 4
+  },
+  "generated": "2026-03-12T21:35:17.855Z",
+  "source": "suno"
+}

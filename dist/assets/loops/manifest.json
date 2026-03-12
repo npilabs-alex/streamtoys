@@ -1,0 +1,392 @@
+{
+  "version": "1.0.0",
+  "generated": "2026-03-12T21:35:17.856Z",
+  "audio": {
+    "bpm": 115,
+    "key": "C",
+    "scale": "minor",
+    "bars": 4,
+    "durationSeconds": 8.347826086956522,
+    "format": "mp3",
+    "sampleRate": 44100
+  },
+  "categories": {
+    "BEAT": {
+      "color": "#ff2d6e",
+      "description": "Drums, percussion, rhythmic foundation",
+      "loops": [
+        {
+          "id": "trap_808",
+          "name": "TRAP 808",
+          "tags": [
+            "trap",
+            "808",
+            "hard"
+          ],
+          "file": "beat/trap_808.mp3"
+        },
+        {
+          "id": "lofi_dusty",
+          "name": "LOFI DUSTY",
+          "tags": [
+            "lofi",
+            "chill",
+            "vinyl"
+          ],
+          "file": "beat/lofi_dusty.mp3"
+        },
+        {
+          "id": "house_groove",
+          "name": "HOUSE",
+          "tags": [
+            "house",
+            "dance",
+            "groove"
+          ],
+          "file": "beat/house_groove.mp3"
+        },
+        {
+          "id": "drill_dark",
+          "name": "UK DRILL",
+          "tags": [
+            "drill",
+            "uk",
+            "dark"
+          ],
+          "file": "beat/drill_dark.mp3"
+        },
+        {
+          "id": "afro_bounce",
+          "name": "AFROBEAT",
+          "tags": [
+            "afro",
+            "bounce",
+            "percussion"
+          ],
+          "file": "beat/afro_bounce.mp3"
+        },
+        {
+          "id": "rnb_smooth",
+          "name": "R&B",
+          "tags": [
+            "rnb",
+            "smooth",
+            "sensual"
+          ],
+          "file": "beat/rnb_smooth.mp3"
+        },
+        {
+          "id": "future_knock",
+          "name": "FUTURE",
+          "tags": [
+            "future",
+            "bass",
+            "electronic"
+          ],
+          "file": "beat/future_knock.mp3"
+        },
+        {
+          "id": "synthwave_kit",
+          "name": "SYNTHWAVE",
+          "tags": [
+            "synthwave",
+            "80s",
+            "retro"
+          ],
+          "file": "beat/synthwave_kit.mp3"
+        }
+      ]
+    },
+    "VIBE": {
+      "color": "#00e5ff",
+      "description": "Pads, atmosphere, ambient textures",
+      "loops": [
+        {
+          "id": "lofi_vinyl",
+          "name": "VINYL WARM",
+          "tags": [
+            "lofi",
+            "warm",
+            "vinyl"
+          ],
+          "file": "vibe/lofi_vinyl.mp3"
+        },
+        {
+          "id": "dark_ambient",
+          "name": "DARK CLOUD",
+          "tags": [
+            "dark",
+            "ambient",
+            "cinematic"
+          ],
+          "file": "vibe/dark_ambient.mp3"
+        },
+        {
+          "id": "dream_pad",
+          "name": "DREAM PAD",
+          "tags": [
+            "dream",
+            "ethereal",
+            "floating"
+          ],
+          "file": "vibe/dream_pad.mp3"
+        },
+        {
+          "id": "neo_soul",
+          "name": "NEO SOUL",
+          "tags": [
+            "soul",
+            "rhodes",
+            "warm"
+          ],
+          "file": "vibe/neo_soul.mp3"
+        },
+        {
+          "id": "retro_synth",
+          "name": "RETRO",
+          "tags": [
+            "retro",
+            "80s",
+            "analog"
+          ],
+          "file": "vibe/retro_synth.mp3"
+        },
+        {
+          "id": "strings_lush",
+          "name": "STRINGS",
+          "tags": [
+            "strings",
+            "orchestral",
+            "cinematic"
+          ],
+          "file": "vibe/strings_lush.mp3"
+        },
+        {
+          "id": "choir_vox",
+          "name": "CHOIR",
+          "tags": [
+            "choir",
+            "vocal",
+            "ethereal"
+          ],
+          "file": "vibe/choir_vox.mp3"
+        },
+        {
+          "id": "sub_weight",
+          "name": "SUB BASS",
+          "tags": [
+            "sub",
+            "bass",
+            "deep"
+          ],
+          "file": "vibe/sub_weight.mp3"
+        }
+      ]
+    },
+    "MELODY": {
+      "color": "#39ff14",
+      "description": "Hooks, leads, melodic lines, arpeggios",
+      "loops": [
+        {
+          "id": "lofi_keys",
+          "name": "LOFI KEYS",
+          "tags": [
+            "lofi",
+            "piano",
+            "jazzy"
+          ],
+          "file": "melody/lofi_keys.mp3"
+        },
+        {
+          "id": "trap_bells",
+          "name": "TRAP BELLS",
+          "tags": [
+            "trap",
+            "bells",
+            "dark"
+          ],
+          "file": "melody/trap_bells.mp3"
+        },
+        {
+          "id": "synth_pluck",
+          "name": "PLUCK",
+          "tags": [
+            "pluck",
+            "synth",
+            "arpeggio"
+          ],
+          "file": "melody/synth_pluck.mp3"
+        },
+        {
+          "id": "rnb_rhodes",
+          "name": "RHODES",
+          "tags": [
+            "rhodes",
+            "rnb",
+            "soulful"
+          ],
+          "file": "melody/rnb_rhodes.mp3"
+        },
+        {
+          "id": "guitar_ambient",
+          "name": "GUITAR",
+          "tags": [
+            "guitar",
+            "ambient",
+            "spacey"
+          ],
+          "file": "melody/guitar_ambient.mp3"
+        },
+        {
+          "id": "saw_lead",
+          "name": "SAW LEAD",
+          "tags": [
+            "saw",
+            "lead",
+            "synth"
+          ],
+          "file": "melody/saw_lead.mp3"
+        },
+        {
+          "id": "vocal_chop",
+          "name": "VOX CHOP",
+          "tags": [
+            "vocal",
+            "chop",
+            "modern"
+          ],
+          "file": "melody/vocal_chop.mp3"
+        },
+        {
+          "id": "arp_runner",
+          "name": "ARPEGGIO",
+          "tags": [
+            "arp",
+            "synth",
+            "hypnotic"
+          ],
+          "file": "melody/arp_runner.mp3"
+        }
+      ]
+    }
+  },
+  "packs": [
+    {
+      "id": "starter",
+      "name": "Starter Pack",
+      "description": "Essential loops to get started",
+      "loops": [
+        "trap_808",
+        "lofi_dusty",
+        "house_groove",
+        "lofi_vinyl",
+        "dream_pad",
+        "dark_ambient",
+        "lofi_keys",
+        "trap_bells",
+        "synth_pluck"
+      ],
+      "unlocked": true
+    },
+    {
+      "id": "lofi_chill",
+      "name": "Lofi Chill",
+      "description": "Laid back vibes for study and relaxation",
+      "loops": [
+        "lofi_dusty",
+        "lofi_vinyl",
+        "lofi_keys",
+        "neo_soul",
+        "rnb_rhodes"
+      ],
+      "unlocked": false,
+      "theme": {
+        "tint": "#d4a574",
+        "mood": "relaxed"
+      }
+    },
+    {
+      "id": "dark_trap",
+      "name": "Dark Trap",
+      "description": "Hard hitting trap with dark atmosphere",
+      "loops": [
+        "trap_808",
+        "drill_dark",
+        "dark_ambient",
+        "trap_bells",
+        "sub_weight"
+      ],
+      "unlocked": false,
+      "theme": {
+        "tint": "#4a0080",
+        "mood": "aggressive"
+      }
+    },
+    {
+      "id": "future_vibes",
+      "name": "Future Vibes",
+      "description": "Modern electronic sounds",
+      "loops": [
+        "future_knock",
+        "dream_pad",
+        "synth_pluck",
+        "arp_runner",
+        "saw_lead"
+      ],
+      "unlocked": false,
+      "theme": {
+        "tint": "#00ffff",
+        "mood": "energetic"
+      }
+    },
+    {
+      "id": "retro_wave",
+      "name": "Retro Wave",
+      "description": "80s inspired synthwave",
+      "loops": [
+        "synthwave_kit",
+        "retro_synth",
+        "saw_lead",
+        "arp_runner"
+      ],
+      "unlocked": false,
+      "theme": {
+        "tint": "#ff00ff",
+        "mood": "nostalgic"
+      }
+    },
+    {
+      "id": "soul_session",
+      "name": "Soul Session",
+      "description": "Smooth R&B and neo soul",
+      "loops": [
+        "rnb_smooth",
+        "neo_soul",
+        "rnb_rhodes",
+        "strings_lush",
+        "choir_vox"
+      ],
+      "unlocked": false,
+      "theme": {
+        "tint": "#ffd700",
+        "mood": "sensual"
+      }
+    },
+    {
+      "id": "world_fusion",
+      "name": "World Fusion",
+      "description": "Global rhythms and textures",
+      "loops": [
+        "afro_bounce",
+        "lofi_vinyl",
+        "guitar_ambient",
+        "choir_vox"
+      ],
+      "unlocked": false,
+      "theme": {
+        "tint": "#ff6b35",
+        "mood": "uplifting"
+      }
+    }
+  ]
+}

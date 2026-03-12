@@ -1,0 +1,20 @@
+{
+  "id": "trap_bells",
+  "name": "TRAP BELLS",
+  "category": "MELODY",
+  "prompt": "trap bell melody, dark metallic bells, haunting hook, C minor, hard hitting, 115 bpm, 4 bars, no drums",
+  "tags": [
+    "trap",
+    "bells",
+    "dark"
+  ],
+  "audio": {
+    "bpm": 115,
+    "key": "C",
+    "scale": "minor",
+    "duration": 8.347826086956522,
+    "bars": 4
+  },
+  "generated": "2026-03-12T21:35:17.855Z",
+  "source": "suno"
+}

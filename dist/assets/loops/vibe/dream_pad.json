@@ -1,0 +1,20 @@
+{
+  "id": "dream_pad",
+  "name": "DREAM PAD",
+  "category": "VIBE",
+  "prompt": "dreamy ethereal pad, shimmering synth texture, floating atmosphere, C minor 7, heavenly, 115 bpm, 4 bars, no drums, no melody",
+  "tags": [
+    "dream",
+    "ethereal",
+    "floating"
+  ],
+  "audio": {
+    "bpm": 115,
+    "key": "C",
+    "scale": "minor",
+    "duration": 8.347826086956522,
+    "bars": 4
+  },
+  "generated": "2026-03-12T21:35:17.854Z",
+  "source": "suno"
+}
