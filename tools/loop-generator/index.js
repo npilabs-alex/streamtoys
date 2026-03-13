@@ -66,7 +66,8 @@ Commands:
   manifest          Export game-ready manifest
 
 Options:
-  --api-key <key>   Suno API key (or use SUNO_API_KEY env var)
+  --api-key <key>   API key for the provider
+  --provider <name> API provider: fal (default), mureka, sunoapi
   --mock            Run in mock mode (creates placeholders)
   --pack <id>       Pack ID (starter, lofi_chill, dark_trap, etc.)
   --category <cat>  Category (BEAT, VIBE, MELODY)
@@ -75,15 +76,18 @@ Options:
 Examples:
   node index.js list
   node index.js generate-starter --mock
-  node index.js generate-pack --pack lofi_chill --api-key YOUR_KEY
-  node index.js generate-loop --category BEAT --loop trap_808
+  REPLICATE_API_TOKEN=xxx node index.js generate-starter
+  node index.js generate-loop --category BEAT --loop trap_808 --api-key YOUR_KEY
 
 Environment Variables:
-  SUNO_API_KEY      Your Suno API key for real generation
+  REPLICATE_API_TOKEN  Replicate API key (default, recommended)
+  FAL_KEY              fal.ai API key
+  MUREKA_API_KEY       Mureka API key
+  SUNO_API_KEY         Suno API key (unofficial)
 
-For real generation, get an API key from:
-  - https://sunoapi.info/
-  - https://apipass.io/
+Get your API key:
+  Replicate (recommended): https://replicate.com/account/api-tokens
+  fal.ai:                  https://fal.ai/dashboard/keys
 `);
 }
 
@@ -96,12 +100,31 @@ function listCommand() {
 async function main() {
   const { command, options } = parseArgs();
 
-  // Check for mock mode
-  const mockMode = options.mock || !options['api-key'] && !process.env.SUNO_API_KEY;
+  // Determine provider and API key
+  const provider = options.provider || config.api.defaultProvider;
+  let apiKey = options['api-key'];
+
+  // Check for provider-specific env vars
+  if (!apiKey) {
+    if (provider === 'replicate') {
+      apiKey = process.env.REPLICATE_API_TOKEN;
+    } else if (provider === 'beatoven') {
+      apiKey = process.env.BEATOVEN_API_KEY;
+    } else if (provider === 'fal') {
+      apiKey = process.env.FAL_KEY;
+    } else if (provider === 'mureka') {
+      apiKey = process.env.MUREKA_API_KEY;
+    } else {
+      apiKey = process.env.SUNO_API_KEY;
+    }
+  }
+
+  const mockMode = options.mock || !apiKey;
 
   // Create generator
   const generator = new LoopGenerator({
-    apiKey: options['api-key'] || process.env.SUNO_API_KEY,
+    apiKey: apiKey,
+    provider: provider,
     mockMode: mockMode
   });
 

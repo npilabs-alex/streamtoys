@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SONGSUGAR Viz Mockup 5: Shader Background</title>
+  <style>
+    * { margin: 0; padding: 0; }
+    body { overflow: hidden; background: #000; }
+    canvas { display: block; }
+    .info {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      color: #fff;
+      font-family: system-ui;
+      font-size: 14px;
+      background: rgba(0,0,0,0.7);
+      padding: 15px 20px;
+      border-radius: 10px;
+      z-index: 100;
+    }
+    .info h2 { margin-bottom: 8px; background: linear-gradient(90deg, #ff2d6e, #00e5ff, #39ff14); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  </style>
+</head>
+<body>
+  <div class="info">
+    <h2>Shader Plasma</h2>
+    <p>GPU-accelerated, ultra-performant</p>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    const scene = new THREE.Scene();
+    const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    document.body.appendChild(renderer.domElement);
+
+    const vertexShader = `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `;
+
+    const fragmentShader = `
+      uniform float time;
+      uniform float beat;
+      uniform float vibe;
+      uniform float melody;
+      uniform vec2 resolution;
+      varying vec2 vUv;
+
+      // Color palette
+      vec3 beatColor = vec3(1.0, 0.176, 0.431);   // #ff2d6e
+      vec3 vibeColor = vec3(0.0, 0.898, 1.0);     // #00e5ff
+      vec3 melodyColor = vec3(0.224, 1.0, 0.078); // #39ff14
+
+      float noise(vec2 p) {
+        return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+      }
+
+      float smoothNoise(vec2 p) {
+        vec2 i = floor(p);
+        vec2 f = fract(p);
+        f = f * f * (3.0 - 2.0 * f);
+
+        float a = noise(i);
+        float b = noise(i + vec2(1.0, 0.0));
+        float c = noise(i + vec2(0.0, 1.0));
+        float d = noise(i + vec2(1.0, 1.0));
+
+        return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+      }
+
+      float fbm(vec2 p) {
+        float value = 0.0;
+        float amplitude = 0.5;
+        for (int i = 0; i < 5; i++) {
+          value += amplitude * smoothNoise(p);
+          p *= 2.0;
+          amplitude *= 0.5;
+        }
+        return value;
+      }
+
+      void main() {
+        vec2 uv = vUv;
+        vec2 center = vec2(0.5);
+        float dist = length(uv - center);
+
+        // Create three zones
+        float zone = uv.x * 3.0;
+
+        // Plasma effect
+        float n1 = fbm(uv * 3.0 + time * 0.3);
+        float n2 = fbm(uv * 5.0 - time * 0.2 + 10.0);
+        float n3 = fbm(uv * 4.0 + vec2(time * 0.1, -time * 0.15));
+
+        // Zone intensities
+        float beatZone = smoothstep(0.0, 1.0, 1.0 - abs(uv.x - 0.15) * 3.0) * beat;
+        float vibeZone = smoothstep(0.0, 1.0, 1.0 - abs(uv.x - 0.5) * 3.0) * vibe;
+        float melodyZone = smoothstep(0.0, 1.0, 1.0 - abs(uv.x - 0.85) * 3.0) * melody;
+
+        // Mix colors based on noise and zones
+        vec3 color = vec3(0.02, 0.02, 0.04);
+
+        // Add pulsing glows
+        color += beatColor * beatZone * (0.3 + n1 * 0.4) * (1.0 + sin(time * 4.0) * 0.3 * beat);
+        color += vibeColor * vibeZone * (0.3 + n2 * 0.4) * (1.0 + sin(time * 0.8) * 0.2);
+        color += melodyColor * melodyZone * (0.3 + n3 * 0.4) * (1.0 + sin(time * 2.5) * 0.25 * melody);
+
+        // Add subtle swirl
+        float swirl = sin(dist * 10.0 - time) * 0.1;
+        color += vec3(swirl * 0.1) * (beat + vibe + melody) / 3.0;
+
+        // Vignette
+        color *= 1.0 - dist * 0.5;
+
+        // Add scan lines
+        color *= 0.95 + 0.05 * sin(uv.y * resolution.y * 0.5);
+
+        gl_FragColor = vec4(color, 1.0);
+      }
+    `;
+
+    const uniforms = {
+      time: { value: 0 },
+      beat: { value: 0.5 },
+      vibe: { value: 0.5 },
+      melody: { value: 0.5 },
+      resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) }
+    };
+
+    const material = new THREE.ShaderMaterial({
+      vertexShader,
+      fragmentShader,
+      uniforms
+    });
+
+    const geometry = new THREE.PlaneGeometry(2, 2);
+    const mesh = new THREE.Mesh(geometry, material);
+    scene.add(mesh);
+
+    camera.position.z = 1;
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const time = Date.now() * 0.001;
+      uniforms.time.value = time;
+
+      // Simulated audio
+      uniforms.beat.value = 0.4 + Math.pow(Math.sin(time * 3.5), 4) * 0.6;
+      uniforms.vibe.value = 0.3 + Math.sin(time * 0.7) * 0.3;
+      uniforms.melody.value = 0.4 + Math.sin(time * 2.2) * 0.4;
+
+      renderer.render(scene, camera);
+    }
+
+    animate();
+
+    window.addEventListener('resize', () => {
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      uniforms.resolution.value.set(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>

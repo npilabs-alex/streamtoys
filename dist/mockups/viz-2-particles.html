@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SONGSUGAR Viz Mockup 2: Particle Field</title>
+  <style>
+    * { margin: 0; padding: 0; }
+    body { overflow: hidden; background: #000; }
+    canvas { display: block; }
+    .info {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      color: #fff;
+      font-family: system-ui;
+      font-size: 14px;
+      background: rgba(0,0,0,0.7);
+      padding: 15px 20px;
+      border-radius: 10px;
+      z-index: 100;
+    }
+    .info h2 { margin-bottom: 8px; color: #00e5ff; }
+  </style>
+</head>
+<body>
+  <div class="info">
+    <h2>Particle Field</h2>
+    <p>3 particle systems - one per audio category</p>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    document.body.appendChild(renderer.domElement);
+
+    const BEAT_COLOR = 0xff2d6e;
+    const VIBE_COLOR = 0x00e5ff;
+    const MELODY_COLOR = 0x39ff14;
+
+    // Create particle system for each category
+    function createParticleSystem(count, color, spread, speed) {
+      const geometry = new THREE.BufferGeometry();
+      const positions = new Float32Array(count * 3);
+      const velocities = [];
+
+      for (let i = 0; i < count; i++) {
+        positions[i * 3] = (Math.random() - 0.5) * spread;
+        positions[i * 3 + 1] = (Math.random() - 0.5) * spread;
+        positions[i * 3 + 2] = (Math.random() - 0.5) * spread;
+        velocities.push({
+          x: (Math.random() - 0.5) * speed,
+          y: (Math.random() - 0.5) * speed,
+          z: (Math.random() - 0.5) * speed
+        });
+      }
+
+      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+      const material = new THREE.PointsMaterial({
+        color: color,
+        size: 0.15,
+        transparent: true,
+        opacity: 0.9,
+        blending: THREE.AdditiveBlending
+      });
+
+      const particles = new THREE.Points(geometry, material);
+      particles.userData = { velocities, spread, baseSpeed: speed };
+      return particles;
+    }
+
+    const beatParticles = createParticleSystem(800, BEAT_COLOR, 15, 0.02);
+    const vibeParticles = createParticleSystem(600, VIBE_COLOR, 20, 0.01);
+    const melodyParticles = createParticleSystem(400, MELODY_COLOR, 12, 0.03);
+
+    scene.add(beatParticles);
+    scene.add(vibeParticles);
+    scene.add(melodyParticles);
+
+    // Add central glow
+    const glowGeometry = new THREE.SphereGeometry(0.5, 32, 32);
+    const glowMaterial = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.3
+    });
+    const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+    scene.add(glow);
+
+    // Outer rings
+    for (let i = 0; i < 3; i++) {
+      const ringGeo = new THREE.RingGeometry(3 + i * 2, 3.1 + i * 2, 64);
+      const ringMat = new THREE.MeshBasicMaterial({
+        color: [BEAT_COLOR, VIBE_COLOR, MELODY_COLOR][i],
+        transparent: true,
+        opacity: 0.3,
+        side: THREE.DoubleSide
+      });
+      const ring = new THREE.Mesh(ringGeo, ringMat);
+      ring.userData = { index: i };
+      scene.add(ring);
+    }
+
+    camera.position.z = 15;
+
+    function animateParticles(particles, intensity, time) {
+      const positions = particles.geometry.attributes.position.array;
+      const velocities = particles.userData.velocities;
+      const spread = particles.userData.spread;
+
+      for (let i = 0; i < velocities.length; i++) {
+        positions[i * 3] += velocities[i].x * (1 + intensity * 3);
+        positions[i * 3 + 1] += velocities[i].y * (1 + intensity * 3);
+        positions[i * 3 + 2] += velocities[i].z * (1 + intensity * 3);
+
+        // Wrap around
+        const halfSpread = spread / 2;
+        if (Math.abs(positions[i * 3]) > halfSpread) positions[i * 3] *= -0.9;
+        if (Math.abs(positions[i * 3 + 1]) > halfSpread) positions[i * 3 + 1] *= -0.9;
+        if (Math.abs(positions[i * 3 + 2]) > halfSpread) positions[i * 3 + 2] *= -0.9;
+      }
+
+      particles.geometry.attributes.position.needsUpdate = true;
+      particles.material.size = 0.1 + intensity * 0.2;
+      particles.material.opacity = 0.5 + intensity * 0.5;
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const time = Date.now() * 0.001;
+
+      // Simulated audio
+      const beat = 0.5 + Math.pow(Math.sin(time * 4), 2) * 0.5;
+      const vibe = 0.3 + Math.sin(time * 0.7) * 0.3;
+      const melody = 0.4 + Math.sin(time * 2.5) * 0.4;
+
+      animateParticles(beatParticles, beat, time);
+      animateParticles(vibeParticles, vibe, time);
+      animateParticles(melodyParticles, melody, time);
+
+      // Rotate systems
+      beatParticles.rotation.y = time * 0.1;
+      beatParticles.rotation.x = time * 0.05;
+      vibeParticles.rotation.y = -time * 0.05;
+      vibeParticles.rotation.z = time * 0.03;
+      melodyParticles.rotation.x = time * 0.08;
+      melodyParticles.rotation.z = -time * 0.04;
+
+      // Pulse glow
+      glow.scale.setScalar(1 + beat * 0.5);
+      glow.material.opacity = 0.2 + beat * 0.3;
+
+      // Animate rings
+      scene.children.forEach(child => {
+        if (child.geometry && child.geometry.type === 'RingGeometry') {
+          const i = child.userData.index;
+          const intensity = [beat, vibe, melody][i];
+          child.rotation.z = time * (0.1 + i * 0.05);
+          child.scale.setScalar(1 + intensity * 0.2);
+          child.material.opacity = 0.2 + intensity * 0.4;
+        }
+      });
+
+      // Camera orbit
+      camera.position.x = Math.sin(time * 0.2) * 3;
+      camera.position.y = Math.cos(time * 0.15) * 2;
+      camera.lookAt(0, 0, 0);
+
+      renderer.render(scene, camera);
+    }
+
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>

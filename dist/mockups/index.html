@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SONGSUGAR - 3D Visualization Mockups</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #0a0a12 0%, #1a1a2e 100%);
+      color: #fff;
+      min-height: 100vh;
+      padding: 40px;
+    }
+    h1 {
+      text-align: center;
+      font-size: 2.5em;
+      margin-bottom: 10px;
+      background: linear-gradient(135deg, #ff2d6e, #00e5ff, #39ff14);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .subtitle {
+      text-align: center;
+      color: #888;
+      margin-bottom: 50px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 30px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .card {
+      background: rgba(255,255,255,0.05);
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.1);
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    }
+    .card iframe {
+      width: 100%;
+      height: 250px;
+      border: none;
+      pointer-events: none;
+    }
+    .card-content {
+      padding: 20px;
+    }
+    .card h2 {
+      margin-bottom: 8px;
+      font-size: 1.3em;
+    }
+    .card p {
+      color: #aaa;
+      font-size: 0.95em;
+      margin-bottom: 15px;
+    }
+    .card a {
+      display: inline-block;
+      padding: 10px 24px;
+      background: linear-gradient(135deg, #ff2d6e, #ff6b9d);
+      color: #fff;
+      text-decoration: none;
+      border-radius: 25px;
+      font-weight: 600;
+      transition: transform 0.2s;
+    }
+    .card a:hover {
+      transform: scale(1.05);
+    }
+    .card.c1 h2 { color: #ff2d6e; }
+    .card.c2 h2 { color: #00e5ff; }
+    .card.c3 h2 { color: #39ff14; }
+    .card.c4 h2 { color: #ffd700; }
+    .card.c5 h2 { background: linear-gradient(90deg, #ff2d6e, #00e5ff, #39ff14); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+    .tech-note {
+      max-width: 800px;
+      margin: 50px auto 0;
+      padding: 25px;
+      background: rgba(255,255,255,0.03);
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .tech-note h3 {
+      color: #00e5ff;
+      margin-bottom: 15px;
+    }
+    .tech-note ul {
+      list-style: none;
+      color: #aaa;
+    }
+    .tech-note li {
+      padding: 5px 0;
+      padding-left: 20px;
+      position: relative;
+    }
+    .tech-note li::before {
+      content: ">";
+      position: absolute;
+      left: 0;
+      color: #39ff14;
+    }
+  </style>
+</head>
+<body>
+  <h1>3D Visualization Mockups</h1>
+  <p class="subtitle">Potential backgrounds for SONGSUGAR - click to view fullscreen</p>
+
+  <div class="grid">
+    <div class="card c1">
+      <iframe src="viz-1-geometric.html"></iframe>
+      <div class="card-content">
+        <h2>Geometric Tunnel</h2>
+        <p>Flying through rings that pulse to BEAT/VIBE/MELODY. High energy, good for intense gameplay.</p>
+        <a href="viz-1-geometric.html">View Fullscreen</a>
+      </div>
+    </div>
+
+    <div class="card c2">
+      <iframe src="viz-2-particles.html"></iframe>
+      <div class="card-content">
+        <h2>Particle Field</h2>
+        <p>Three particle systems, one per audio category. Organic, flowing movement.</p>
+        <a href="viz-2-particles.html">View Fullscreen</a>
+      </div>
+    </div>
+
+    <div class="card c3">
+      <iframe src="viz-3-waveform.html"></iframe>
+      <div class="card-content">
+        <h2>3D Waveform Terrain</h2>
+        <p>Audio-reactive landscape with spectrum bars. Retro-futuristic aesthetic.</p>
+        <a href="viz-3-waveform.html">View Fullscreen</a>
+      </div>
+    </div>
+
+    <div class="card c4">
+      <iframe src="viz-4-minimal.html"></iframe>
+      <div class="card-content">
+        <h2>Minimal Orbs</h2>
+        <p>Clean, unobtrusive. Three glowing orbs represent each audio category. Won't distract from gameplay.</p>
+        <a href="viz-4-minimal.html">View Fullscreen</a>
+      </div>
+    </div>
+
+    <div class="card c5">
+      <iframe src="viz-5-shader.html"></iframe>
+      <div class="card-content">
+        <h2>Shader Plasma</h2>
+        <p>Pure GPU shader effect. Most performant option - runs entirely on graphics card.</p>
+        <a href="viz-5-shader.html">View Fullscreen</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="tech-note">
+    <h3>Technical Notes</h3>
+    <ul>
+      <li>All mockups use Three.js (WebGL) - runs in any modern browser</li>
+      <li>Currently using simulated audio - would connect to real AudioContext analyzer</li>
+      <li>Can be rendered behind game canvas with CSS layering</li>
+      <li>Shader version (#5) has lowest CPU overhead</li>
+      <li>All effects can be intensity-adjusted based on game state</li>
+      <li>Could fade/blur during active gameplay, intensify during combos</li>
+    </ul>
+  </div>
+</body>
+</html>

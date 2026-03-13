@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SONGSUGAR Viz Mockup 4: Minimal Orbs</title>
+  <style>
+    * { margin: 0; padding: 0; }
+    body { overflow: hidden; background: #050508; }
+    canvas { display: block; }
+    .info {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      color: #fff;
+      font-family: system-ui;
+      font-size: 14px;
+      background: rgba(0,0,0,0.7);
+      padding: 15px 20px;
+      border-radius: 10px;
+      z-index: 100;
+    }
+    .info h2 { margin-bottom: 8px; color: #ffd700; }
+  </style>
+</head>
+<body>
+  <div class="info">
+    <h2>Minimal Orbs</h2>
+    <p>Clean aesthetic - won't distract from gameplay</p>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setClearColor(0x050508);
+    document.body.appendChild(renderer.domElement);
+
+    const BEAT_COLOR = 0xff2d6e;
+    const VIBE_COLOR = 0x00e5ff;
+    const MELODY_COLOR = 0x39ff14;
+
+    // Create glowing orbs
+    function createOrb(color, size, x, y, z) {
+      const group = new THREE.Group();
+
+      // Core
+      const coreGeo = new THREE.SphereGeometry(size, 32, 32);
+      const coreMat = new THREE.MeshBasicMaterial({
+        color: color,
+        transparent: true,
+        opacity: 0.9
+      });
+      const core = new THREE.Mesh(coreGeo, coreMat);
+      group.add(core);
+
+      // Glow layers
+      for (let i = 1; i <= 3; i++) {
+        const glowGeo = new THREE.SphereGeometry(size * (1 + i * 0.3), 32, 32);
+        const glowMat = new THREE.MeshBasicMaterial({
+          color: color,
+          transparent: true,
+          opacity: 0.15 / i
+        });
+        const glow = new THREE.Mesh(glowGeo, glowMat);
+        group.add(glow);
+      }
+
+      // Ring
+      const ringGeo = new THREE.TorusGeometry(size * 2, size * 0.1, 8, 64);
+      const ringMat = new THREE.MeshBasicMaterial({
+        color: color,
+        transparent: true,
+        opacity: 0.4
+      });
+      const ring = new THREE.Mesh(ringGeo, ringMat);
+      group.add(ring);
+
+      group.position.set(x, y, z);
+      group.userData = { baseSize: size, ring: ring, core: core };
+      return group;
+    }
+
+    const beatOrb = createOrb(BEAT_COLOR, 0.8, -6, 0, -5);
+    const vibeOrb = createOrb(VIBE_COLOR, 1, 0, 0, -8);
+    const melodyOrb = createOrb(MELODY_COLOR, 0.6, 6, 0, -5);
+
+    scene.add(beatOrb);
+    scene.add(vibeOrb);
+    scene.add(melodyOrb);
+
+    // Connection lines between orbs
+    const lineMaterial = new THREE.LineBasicMaterial({
+      color: 0x333344,
+      transparent: true,
+      opacity: 0.3
+    });
+
+    function createLine(p1, p2) {
+      const geometry = new THREE.BufferGeometry().setFromPoints([p1, p2]);
+      return new THREE.Line(geometry, lineMaterial.clone());
+    }
+
+    const line1 = createLine(beatOrb.position, vibeOrb.position);
+    const line2 = createLine(vibeOrb.position, melodyOrb.position);
+    const line3 = createLine(melodyOrb.position, beatOrb.position);
+    scene.add(line1, line2, line3);
+
+    // Ambient particles
+    const particleCount = 100;
+    const particleGeo = new THREE.BufferGeometry();
+    const particlePos = new Float32Array(particleCount * 3);
+
+    for (let i = 0; i < particleCount; i++) {
+      particlePos[i * 3] = (Math.random() - 0.5) * 30;
+      particlePos[i * 3 + 1] = (Math.random() - 0.5) * 15;
+      particlePos[i * 3 + 2] = -5 - Math.random() * 15;
+    }
+
+    particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePos, 3));
+    const particleMat = new THREE.PointsMaterial({
+      color: 0x444455,
+      size: 0.05,
+      transparent: true,
+      opacity: 0.5
+    });
+    const particles = new THREE.Points(particleGeo, particleMat);
+    scene.add(particles);
+
+    camera.position.z = 12;
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const time = Date.now() * 0.001;
+
+      // Simulated audio
+      const beat = 0.5 + Math.pow(Math.sin(time * 3.5), 4) * 0.5;
+      const vibe = 0.4 + Math.sin(time * 0.6) * 0.3;
+      const melody = 0.5 + Math.sin(time * 2) * 0.3;
+
+      // Animate orbs
+      function pulseOrb(orb, intensity, speed) {
+        const scale = 1 + intensity * 0.4;
+        orb.scale.setScalar(scale);
+
+        // Rotate ring
+        orb.userData.ring.rotation.x = time * speed;
+        orb.userData.ring.rotation.y = time * speed * 0.7;
+
+        // Pulse core opacity
+        orb.userData.core.material.opacity = 0.6 + intensity * 0.4;
+
+        // Gentle float
+        orb.position.y = Math.sin(time * speed + orb.position.x) * 0.5;
+      }
+
+      pulseOrb(beatOrb, beat, 1.5);
+      pulseOrb(vibeOrb, vibe, 0.8);
+      pulseOrb(melodyOrb, melody, 1.2);
+
+      // Update connection lines
+      line1.geometry.setFromPoints([beatOrb.position, vibeOrb.position]);
+      line2.geometry.setFromPoints([vibeOrb.position, melodyOrb.position]);
+      line3.geometry.setFromPoints([melodyOrb.position, beatOrb.position]);
+
+      // Line intensity based on combined audio
+      const avgIntensity = (beat + vibe + melody) / 3;
+      line1.material.opacity = 0.1 + avgIntensity * 0.3;
+      line2.material.opacity = 0.1 + avgIntensity * 0.3;
+      line3.material.opacity = 0.1 + avgIntensity * 0.3;
+
+      // Subtle particle drift
+      const pPos = particles.geometry.attributes.position.array;
+      for (let i = 0; i < particleCount; i++) {
+        pPos[i * 3 + 1] += Math.sin(time + i) * 0.002;
+      }
+      particles.geometry.attributes.position.needsUpdate = true;
+
+      // Very subtle camera movement
+      camera.position.x = Math.sin(time * 0.1) * 0.5;
+      camera.position.y = Math.cos(time * 0.08) * 0.3;
+
+      renderer.render(scene, camera);
+    }
+
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>

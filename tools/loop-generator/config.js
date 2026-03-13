@@ -243,8 +243,44 @@ module.exports = {
 
   // API configuration
   api: {
-    // Suno API via third-party providers
     providers: {
+      // Replicate MusicGen - Best working option
+      replicate: {
+        name: 'Replicate (MusicGen)',
+        baseUrl: 'https://api.replicate.com',
+        model: 'meta/musicgen',
+        keyEnvVar: 'REPLICATE_API_TOKEN'
+      },
+      // fal.ai - Hosts Beatoven model
+      fal: {
+        name: 'fal.ai (Beatoven)',
+        baseUrl: 'https://queue.fal.run',
+        model: 'fal-ai/beatoven/music-generation',
+        keyEnvVar: 'FAL_KEY'
+      },
+      // Mureka AI - Direct API access
+      mureka: {
+        name: 'Mureka',
+        baseUrl: 'https://api.mureka.ai/v1',
+        endpoints: {
+          generate: '/instrumental/generate',
+          status: '/instrumental/query',
+          stems: '/stems/generate'
+        },
+        models: ['V8', 'O2', 'V7.6', 'V7.5'],
+        defaultModel: 'V8'
+      },
+      // Mureka via useapi.net (alternative)
+      mureka_useapi: {
+        name: 'Mureka (useapi.net)',
+        baseUrl: 'https://api.useapi.net/v1/mureka',
+        endpoints: {
+          generate: '/music/create-instrumental',
+          status: '/jobs',
+          stems: '/stems'
+        }
+      },
+      // Suno API via third-party providers
       sunoapi: {
         name: 'SunoAPI.info',
         baseUrl: 'https://api.sunoapi.info/api/v1',
@@ -265,7 +301,7 @@ module.exports = {
       }
     },
     // Default settings
-    defaultProvider: 'sunoapi',
+    defaultProvider: 'replicate',
     retryAttempts: 3,
     pollIntervalMs: 5000,
     timeoutMs: 300000 // 5 minutes max wait

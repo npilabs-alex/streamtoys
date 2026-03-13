@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SONGSUGAR Viz: 3D Waveform (Analogue)</title>
+  <style>
+    * { margin: 0; padding: 0; }
+    body { overflow: hidden; background: #1A1208; }
+    canvas { display: block; }
+    .info {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      color: #f5e6d0;
+      font-family: system-ui;
+      font-size: 14px;
+      background: rgba(26,18,8,0.9);
+      padding: 15px 20px;
+      border-radius: 10px;
+      border: 1px solid #3a2a18;
+      z-index: 100;
+    }
+    .info h2 { margin-bottom: 8px; color: #D4521A; }
+  </style>
+</head>
+<body>
+  <div class="info">
+    <h2>3D Waveform Terrain</h2>
+    <p>Analogue palette - audio reactive</p>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setClearColor(0x1A1208);
+    document.body.appendChild(renderer.domElement);
+
+    // Analogue palette colors
+    const BEAT_COLOR = new THREE.Color(0xD4521A);   // Warm rust/orange
+    const VIBE_COLOR = new THREE.Color(0x2E7D7A);   // Teal
+    const MELODY_COLOR = new THREE.Color(0xE8A090); // Salmon pink
+    const SOCIAL_COLOR = new THREE.Color(0xCFB53B); // Gold
+    const BG_COLOR = new THREE.Color(0x1A1208);
+    const GRID_COLOR = new THREE.Color(0x251a0e);
+
+    // Grid terrain
+    const gridWidth = 100;
+    const gridDepth = 80;
+    const geometry = new THREE.PlaneGeometry(50, 40, gridWidth, gridDepth);
+
+    // Create gradient colors matching the palette
+    const colors = new Float32Array(geometry.attributes.position.count * 3);
+    const positions = geometry.attributes.position.array;
+
+    for (let i = 0; i < geometry.attributes.position.count; i++) {
+      const x = positions[i * 3];
+      const normalizedX = (x + 25) / 50; // 0 to 1
+
+      let color;
+      if (normalizedX < 0.33) {
+        // Beat zone (rust orange)
+        const t = normalizedX / 0.33;
+        color = BEAT_COLOR.clone().lerp(new THREE.Color(0x9a3a12), 1 - t);
+      } else if (normalizedX < 0.66) {
+        // Vibe zone (teal)
+        const t = (normalizedX - 0.33) / 0.33;
+        color = VIBE_COLOR.clone();
+      } else {
+        // Melody zone (salmon)
+        const t = (normalizedX - 0.66) / 0.34;
+        color = MELODY_COLOR.clone().lerp(new THREE.Color(0xc07060), t);
+      }
+
+      colors[i * 3] = color.r;
+      colors[i * 3 + 1] = color.g;
+      colors[i * 3 + 2] = color.b;
+    }
+
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+    const material = new THREE.MeshBasicMaterial({
+      vertexColors: true,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.7
+    });
+
+    const terrain = new THREE.Mesh(geometry, material);
+    terrain.rotation.x = -Math.PI / 3;
+    terrain.position.y = -5;
+    terrain.position.z = -10;
+    scene.add(terrain);
+
+    // Add reflection underneath
+    const terrain2 = terrain.clone();
+    terrain2.rotation.x = Math.PI / 3;
+    terrain2.position.y = -18;
+    terrain2.material = material.clone();
+    terrain2.material.opacity = 0.2;
+    scene.add(terrain2);
+
+    // Floating bars (spectrum analyzer style) with analogue colors
+    const bars = [];
+    const barCount = 40;
+
+    for (let i = 0; i < barCount; i++) {
+      const barGeo = new THREE.BoxGeometry(0.6, 1, 0.25);
+      let color;
+      const section = i / barCount;
+
+      if (section < 0.33) {
+        color = BEAT_COLOR;
+      } else if (section < 0.66) {
+        color = VIBE_COLOR;
+      } else {
+        color = MELODY_COLOR;
+      }
+
+      const barMat = new THREE.MeshBasicMaterial({
+        color: color,
+        transparent: true,
+        opacity: 0.9
+      });
+
+      const bar = new THREE.Mesh(barGeo, barMat);
+      bar.position.x = (i - barCount / 2) * 1.0;
+      bar.position.z = 6;
+      bar.position.y = 0;
+      scene.add(bar);
+      bars.push(bar);
+    }
+
+    // Ambient glow orbs
+    function createGlowOrb(color, x, y, z, size) {
+      const group = new THREE.Group();
+
+      for (let i = 0; i < 4; i++) {
+        const geo = new THREE.SphereGeometry(size * (1 + i * 0.5), 16, 16);
+        const mat = new THREE.MeshBasicMaterial({
+          color: color,
+          transparent: true,
+          opacity: 0.15 / (i + 1)
+        });
+        group.add(new THREE.Mesh(geo, mat));
+      }
+
+      group.position.set(x, y, z);
+      return group;
+    }
+
+    const beatOrb = createGlowOrb(BEAT_COLOR, -15, 8, -20, 1.5);
+    const vibeOrb = createGlowOrb(VIBE_COLOR, 0, 10, -25, 2);
+    const melodyOrb = createGlowOrb(MELODY_COLOR, 15, 8, -20, 1.5);
+    scene.add(beatOrb, vibeOrb, melodyOrb);
+
+    // Background particles (warm tones)
+    const particleCount = 300;
+    const particleGeo = new THREE.BufferGeometry();
+    const particlePositions = new Float32Array(particleCount * 3);
+    const particleColors = new Float32Array(particleCount * 3);
+
+    for (let i = 0; i < particleCount; i++) {
+      particlePositions[i * 3] = (Math.random() - 0.5) * 80;
+      particlePositions[i * 3 + 1] = Math.random() * 30 - 5;
+      particlePositions[i * 3 + 2] = -10 - Math.random() * 40;
+
+      // Warm palette particles
+      const colors = [BEAT_COLOR, VIBE_COLOR, MELODY_COLOR, SOCIAL_COLOR];
+      const c = colors[Math.floor(Math.random() * colors.length)];
+      particleColors[i * 3] = c.r;
+      particleColors[i * 3 + 1] = c.g;
+      particleColors[i * 3 + 2] = c.b;
+    }
+
+    particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+    particleGeo.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
+    const particleMat = new THREE.PointsMaterial({
+      size: 0.15,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.6,
+      blending: THREE.AdditiveBlending
+    });
+    const particles = new THREE.Points(particleGeo, particleMat);
+    scene.add(particles);
+
+    // Fog matching background
+    scene.fog = new THREE.Fog(0x1A1208, 20, 80);
+
+    camera.position.set(0, 6, 22);
+    camera.lookAt(0, -2, 0);
+
+    // Store original positions for animation
+    const originalPositions = geometry.attributes.position.array.slice();
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const time = Date.now() * 0.001;
+
+      // Simulated audio data
+      const beat = 0.5 + Math.pow(Math.sin(time * 3.5), 4) * 0.5;
+      const vibe = 0.3 + Math.sin(time * 0.7) * 0.35;
+      const melody = 0.4 + Math.sin(time * 2.2) * 0.4;
+
+      // Animate terrain waves
+      const positions = geometry.attributes.position.array;
+      for (let i = 0; i < geometry.attributes.position.count; i++) {
+        const x = originalPositions[i * 3];
+        const y = originalPositions[i * 3 + 1];
+        const normalizedX = (x + 25) / 50;
+
+        let intensity;
+        if (normalizedX < 0.33) {
+          intensity = beat;
+        } else if (normalizedX < 0.66) {
+          intensity = vibe;
+        } else {
+          intensity = melody;
+        }
+
+        const wave = Math.sin(x * 0.4 + time * 2) * Math.cos(y * 0.25 + time * 0.8);
+        positions[i * 3 + 2] = originalPositions[i * 3 + 2] + wave * intensity * 2.5;
+      }
+      geometry.attributes.position.needsUpdate = true;
+
+      // Animate spectrum bars
+      bars.forEach((bar, i) => {
+        const section = i / barCount;
+        let intensity;
+        if (section < 0.33) {
+          intensity = beat * (0.5 + Math.sin(time * 8 + i * 0.5) * 0.5);
+        } else if (section < 0.66) {
+          intensity = vibe * (0.5 + Math.sin(time * 2 + i * 0.3) * 0.5);
+        } else {
+          intensity = melody * (0.5 + Math.sin(time * 5 + i * 0.4) * 0.5);
+        }
+
+        bar.scale.y = 0.3 + intensity * 5;
+        bar.position.y = (bar.scale.y / 2) - 1;
+        bar.material.opacity = 0.4 + intensity * 0.6;
+      });
+
+      // Pulse orbs
+      beatOrb.scale.setScalar(1 + beat * 0.3);
+      vibeOrb.scale.setScalar(1 + vibe * 0.25);
+      melodyOrb.scale.setScalar(1 + melody * 0.3);
+
+      // Scroll terrain continuously
+      terrain.position.z += 0.03;
+      terrain2.position.z += 0.03;
+      if (terrain.position.z > 8) {
+        terrain.position.z = -10;
+        terrain2.position.z = -10;
+      }
+
+      // Gentle particle drift
+      const pPos = particles.geometry.attributes.position.array;
+      for (let i = 0; i < particleCount; i++) {
+        pPos[i * 3 + 1] += Math.sin(time * 0.5 + i) * 0.005;
+        pPos[i * 3 + 2] += 0.02;
+        if (pPos[i * 3 + 2] > 10) {
+          pPos[i * 3 + 2] = -50;
+        }
+      }
+      particles.geometry.attributes.position.needsUpdate = true;
+
+      // Subtle camera sway
+      camera.position.x = Math.sin(time * 0.2) * 2;
+      camera.position.y = 6 + Math.sin(time * 0.15) * 0.5;
+      camera.lookAt(0, -2, 0);
+
+      renderer.render(scene, camera);
+    }
+
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>
