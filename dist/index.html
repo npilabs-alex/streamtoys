@@ -1123,7 +1123,7 @@ const Audio = {
       const kickSynth = this.synths.BEAT.kick[id];
       if (kickSynth) {
         const kickSeq = new Tone.Sequence((t, n) => {
-          const swingAmt = (G.swing * 0.5) * (60 / Tone.Transport.bpm.value / 4);
+          const swingAmt = (G.swing * 0.33) * (60 / Tone.Transport.bpm.value / 4);
           const st = (slot.step % 2 === 1) ? t + swingAmt : t;
           if (n) try {
             kickSynth.triggerAttackRelease(n, '8n', st);
@@ -1152,7 +1152,7 @@ const Audio = {
 
           const arr = this.parsePattern(patStr);
           const seq = new Tone.Sequence((t, n) => {
-            const swingAmt = (G.swing * 0.5) * (60 / Tone.Transport.bpm.value / 4);
+            const swingAmt = (G.swing * 0.33) * (60 / Tone.Transport.bpm.value / 4);
             const st = (slot.step % 2 === 1) ? t + swingAmt : t;
             if (n) try {
               if (cfg.note) synth.triggerAttackRelease(cfg.note, cfg.dur, st, cfg.vel);
@@ -1225,7 +1225,7 @@ const Audio = {
 
         let stepIndex = 0;
         const seq = new Tone.Sequence((t, n) => {
-          const swingAmt = (G.swing * 0.5) * (60 / Tone.Transport.bpm.value / 4);
+          const swingAmt = (G.swing * 0.33) * (60 / Tone.Transport.bpm.value / 4);
           const st = (stepIndex % 2 === 1) ? t + swingAmt : t;
           stepIndex = (stepIndex + 1) % 16;
           if (!n) return;
