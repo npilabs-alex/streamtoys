@@ -801,27 +801,30 @@ const Audio = {
       return s;
     };
 
-    // 1. LOFI KEYS - soft, warm triangle with slight detune
-    const lofiKeys = new Tone.MonoSynth({
-      oscillator: { type: 'triangle', detune: 8 },
-      envelope: { attack: 0.02, decay: 0.4, sustain: 0.2, release: 0.8 },
-      filterEnvelope: { attack: 0.01, decay: 0.2, sustain: 0.3, release: 0.3, baseFrequency: 600, octaves: 2 },
-      filter: { Q: 2 }
+    // 1. LOFI KEYS - soft FM keys with detune
+    const lofiKeys = new Tone.FMSynth({
+      harmonicity: 2,
+      modulationIndex: 3,
+      detune: 8,
+      envelope: { attack: 0.02, decay: 0.5, sustain: 0.2, release: 0.8 },
+      modulation: { type: 'triangle' },
+      modulationEnvelope: { attack: 0.01, decay: 0.3, sustain: 0.1, release: 0.4 }
     });
     lofiKeys.connect(melodyBus);
     lofiKeys.connect(reverbSend);
-    lofiKeys.volume.value = -10;
+    lofiKeys.volume.value = -11;
 
-    // 2. TRAP BELLS - fat shimmering bells
-    const trapBells = new Tone.MonoSynth({
-      oscillator: { type: 'fatsine' },
-      envelope: { attack: 0.001, decay: 0.8, sustain: 0.02, release: 1.2 },
-      filterEnvelope: { attack: 0.001, decay: 0.2, sustain: 0.1, release: 0.3, baseFrequency: 3000, octaves: 2 },
-      filter: { Q: 1 }
+    // 2. TRAP BELLS - shimmering FM bells
+    const trapBells = new Tone.PolySynth(Tone.FMSynth, {
+      harmonicity: 5.1,
+      modulationIndex: 20,
+      envelope: { attack: 0.001, decay: 1.0, sustain: 0, release: 0.8 },
+      modulation: { type: 'sine' },
+      modulationEnvelope: { attack: 0.001, decay: 0.5, sustain: 0, release: 0.3 }
     });
     trapBells.connect(melodyBus);
     trapBells.connect(reverbSend);
-    trapBells.volume.value = -10;
+    trapBells.volume.value = -14;
 
     // 3. SYNTH PLUCK - fat resonant pluck
     const synthPluck = new Tone.MonoSynth({
@@ -834,16 +837,17 @@ const Audio = {
     synthPluck.connect(reverbSend);
     synthPluck.volume.value = -9;
 
-    // 4. RNB RHODES - warm mellow keys
-    const rnbRhodes = new Tone.MonoSynth({
-      oscillator: { type: 'triangle' },
-      envelope: { attack: 0.01, decay: 0.6, sustain: 0.3, release: 1.0 },
-      filterEnvelope: { attack: 0.02, decay: 0.3, sustain: 0.3, release: 0.5, baseFrequency: 500, octaves: 2 },
-      filter: { Q: 3 }
+    // 4. RNB RHODES - warm FM electric piano
+    const rnbRhodes = new Tone.FMSynth({
+      harmonicity: 3.5,
+      modulationIndex: 10,
+      envelope: { attack: 0.01, decay: 0.8, sustain: 0.3, release: 1.2 },
+      modulation: { type: 'sine' },
+      modulationEnvelope: { attack: 0.002, decay: 0.4, sustain: 0.1, release: 0.5 }
     });
     rnbRhodes.connect(melodyBus);
     rnbRhodes.connect(reverbSend);
-    rnbRhodes.volume.value = -9;
+    rnbRhodes.volume.value = -12;
 
     // 5. GUITAR AMBIENT - soft pluck with long release
     const guitarAmbient = new Tone.MonoSynth({
@@ -926,16 +930,16 @@ const Audio = {
     acid303.connect(melodyBus);
     acid303.volume.value = -10;
 
-    // 13. JAZZ SAX - expressive, breathy
-    const jazzSax = new Tone.MonoSynth({
-      oscillator: { type: 'sawtooth' },
-      envelope: { attack: 0.08, decay: 0.4, sustain: 0.6, release: 0.5 },
-      filterEnvelope: { attack: 0.03, decay: 0.2, sustain: 0.4, release: 0.3, baseFrequency: 900, octaves: 2 },
-      filter: { Q: 3 }
+    // 13. JAZZ SAX - expressive AM brass
+    const jazzSax = new Tone.AMSynth({
+      harmonicity: 0.5,
+      envelope: { attack: 0.08, decay: 0.3, sustain: 0.7, release: 0.4 },
+      modulation: { type: 'sawtooth' },
+      modulationEnvelope: { attack: 0.1, decay: 0.2, sustain: 0.8, release: 0.3 }
     });
     jazzSax.connect(melodyBus);
     jazzSax.connect(reverbSend);
-    jazzSax.volume.value = -9;
+    jazzSax.volume.value = -10;
 
     // 14. PHONK LEAD - dark, aggressive bass lead
     const phonkLead = new Tone.MonoSynth({
