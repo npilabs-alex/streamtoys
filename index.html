@@ -3250,6 +3250,13 @@ function renderHUD() {
   const tickerY = H - tickerH - safeBottom;
   const tickerFontSize = isMobile ? 10 : 12;
 
+  // Dark background bar for ticker
+  const tickerBg = new PIXI.Graphics();
+  tickerBg.beginFill(0x000000, 0.6);
+  tickerBg.drawRect(0, tickerY, W, tickerH);
+  tickerBg.endFill();
+  layers.hud.addChild(tickerBg);
+
   // Get active loops
   const activeLoops = [];
   ['BEAT', 'VIBE', 'MELODY'].forEach(cat => {
@@ -3317,11 +3324,11 @@ function renderHUD() {
 
     layers.hud.addChild(tickerContainer);
   } else {
-    // No loops active - faint placeholder
+    // No loops active - placeholder
     const placeholder = new PIXI.Text('♪ start building your mix', {
-      fontFamily: FONT_UI, fontSize: tickerFontSize, fill: 0x444444, fontWeight: '400'
+      fontFamily: FONT_UI, fontSize: tickerFontSize, fill: 0x888888, fontWeight: '400'
     });
-    placeholder.alpha = 0.5;
+    placeholder.alpha = 1.0;
     placeholder.anchor.set(0.5);
     placeholder.x = W / 2;
     placeholder.y = tickerY + tickerH / 2;
