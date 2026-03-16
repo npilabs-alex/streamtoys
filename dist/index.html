@@ -157,6 +157,7 @@ const G = {
   mix: { BEAT: 0.8, VIBE: 0.7, MELODY: 0.8 }, // volume mix 0-1
   filter: 1.0, // master filter cutoff 0-1 (maps to 200-20000 Hz)
   effects: 0.5, // global effects wet 0-1 (reverb/delay)
+  swing: 0, // swing amount 0-1 (maps to 0-50%)
   // Tutorial system
   tutorial: {
     active: false,
@@ -1534,6 +1535,16 @@ const Audio = {
     try { Tone.Transport.bpm.rampTo(clamped, 0.15); } catch(e) { console.log('setBPM error:', e); }
     G.bpm = clamped;
     console.log('BPM set to:', clamped, '| Transport BPM:', Tone.Transport.bpm.value);
+  },
+
+  setSwing(amount) {
+    if (!this.ready) { console.log('setSwing: Audio not ready'); return; }
+    const clamped = Math.max(0, Math.min(1, amount));
+    G.swing = clamped;
+    // Map 0-1 to 0-0.5 (0-50% swing)
+    Tone.Transport.swing = clamped * 0.5;
+    Tone.Transport.swingSubdivision = '16n';
+    console.log('Swing set to:', (clamped * 50).toFixed(0) + '%');
   },
 
   setPitch(semitones) {
