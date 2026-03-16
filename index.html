@@ -1115,9 +1115,13 @@ const Audio = {
       // Kick pattern
       const kickSynth = this.synths.BEAT.kick[id];
       if (kickSynth) {
+        let kickStep = 0;
         const kickSeq = new Tone.Sequence((t, n) => {
+          const swingAmt = (G.swing * 0.5) * (60 / Tone.Transport.bpm.value / 4);
+          const st = (kickStep % 2 === 1) ? t + swingAmt : t;
+          kickStep = (kickStep + 1) % 16;
           if (n) try {
-            kickSynth.triggerAttackRelease(n, '8n', t);
+            kickSynth.triggerAttackRelease(n, '8n', st);
           } catch(e) {}
         }, pattern, '16n');
         kickSeq.start(startTime);
@@ -1142,10 +1146,14 @@ const Audio = {
           if (!synth) return;
 
           const arr = this.parsePattern(patStr);
+          let percStep = 0;
           const seq = new Tone.Sequence((t, n) => {
+            const swingAmt = (G.swing * 0.5) * (60 / Tone.Transport.bpm.value / 4);
+            const st = (percStep % 2 === 1) ? t + swingAmt : t;
+            percStep = (percStep + 1) % 16;
             if (n) try {
-              if (cfg.note) synth.triggerAttackRelease(cfg.note, cfg.dur, t, cfg.vel);
-              else synth.triggerAttackRelease(cfg.dur, t, cfg.vel);
+              if (cfg.note) synth.triggerAttackRelease(cfg.note, cfg.dur, st, cfg.vel);
+              else synth.triggerAttackRelease(cfg.dur, st, cfg.vel);
             } catch(e) {}
           }, arr, '16n');
           seq.start(startTime);
@@ -1212,7 +1220,11 @@ const Audio = {
         const isPluck = id.includes('pluck') || id.includes('guitar');
         let noteIndex = 0;
 
+        let stepIndex = 0;
         const seq = new Tone.Sequence((t, n) => {
+          const swingAmt = (G.swing * 0.5) * (60 / Tone.Transport.bpm.value / 4);
+          const st = (stepIndex % 2 === 1) ? t + swingAmt : t;
+          stepIndex = (stepIndex + 1) % 16;
           if (!n) return;
           try {
             // Velocity humanization
@@ -1224,11 +1236,11 @@ const Audio = {
             const note = Array.isArray(n) ? n[0] : n;
 
             if (isMono) {
-              synth.triggerAttackRelease(note, '8n', t, vel);
+              synth.triggerAttackRelease(note, '8n', st, vel);
             } else if (isPluck) {
-              synth.triggerAttackRelease(note, '8n', t, vel);
+              synth.triggerAttackRelease(note, '8n', st, vel);
             } else {
-              synth.triggerAttackRelease(note, '16n', t, vel);
+              synth.triggerAttackRelease(note, '16n', st, vel);
             }
           } catch(e) {}
         }, pattern, '16n');
@@ -1543,8 +1555,10 @@ const Audio = {
     G.swing = clamped;
     // Map 0-1 to 0-0.5 (0-50% swing)
     Tone.Transport.swing = clamped * 0.5;
-    Tone.Transport.swingSubdivision = '16n';
-    console.log('Swing set to:', (clamped * 50).toFixed(0) + '%');
+    Tone.Transport.swingSubdivision = '8n';
+    console.log('Swing set to:', (clamped * 50).toFixed(0) + '%',
+      '| Transport.swing:', Tone.Transport.swing,
+      '| swingSubdivision:', Tone.Transport.swingSubdivision);
   },
 
   setPitch(semitones) {
