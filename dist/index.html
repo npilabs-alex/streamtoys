@@ -99,7 +99,7 @@ const LOOPS = {
     // New sound packs
     { id: 'chip_beat', name: 'CHIPTUNE', unlocked: true },
     { id: 'tropical_bounce', name: 'TROPICAL', unlocked: true },
-    { id: 'ambient_pulse', name: 'AMBIENT', unlocked: true },
+    { id: 'phonk_dark', name: 'PHONK', unlocked: true },
     { id: 'acid_drive', name: 'ACID', unlocked: true },
     { id: 'jazz_swing', name: 'JAZZ HOP', unlocked: true }
   ],
@@ -746,24 +746,25 @@ const Audio = {
     const reverbSend = this.sends.REVERB;
 
     // ========== BEAT SYNTHS (kicks + perc) ==========
-    // 3 shared kick types with balanced decay times
+    // 4 kick types optimized for different genres
     const kickDeep = this._makeKick({ pitchDecay: 0.1, octaves: 6, decay: 0.35 }, beatBus);   // 808/sub - full body
     const kickTight = this._makeKick({ pitchDecay: 0.02, octaves: 3, decay: 0.12 }, beatBus); // Punchy - quick
     const kickSoft = this._makeKick({ pitchDecay: 0.04, octaves: 4, decay: 0.18 }, beatBus);  // Natural - medium
+    const kickHard = this._makeKick({ pitchDecay: 0.05, octaves: 5, decay: 0.2 }, beatBus);   // Hard hitting - drill/phonk
 
     this.synths.BEAT.kick = {
       trap_808: kickDeep,
       lofi_dusty: kickSoft,
-      house_groove: kickTight,
-      drill_dark: kickDeep,
+      house_groove: kickHard,
+      drill_dark: kickTight,
       afro_bounce: kickSoft,
       rnb_smooth: kickSoft,
       future_knock: kickSoft,
       synthwave_kit: kickTight,
       chip_beat: kickTight,
       tropical_bounce: kickSoft,
-      ambient_pulse: kickDeep,
-      acid_drive: kickTight,
+      phonk_dark: kickHard,
+      acid_drive: kickHard,
       jazz_swing: kickSoft
     };
 
@@ -987,10 +988,10 @@ const Audio = {
   // ========== PATTERNS - All in C minor at 115 BPM ==========
   patterns: {
     BEAT: {
-      trap_808: ['C1',null,'C1',null,'G0',null,'C1','C1',null,'C1',null,null,'G0',null,'C1',null],
+      trap_808: ['C1',null,null,null,'G0',null,'C1',null,null,'C1',null,null,'G0',null,null,'C1'],
       lofi_dusty: ['C2',null,null,null,'C2',null,null,null,'C2',null,null,null,'C2',null,null,'D2'],
-      house_groove: ['C1',null,null,null,'C1',null,null,null,'C1',null,null,null,'C1',null,null,null],
-      drill_dark: ['C1',null,null,null,null,null,'G0',null,null,'C1',null,null,null,null,'G0',null],
+      house_groove: ['C1',null,null,null,'C1',null,'C1',null,'C1',null,null,null,'C1',null,'G0',null],
+      drill_dark: ['C1',null,'C1',null,null,null,'G0','C1',null,null,'C1',null,null,'G0',null,'C1'],
       afro_bounce: ['C2',null,'C2','D2','C2',null,'C2',null,'G1',null,'C2','D2','C2',null,'G1',null],
       rnb_smooth: ['C2',null,null,null,null,null,'C2',null,null,null,null,null,'G1',null,null,null],
       future_knock: ['C1',null,null,null,null,null,'G0',null,'C1',null,null,null,null,null,'G0',null],
@@ -998,8 +999,8 @@ const Audio = {
       // New sound packs
       chip_beat: ['C3',null,'C3',null,'C3',null,'C3',null,'C3',null,'C3',null,'C3',null,'C3',null],
       tropical_bounce: ['C2',null,null,'C2',null,null,'C2',null,null,null,'C2',null,null,'D2',null,null],
-      ambient_pulse: ['C1',null,null,null,null,null,null,null,'G0',null,null,null,null,null,null,null],
-      acid_drive: ['C1',null,null,null,'C1',null,null,null,'C1',null,null,null,'C1',null,null,null],
+      phonk_dark: ['C1',null,'C1',null,null,'G0',null,'C1','C1',null,null,'G0',null,'C1',null,'G0'],
+      acid_drive: ['C1',null,'C1',null,'C1',null,'G0','C1',null,'C1',null,'C1','G0',null,'C1',null],
       jazz_swing: ['C2',null,null,'D2',null,null,'C2',null,null,null,'C2',null,null,'G1',null,null]
     },
     // VIBE is now effects - no patterns needed
@@ -1030,10 +1031,10 @@ const Audio = {
       arp_runner: [null,null,'C5',null,null,null,'G4',null,null,null,'Bb4',null,null,null,'F4',null]
     },
     BEAT_PERC: {
-      trap_808: { hh: 'x-x-x-x-x-x-x-x-', sn: '----x-------x---', oh: '------x-------x-' },
+      trap_808: { hh: 'x-x-x-x-x-x-x-x-', sn: '----x-------x---', oh: '----x-------x---', cl: '------x-------x-' },
       lofi_dusty: { hh: 'x--xx--xx--xx--x', sn: '----x-------x--x', sh: 'x-x-x-x-x-x-x-x-' },
-      house_groove: { hh: '-x-x-x-x-x-x-x-x', oh: '----x-------x---', cl: '----x-------x---' },
-      drill_dark: { hh: 'x-xxx-x-x-xxx-x-', sn: '----x--x----x--x', oh: '--x-------x-----' },
+      house_groove: { hh: 'x-x-x-x-x-x-x-x-', oh: '----x-------x---', cl: '----x-------x---', sn: '--------x-------' },
+      drill_dark: { hh: 'x-xxx-xxx-xxx-x-', sn: '----x--x----x--x', cl: '--x---x---x---x-' },
       afro_bounce: { hh: 'x-x-x-x-x-x-x-x-', rm: 'x-x--x-xx-x--x-x', cl: '----x-------x---' },
       rnb_smooth: { hh: 'x---x---x---x---', sn: '----x-------x---', sh: '--x---x---x---x-' },
       future_knock: { hh: 'x---x---x---x---', cl: '----x-------x---', sn: '----x-------x---' },
@@ -1041,8 +1042,8 @@ const Audio = {
       // New sound packs
       chip_beat: { hh: 'x-x-x-x-x-x-x-x-', sn: '----x-------x---', cl: '--x---x---x---x-' },
       tropical_bounce: { sh: 'x-x-x-x-x-x-x-x-', rm: '--x---x---x---x-', cl: '----x-------x---' },
-      ambient_pulse: { sh: '----x-------x---', oh: '--------x-------' },
-      acid_drive: { hh: 'x-x-x-x-x-x-x-x-', oh: '----x-------x---', cl: '--------x-------' },
+      phonk_dark: { hh: 'x-x-x-x-x-x-x-x-', sn: '----x-------x---', cl: '--x---x---x---x-', oh: '------x-------x-' },
+      acid_drive: { hh: 'xxxxxxxxxxxx-xxx', oh: '----x-------x---', cl: '----x--x----x--x' },
       jazz_swing: { hh: 'x--x--x--x--x--x', sn: '----x-------x---', rm: '--x-------x-----' }
     }
   },
@@ -3823,8 +3824,8 @@ function renderMix() {
   layers.overlay.addChild(listLbl);
   curY += labelSize + 8;
 
-  const rowH = isNarrow ? 22 : (isMobile ? 24 : 30);
-  const rowGap = isNarrow ? 2 : (isMobile ? 3 : 4);
+  const rowH = isNarrow ? 18 : (isMobile ? 20 : 24);
+  const rowGap = isNarrow ? 1 : (isMobile ? 2 : 3);
   const contentW = W - pad * 2;
   const colW = (contentW - slotGap * 2) / 3;
   const maxRows = Math.floor((H - footerH - curY - rowH) / (rowH + rowGap));
