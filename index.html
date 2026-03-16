@@ -3246,7 +3246,8 @@ function renderHUD() {
 
   // ========== BOTTOM TICKER: SIGNAL CHAIN ==========
   const tickerH = isMobile ? 24 : 28;
-  const tickerY = H - tickerH;
+  const safeBottom = isMobile ? 20 : 0;  // Safe area for mobile browser chrome
+  const tickerY = H - tickerH - safeBottom;
   const tickerFontSize = isMobile ? 10 : 12;
 
   // Get active loops
