@@ -604,8 +604,8 @@ const Audio = {
     // Single shared reverb send for all categories
     this.sends.REVERB = new Tone.Gain(0.4).connect(this.effectsGain);
 
-    // Load single reverb (non-blocking)
-    setTimeout(() => this._loadEffects(), 300);
+    // Load shared reverb (must complete before user interaction)
+    await this._loadEffects();
 
     // ========== SIMPLE CATEGORY BUSES ==========
     // Direct to music bus - no extra processing for efficiency
@@ -714,8 +714,29 @@ const Audio = {
 
   // Pre-trigger all SFX synths to avoid JIT compilation latency
   _warmupSFX() {
-    // Skip warmup to avoid any audible sounds at start
-    // Synths will warm up naturally on first use
+    // Silent warmup - trigger each synth at -Infinity dB to pre-compile JIT
+    const originalVolumes = {};
+    Object.entries(this.sfx).forEach(([name, synth]) => {
+      if (!synth) return;
+      originalVolumes[name] = synth.volume.value;
+      synth.volume.value = -Infinity;
+    });
+
+    // Trigger each synth type silently
+    try { this.sfx.membrane.triggerAttackRelease('C1', '32n'); } catch(e) {}
+    try { this.sfx.bell.triggerAttackRelease('C4', '32n'); } catch(e) {}
+    try { this.sfx.pluck.triggerAttack('C4'); } catch(e) {}
+    try { this.sfx.noise.triggerAttackRelease('32n'); } catch(e) {}
+    try { this.sfx.metal.triggerAttackRelease('C4', '32n'); } catch(e) {}
+    try { this.sfx.poly.triggerAttackRelease('C4', '32n'); } catch(e) {}
+    try { this.sfx.click.triggerAttackRelease('G5', '32n'); } catch(e) {}
+
+    // Restore volumes after a brief delay
+    setTimeout(() => {
+      Object.entries(originalVolumes).forEach(([name, vol]) => {
+        if (this.sfx[name]) this.sfx[name].volume.value = vol;
+      });
+    }, 100);
   },
 
   _createSynths() {
@@ -1053,8 +1074,9 @@ const Audio = {
 
     const slot = { id, sequences: [] };
 
-    // Quantize start time to next measure for perfect sync
-    const startTime = "@1m"; // Start at next measure boundary
+    // Quantize start time - first loop waits for measure, subsequent loops use half-note for faster entry
+    const hasActiveLoops = this.slots.BEAT.length + this.slots.VIBE.length + this.slots.MELODY.length > 0;
+    const startTime = hasActiveLoops ? "@2n" : "@1m";
 
     if (cat === 'BEAT') {
       // Kick pattern
@@ -1108,8 +1130,19 @@ const Audio = {
         if (!fx.node) {
           if (id === 'reverb_hall') {
             fx.node = new Tone.Reverb({ decay: 2.0, wet: 0 });
-            fx.node.generate(); // Async init
-          } else if (id === 'delay_echo') {
+            fx.node.generate().then(() => {
+              if (!fx.active) return; // User may have toggled off during generation
+              this.musicBus.connect(fx.node);
+              fx.node.connect(this.masterBus);
+              fx.node.wet.rampTo(fx.targetWet, 0.5);
+              console.log(`VIBE effect ON: ${id}`);
+            });
+            // Early return - reverb handles its own async connection
+            this.slots[cat].push(slot);
+            this._autoGainStage();
+            return;
+          }
+          if (id === 'delay_echo') {
             fx.node = new Tone.PingPongDelay({ delayTime: '8n', feedback: 0.3, wet: 0 });
           } else if (id === 'filter_sweep') {
             fx.node = new Tone.AutoFilter({ frequency: '2n', baseFrequency: 200, octaves: 4, wet: 0 });
@@ -1192,6 +1225,13 @@ const Audio = {
         fx.active = false;
         if (fx.node) {
           fx.node.wet.rampTo(0, 0.3); // Fade out
+          // Dispose after fade completes
+          setTimeout(() => {
+            if (fx.node && !fx.active) {
+              try { fx.node.disconnect(); fx.node.dispose(); } catch(e) {}
+              fx.node = null;
+            }
+          }, 500);
         }
         console.log(`VIBE effect OFF: ${id}`);
       }
