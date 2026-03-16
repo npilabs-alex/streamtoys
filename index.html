@@ -1343,7 +1343,7 @@ const Audio = {
         this.introSynth.triggerAttackRelease(['C2', 'G2'], '2n', t, 0.3);
       } catch(e) {}
     }, '1m');
-    this.introLoop.start(0);
+    this.introLoop.start("+0.1");  // Start shortly after now (relative time)
     this.introActive = true;
   },
 
