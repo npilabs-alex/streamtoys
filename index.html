@@ -3646,147 +3646,212 @@ function renderSettings() {
 }
 
 function renderMix() {
-  const p = P(), bg = new PIXI.Graphics();
-  bg.beginFill(p.bg); bg.drawRect(0, 0, W, H); bg.endFill();
+  const p = P();
+  const bg = new PIXI.Graphics();
+  bg.beginFill(p.bg);
+  bg.drawRect(0, 0, W, H);
+  bg.endFill();
   layers.overlay.addChild(bg);
 
   const isMobile = W < 500;
-  const isNarrow = W < 360; // Very narrow screens get stacked layout
-  const pad = isMobile ? 10 : 20;
-  const headerH = isMobile ? 36 : 50;
-  const footerH = isMobile ? 40 : 55;
-  const labelSize = isMobile ? 7 : 11;
-  const valueSize = isMobile ? 9 : 14;
+  const pad = isMobile ? 12 : 20;
 
-  // Calculate beat pulse for active loop throbbing effect
-  // Uses Tone.Transport to sync with music
-  let beatPulse = 0;
-  try {
-    if (Tone && Tone.Transport && Tone.Transport.state === 'started') {
-      // Get position in current bar (0-1) and use it for pulse
-      const pos = Tone.Transport.progress || 0;
-      const beatInBar = (pos * 4) % 1; // 4 beats per bar
-      // Sharp attack, quick decay for punchy pulse
-      beatPulse = Math.pow(1 - beatInBar, 2) * 0.35;
-    }
-  } catch(e) {}
+  // Category colors (no orange)
+  const catColors = {
+    BEAT: 0xe05555,
+    VIBE: 0x4caf70,
+    MELODY: 0x5599e0
+  };
 
-  // Title
-  const title = new PIXI.Text('MIX', { fontFamily: FONT_UI, fontSize: isMobile ? 18 : 24, fill: p.text, fontWeight: '800' });
-  title.anchor.set(0.5); title.x = W/2; title.y = headerH / 2;
+  // Initialize state if not set
+  if (!G.mixTab) G.mixTab = 'BEAT';
+  if (typeof G.mixScrollY !== 'number') G.mixScrollY = 0;
+
+  let curY = 0;
+
+  // ========== HEADER ==========
+  const headerH = isMobile ? 44 : 56;
+
+  const title = new PIXI.Text('MIX', {
+    fontFamily: FONT_UI,
+    fontSize: isMobile ? 20 : 28,
+    fill: 0xffffff,
+    fontWeight: '800'
+  });
+  title.anchor.set(0.5);
+  title.x = W / 2;
+  title.y = headerH / 2;
   layers.overlay.addChild(title);
 
   // Close button
-  const closeBtnSize = isMobile ? 28 : 36;
-  layers.overlay.addChild(makeButton('X', W - closeBtnSize/2 - 8, headerH/2, () => { G.screen = 'PLAY'; G.dirty = true; }, closeBtnSize, closeBtnSize - 6, p.dim));
+  const closeBtnSize = isMobile ? 32 : 40;
+  const closeBtn = new PIXI.Graphics();
+  closeBtn.beginFill(0x333333, 0.6);
+  closeBtn.drawRoundedRect(0, 0, closeBtnSize, closeBtnSize, 6);
+  closeBtn.endFill();
+  closeBtn.x = W - closeBtnSize - pad;
+  closeBtn.y = (headerH - closeBtnSize) / 2;
+  closeBtn.interactive = true;
+  closeBtn.cursor = 'pointer';
+  closeBtn.on('pointerdown', () => { G.screen = 'PLAY'; G.dirty = true; });
+  layers.overlay.addChild(closeBtn);
 
-  // === LAYOUT CALCULATIONS ===
-  // On narrow screens: stack slots above controls
-  // On wider screens: slots left, controls right
-  const topSectionH = isNarrow ? H * 0.28 : (isMobile ? H * 0.38 : H * 0.42);
-  const slotAreaW = isNarrow ? W - pad * 2 : (isMobile ? W * 0.48 : W * 0.45);
-  const ctrlAreaX = isNarrow ? pad : slotAreaW + pad;
-  const ctrlAreaW = isNarrow ? W - pad * 2 : W - ctrlAreaX - pad;
-  const ctrlStartYOffset = isNarrow ? topSectionH + 8 : 0;
+  const closeX = new PIXI.Text('✕', {
+    fontFamily: FONT_UI,
+    fontSize: isMobile ? 16 : 20,
+    fill: 0x888888
+  });
+  closeX.anchor.set(0.5);
+  closeX.x = closeBtn.x + closeBtnSize / 2;
+  closeX.y = closeBtn.y + closeBtnSize / 2;
+  layers.overlay.addChild(closeX);
 
-  // === ACTIVE LOOPS SECTION (Top Left - Tile Grid) ===
-  const slotLbl = new PIXI.Text('ACTIVE LOOPS', { fontFamily: FONT_UI, fontSize: labelSize, fill: p.dim, fontWeight: '600' });
-  slotLbl.x = pad; slotLbl.y = headerH + 4;
-  layers.overlay.addChild(slotLbl);
+  curY = headerH;
 
-  const gridStartY = headerH + labelSize + 12;
-  const gridH = topSectionH - labelSize - 20;
-  const slotGap = isMobile ? 4 : 6;
+  // ========== SIGNAL CHAIN ==========
+  const chainH = isMobile ? 50 : 60;
+  const chainY = curY;
+  const pillH = isMobile ? 26 : 32;
+  const pillY = chainY + (chainH - pillH) / 2;
 
-  // Calculate tile size to fit 3x3 grid
-  const tileSize = Math.min(
-    (slotAreaW - pad - slotGap * 2) / 3,
-    (gridH - slotGap * 2) / 3
-  );
-  const tileRadius = tileSize * 0.15;
+  // Get active loops per category
+  const activeLoops = {
+    BEAT: Audio.slots?.BEAT?.map(s => s.id) || [],
+    VIBE: Audio.slots?.VIBE?.map(s => s.id) || [],
+    MELODY: Audio.slots?.MELODY?.map(s => s.id) || []
+  };
 
-  // Draw 3x3 grid of tile-shaped slots
-  CATS.forEach((cat, col) => {
-    const color = getColor(cat);
-    const grad = getGradient(cat);
-    const active = G.layers[cat];
-    const colX = pad + col * (tileSize + slotGap);
+  let chainX = pad;
 
-    for (let row = 0; row < 3; row++) {
-      const slotY = gridStartY + row * (tileSize + slotGap);
-      const slot = new PIXI.Graphics();
-      const hasLoop = active[row];
+  ['BEAT', 'VIBE', 'MELODY'].forEach((cat, catIdx) => {
+    const color = catColors[cat];
+    const loops = activeLoops[cat];
 
-      if (hasLoop) {
-        // Solid color from palette
-        const loopGrad = getGradient(cat);
-        slot.beginFill(loopGrad.mid, 1);
-      } else {
-        // Empty slot outline
-        slot.lineStyle(2, p.dim, 0.25);
-        slot.beginFill(p.grid, 0.2);
-      }
-      slot.drawRoundedRect(colX, slotY, tileSize, tileSize, tileRadius);
-      slot.endFill();
-      layers.overlay.addChild(slot);
-
-      if (hasLoop) {
-        // Loop name inside tile (scale with tile size)
-        const maxChars = Math.floor(tileSize / 8);
-        const name = hasLoop.name.length > maxChars ? hasLoop.name.substring(0, maxChars - 1) + '..' : hasLoop.name;
-        const tileFontSize = Math.max(7, Math.min(10, tileSize / 6));
-        const txt = new PIXI.Text(name, {
-          fontFamily: FONT_UI, fontSize: tileFontSize, fill: p.text, fontWeight: '600'
+    if (loops.length > 0) {
+      // Draw active loop pills
+      loops.forEach((loopId) => {
+        const name = loopId.replace(/_/g, ' ').toUpperCase();
+        const pillText = new PIXI.Text(name, {
+          fontFamily: FONT_UI,
+          fontSize: isMobile ? 9 : 11,
+          fill: 0xffffff,
+          fontWeight: '600'
         });
-        txt.anchor.set(0.5); txt.x = colX + tileSize/2; txt.y = slotY + tileSize/2;
-        layers.overlay.addChild(txt);
+        const pillW = pillText.width + (isMobile ? 16 : 24);
 
-        // X button to remove (scale with tile)
-        const xR = Math.max(6, tileSize * 0.15);
-        const xOffset = xR + 2;
-        const xBtn = new PIXI.Graphics();
-        xBtn.beginFill(p.bg, 0.7); xBtn.drawCircle(colX + tileSize - xOffset, slotY + xOffset, xR); xBtn.endFill();
-        xBtn.interactive = true; xBtn.cursor = 'pointer';
-        xBtn.on('pointerdown', (e) => { e.stopPropagation(); toggleLoop(cat, hasLoop.id); G.dirty = true; });
-        layers.overlay.addChild(xBtn);
-        const xTxt = new PIXI.Text('×', { fontFamily: FONT_UI, fontSize: xR * 1.4, fill: p.text, fontWeight: '700' });
-        xTxt.anchor.set(0.5); xTxt.x = colX + tileSize - xOffset; xTxt.y = slotY + xOffset;
-        layers.overlay.addChild(xTxt);
-      }
+        const pill = new PIXI.Graphics();
+        pill.beginFill(color);
+        pill.drawRoundedRect(0, 0, pillW, pillH, pillH / 2);
+        pill.endFill();
+        pill.x = chainX;
+        pill.y = pillY;
+        pill.interactive = true;
+        pill.cursor = 'pointer';
+        pill.on('pointerdown', () => {
+          Audio.stopLoop(cat, loopId);
+          G.dirty = true;
+        });
+        layers.overlay.addChild(pill);
+
+        pillText.anchor.set(0.5);
+        pillText.x = chainX + pillW / 2;
+        pillText.y = pillY + pillH / 2;
+        layers.overlay.addChild(pillText);
+
+        chainX += pillW + 6;
+      });
+    } else {
+      // Faint label only
+      const label = new PIXI.Text(cat, {
+        fontFamily: FONT_UI,
+        fontSize: isMobile ? 9 : 11,
+        fill: color,
+        fontWeight: '500'
+      });
+      label.alpha = 0.4;
+      label.x = chainX;
+      label.y = pillY + (pillH - label.height) / 2;
+      layers.overlay.addChild(label);
+      chainX += label.width + 6;
     }
 
-    // Category label below column
-    const catLbl = new PIXI.Text(cat[0], { fontFamily: FONT_UI, fontSize: labelSize, fill: color, fontWeight: '700' });
-    catLbl.anchor.set(0.5); catLbl.x = colX + tileSize/2; catLbl.y = gridStartY + 3 * (tileSize + slotGap) + 4;
-    layers.overlay.addChild(catLbl);
+    // Arrow separator (except after last)
+    if (catIdx < 2) {
+      const arrow = new PIXI.Text('→', {
+        fontFamily: FONT_UI,
+        fontSize: isMobile ? 12 : 16,
+        fill: 0x444444
+      });
+      arrow.x = chainX + 4;
+      arrow.y = pillY + (pillH - arrow.height) / 2;
+      layers.overlay.addChild(arrow);
+      chainX += arrow.width + 12;
+    }
   });
 
-  // === AUDIO CONTROLS SECTION (Top Right, or below slots on narrow) ===
-  const ctrlStartY = headerH + 4 + ctrlStartYOffset;
-  let ctrlY = ctrlStartY;
-  const ctrlH = isMobile ? 24 : 32;
-  const ctrlGap = isMobile ? 6 : 10;
-  const sliderW = ctrlAreaW - 10;
+  curY = chainY + chainH;
 
-  // Helper to draw a compact slider
-  const drawSlider = (x, y, w, value, min, max, color, onChange, showVal = true) => {
-    const g = new PIXI.Graphics();
-    const trackH = 4;
-    const knobR = isMobile ? 7 : 9;
+  // ========== TRANSPORT & SOUND CONTROLS ==========
+  const sliderH = isMobile ? 36 : 44;
+  const sliderPad = isMobile ? 2 : 4;
+  const trackH = 3;
+  const knobR = 8;
+  const labelW = isMobile ? 50 : 65;
+
+  const drawGlobalSlider = (label, value, valueText, min, max, onChange) => {
+    const rowY = curY;
+
+    // Label
+    const lbl = new PIXI.Text(label, {
+      fontFamily: FONT_UI,
+      fontSize: isMobile ? 10 : 12,
+      fill: 0xffffff,
+      fontWeight: '600'
+    });
+    lbl.x = pad;
+    lbl.y = rowY + (sliderH - lbl.height) / 2;
+    layers.overlay.addChild(lbl);
+
+    // Value text
+    const val = new PIXI.Text(valueText, {
+      fontFamily: FONT_UI,
+      fontSize: isMobile ? 10 : 12,
+      fill: 0x666666,
+      fontWeight: '500'
+    });
+    val.anchor.set(1, 0.5);
+    val.x = W - pad;
+    val.y = rowY + sliderH / 2;
+    layers.overlay.addChild(val);
+
+    // Slider
+    const sliderX = pad + labelW;
+    const sliderLen = W - pad * 2 - labelW - 40;
+    const sliderY = rowY + sliderH / 2;
     const norm = (value - min) / (max - min);
-    const knobX = x + norm * w;
+    const knobX = sliderX + norm * sliderLen;
 
-    g.beginFill(p.dim, 0.3); g.drawRoundedRect(x, y - trackH/2, w, trackH, 2); g.endFill();
-    g.beginFill(color, 0.7); g.drawRoundedRect(x, y - trackH/2, norm * w, trackH, 2); g.endFill();
-    g.beginFill(color); g.drawCircle(knobX, y, knobR); g.endFill();
-    g.beginFill(p.text); g.drawCircle(knobX, y, knobR - 2); g.endFill();
+    const g = new PIXI.Graphics();
+    // Track background
+    g.beginFill(0x333333);
+    g.drawRoundedRect(sliderX, sliderY - trackH / 2, sliderLen, trackH, 2);
+    g.endFill();
+    // Filled portion
+    g.beginFill(0x555555);
+    g.drawRoundedRect(sliderX, sliderY - trackH / 2, norm * sliderLen, trackH, 2);
+    g.endFill();
+    // Knob
+    g.beginFill(0xffffff);
+    g.drawCircle(knobX, sliderY, knobR);
+    g.endFill();
 
-    g.interactive = true; g.cursor = 'pointer';
-    g.hitArea = new PIXI.Rectangle(x - knobR, y - knobR - 5, w + knobR * 2, knobR * 2 + 10);
+    g.interactive = true;
+    g.cursor = 'pointer';
+    g.hitArea = new PIXI.Rectangle(sliderX - knobR, sliderY - knobR - 8, sliderLen + knobR * 2, knobR * 2 + 16);
 
     const updateFromEvent = (e) => {
       const local = e.data.global.x;
-      const newNorm = Math.max(0, Math.min(1, (local - x) / w));
+      const newNorm = Math.max(0, Math.min(1, (local - sliderX) / sliderLen));
       const newVal = min + newNorm * (max - min);
       onChange(newVal);
       G.dirty = true;
@@ -3795,144 +3860,198 @@ function renderMix() {
     g.on('pointerdown', updateFromEvent);
     g.on('pointermove', (e) => { if (e.data.buttons) updateFromEvent(e); });
     layers.overlay.addChild(g);
+
+    curY += sliderH + sliderPad;
   };
 
-  // Helper to draw a labeled slider row
-  const ctrlRowH = isMobile ? 28 : 36;
-  const ctrlRowPad = isMobile ? 6 : 10;
-  const lblW = isMobile ? 50 : 70;
+  curY += isMobile ? 6 : 10;
 
-  const drawControlRow = (label, value, valueText, min, max, color, onChange) => {
-    const lbl = new PIXI.Text(label, { fontFamily: FONT_UI, fontSize: labelSize, fill: p.dim, fontWeight: '600' });
-    lbl.x = ctrlAreaX; lbl.y = ctrlY + (ctrlRowH - labelSize) / 2;
-    layers.overlay.addChild(lbl);
+  // Transport controls
+  drawGlobalSlider('BPM', G.bpm, G.bpm.toString(), 80, 140, (v) => Audio.setBPM(Math.round(v)));
+  drawGlobalSlider('PITCH', G.pitch, (G.pitch >= 0 ? '+' : '') + G.pitch, -12, 12, (v) => Audio.setPitch(Math.round(v)));
+  drawGlobalSlider('SWING', G.swing * 100, Math.round(G.swing * 100) + '%', 0, 100, (v) => Audio.setSwing(v / 100));
 
-    const val = new PIXI.Text(valueText, { fontFamily: FONT_UI, fontSize: labelSize, fill: color, fontWeight: '700' });
-    val.anchor.set(1, 0.5); val.x = ctrlAreaX + sliderW; val.y = ctrlY + ctrlRowH / 2;
-    layers.overlay.addChild(val);
+  curY += isMobile ? 4 : 8;
 
-    const sliderX = ctrlAreaX + lblW;
-    const sliderLen = sliderW - lblW - 35;
-    drawSlider(sliderX, ctrlY + ctrlRowH / 2, sliderLen, value, min, max, color, onChange);
+  // Sound controls
+  drawGlobalSlider('TONE', G.filter, Math.round(G.filter * 100) + '%', 0, 1, (v) => Audio.setFilter(v));
+  drawGlobalSlider('SPACE', G.effects, Math.round(G.effects * 100) + '%', 0, 1, (v) => Audio.setEffects(v));
 
-    ctrlY += ctrlRowH + ctrlRowPad;
-  };
+  // ========== LOOP BROWSER ==========
+  curY += isMobile ? 10 : 16;
 
-  // === SECTION 1: TEMPO ===
-  drawControlRow('BPM', G.bpm, G.bpm.toString(), 80, 140, p.vibe, (v) => { console.log('BPM slider:', v); Audio.setBPM(Math.round(v)); });
-  drawControlRow('PITCH', G.pitch, (G.pitch >= 0 ? '+' : '') + G.pitch, -12, 12, p.melody, (v) => { console.log('PITCH slider:', v); Audio.setPitch(Math.round(v)); });
-  drawControlRow('SWING', G.swing * 100, Math.round(G.swing * 100) + '%', 0, 100, p.beat, (v) => Audio.setSwing(v / 100));
+  const tabH = isMobile ? 36 : 42;
+  const tabW = (W - pad * 2) / 3;
 
-  // Section padding
-  ctrlY += isMobile ? 8 : 14;
+  // Tabs
+  ['BEAT', 'VIBE', 'MELODY'].forEach((cat, i) => {
+    const isActive = G.mixTab === cat;
+    const color = catColors[cat];
 
-  // === SECTION 2: VOLUME ===
-  const volLbl = new PIXI.Text('VOLUME', { fontFamily: FONT_UI, fontSize: labelSize, fill: p.text, fontWeight: '700', letterSpacing: 1 });
-  volLbl.x = ctrlAreaX; volLbl.y = ctrlY;
-  layers.overlay.addChild(volLbl);
-  ctrlY += labelSize + (isMobile ? 8 : 12);
+    const tab = new PIXI.Graphics();
+    if (isActive) {
+      tab.beginFill(color);
+    } else {
+      tab.beginFill(0x1a1a1a);
+    }
+    tab.drawRoundedRect(0, 0, tabW - 4, tabH, 6);
+    tab.endFill();
+    tab.x = pad + i * tabW + 2;
+    tab.y = curY;
+    tab.interactive = true;
+    tab.cursor = 'pointer';
+    tab.on('pointerdown', () => {
+      G.mixTab = cat;
+      G.mixScrollY = 0; // Reset scroll on tab change
+      G.dirty = true;
+    });
+    layers.overlay.addChild(tab);
 
-  CATS.forEach((cat) => {
-    const color = getColor(cat);
-    const pct = Math.round(G.mix[cat] * 100) + '%';
-    drawControlRow(cat, G.mix[cat], pct, 0, 1, color, (v) => Audio.setMix(cat, v));
+    const tabText = new PIXI.Text(cat, {
+      fontFamily: FONT_UI,
+      fontSize: isMobile ? 11 : 13,
+      fill: isActive ? 0xffffff : 0x555555,
+      fontWeight: '700'
+    });
+    tabText.anchor.set(0.5);
+    tabText.x = tab.x + (tabW - 4) / 2;
+    tabText.y = curY + tabH / 2;
+    layers.overlay.addChild(tabText);
   });
 
-  // Section padding
-  ctrlY += isMobile ? 8 : 14;
+  curY += tabH + (isMobile ? 6 : 10);
 
-  // === SECTION 3: EFFECTS ===
-  const fxLbl = new PIXI.Text('EFFECTS', { fontFamily: FONT_UI, fontSize: labelSize, fill: p.text, fontWeight: '700', letterSpacing: 1 });
-  fxLbl.x = ctrlAreaX; fxLbl.y = ctrlY;
-  layers.overlay.addChild(fxLbl);
-  ctrlY += labelSize + (isMobile ? 8 : 12);
+  // Loop list area
+  const listAreaY = curY;
+  const listAreaH = H - curY - (isMobile ? 8 : 12);
+  const loopRowH = 44;
+  const loopRowPad = isMobile ? 4 : 6;
+  const currentCat = G.mixTab;
+  const currentColor = catColors[currentCat];
+  const currentActiveLoops = activeLoops[currentCat];
 
-  const filterPct = Math.round(G.filter * 100) + '%';
-  drawControlRow('FILTER', G.filter, filterPct, 0, 1, p.vibe, (v) => Audio.setFilter(v));
+  // Get all loops for current category
+  let allLoops = [];
+  if (currentCat === 'BEAT') {
+    allLoops = Object.keys(Audio.patterns?.BEAT || {});
+  } else if (currentCat === 'MELODY') {
+    allLoops = Object.keys(Audio.patterns?.MELODY || {});
+  } else if (currentCat === 'VIBE') {
+    allLoops = Object.keys(Audio.vibeEffects || {});
+  }
 
-  const reverbPct = Math.round(G.effects * 100) + '%';
-  drawControlRow('REVERB', G.effects, reverbPct, 0, 1, p.melody, (v) => Audio.setEffects(v));
+  // Calculate content height and clamp scroll
+  const contentH = allLoops.length * (loopRowH + loopRowPad);
+  const maxScroll = Math.max(0, contentH - listAreaH);
+  G.mixScrollY = Math.max(0, Math.min(maxScroll, G.mixScrollY));
 
-  // === AVAILABLE LOOPS SECTION (Bottom) ===
-  // On narrow screens, loops start after controls; on wide screens, after top section
-  const loopSectionY = isNarrow ? ctrlY + 16 : headerH + topSectionH + 8;
-  let curY = loopSectionY;
+  // Create scroll container with mask
+  const scrollContainer = new PIXI.Container();
+  scrollContainer.y = listAreaY;
+  layers.overlay.addChild(scrollContainer);
 
-  const listLbl = new PIXI.Text('AVAILABLE LOOPS', { fontFamily: FONT_UI, fontSize: labelSize, fill: p.dim, fontWeight: '600' });
-  listLbl.x = pad; listLbl.y = curY;
-  layers.overlay.addChild(listLbl);
-  curY += labelSize + 8;
+  // Mask for clipping
+  const mask = new PIXI.Graphics();
+  mask.beginFill(0xffffff);
+  mask.drawRect(0, listAreaY, W, listAreaH);
+  mask.endFill();
+  layers.overlay.addChild(mask);
+  scrollContainer.mask = mask;
 
-  const rowH = isNarrow ? 18 : (isMobile ? 20 : 24);
-  const rowGap = isNarrow ? 1 : (isMobile ? 2 : 3);
-  const contentW = W - pad * 2;
-  const colW = (contentW - slotGap * 2) / 3;
-  const maxRows = Math.floor((H - footerH - curY - rowH) / (rowH + rowGap));
+  // Scroll hit area for drag
+  const scrollHit = new PIXI.Graphics();
+  scrollHit.beginFill(0x000000, 0.001); // Nearly invisible
+  scrollHit.drawRect(0, 0, W, listAreaH);
+  scrollHit.endFill();
+  scrollHit.interactive = true;
+  scrollHit.cursor = 'grab';
+  scrollContainer.addChild(scrollHit);
 
-  CATS.forEach((cat, col) => {
-    const loops = G.loops[cat];
-    const color = getColor(cat);
-    const colX = pad + col * (colW + slotGap / 2);
+  let dragStartY = 0;
+  let dragStartScroll = 0;
+  let isDragging = false;
 
-    // Column header
-    const hdr = new PIXI.Graphics();
-    hdr.beginFill(color, 0.2); hdr.drawRoundedRect(colX, curY, colW - slotGap/2, rowH, 4); hdr.endFill();
-    layers.overlay.addChild(hdr);
+  scrollHit.on('pointerdown', (e) => {
+    isDragging = true;
+    dragStartY = e.data.global.y;
+    dragStartScroll = G.mixScrollY;
+    scrollHit.cursor = 'grabbing';
+  });
 
-    const hdrTxt = new PIXI.Text(cat, { fontFamily: FONT_UI, fontSize: labelSize, fill: color, fontWeight: '700' });
-    hdrTxt.anchor.set(0.5); hdrTxt.x = colX + colW/2 - slotGap/4; hdrTxt.y = curY + rowH/2;
-    layers.overlay.addChild(hdrTxt);
+  scrollHit.on('pointermove', (e) => {
+    if (!isDragging) return;
+    const dy = dragStartY - e.data.global.y;
+    G.mixScrollY = Math.max(0, Math.min(maxScroll, dragStartScroll + dy));
+    G.dirty = true;
+  });
 
-    // Loop rows
-    loops.forEach((loop, i) => {
-      if (i >= maxRows - 1) return;
-      const y = curY + (i + 1) * (rowH + rowGap);
-      const isActive = G.layers[cat].some(l => l.id === loop.id);
-      const isUnlocked = loop.unlocked;
+  scrollHit.on('pointerup', () => { isDragging = false; scrollHit.cursor = 'grab'; });
+  scrollHit.on('pointerupoutside', () => { isDragging = false; scrollHit.cursor = 'grab'; });
 
-      const row = new PIXI.Graphics();
-      if (isActive) {
-        row.beginFill(color, 0.5); row.lineStyle(2, color);
-      } else if (isUnlocked) {
-        row.beginFill(color, 0.15);
-      } else {
-        row.beginFill(p.grid, 0.3);
-      }
-      row.drawRoundedRect(colX, y, colW - slotGap/2, rowH, 4);
-      row.endFill();
-      row.interactive = true; row.cursor = 'pointer';
+  // Render all loop rows
+  allLoops.forEach((loopId, i) => {
+    const isActive = currentActiveLoops.includes(loopId);
+    const rowY = i * (loopRowH + loopRowPad) - G.mixScrollY;
 
-      if (isUnlocked) {
-        row.on('pointerdown', () => { toggleLoop(cat, loop.id); G.dirty = true; });
-      } else {
-        row.on('pointerdown', () => unlock(cat, loop.id));
-      }
-      layers.overlay.addChild(row);
+    // Skip rows outside visible area
+    if (rowY + loopRowH < 0 || rowY > listAreaH) return;
 
-      // Loop name
-      const maxChars = Math.floor((colW - 30) / (labelSize * 0.55));
-      let name = loop.name.length > maxChars ? loop.name.substring(0, maxChars - 1) + '..' : loop.name;
-      const nameTxt = new PIXI.Text(name, { fontFamily: FONT_UI, fontSize: labelSize, fill: isUnlocked ? p.text : p.dim, fontWeight: '500' });
-      nameTxt.x = colX + 8; nameTxt.y = y + (rowH - labelSize) / 2;
-      layers.overlay.addChild(nameTxt);
+    const name = loopId.replace(/_/g, ' ').toUpperCase();
 
-      // Status indicator
-      if (isActive) {
-        const dot = new PIXI.Graphics();
-        dot.beginFill(0x00ff00); dot.drawCircle(colX + colW - slotGap/2 - 10, y + rowH/2, 4); dot.endFill();
-        layers.overlay.addChild(dot);
-      } else if (!isUnlocked) {
-        const lock = new PIXI.Text('$', { fontFamily: FONT_UI, fontSize: labelSize, fill: color, fontWeight: '700' });
-        lock.anchor.set(0.5); lock.x = colX + colW - slotGap/2 - 10; lock.y = y + rowH/2;
-        layers.overlay.addChild(lock);
+    const row = new PIXI.Graphics();
+    if (isActive) {
+      row.beginFill(currentColor);
+    } else {
+      row.beginFill(0x1a1a1a);
+    }
+    row.drawRoundedRect(pad, rowY, W - pad * 2, loopRowH, 8);
+    row.endFill();
+    row.interactive = true;
+    row.cursor = 'pointer';
+    row.on('pointerdown', (e) => {
+      // Only toggle if not dragging
+      if (Math.abs(G.mixScrollY - dragStartScroll) < 5) {
+        if (isActive) {
+          Audio.stopLoop(currentCat, loopId);
+        } else {
+          Audio.startLoop(currentCat, loopId);
+        }
+        G.dirty = true;
       }
     });
+    scrollContainer.addChild(row);
+
+    // Loop name
+    const rowText = new PIXI.Text(name, {
+      fontFamily: FONT_UI,
+      fontSize: isMobile ? 12 : 14,
+      fill: isActive ? 0xffffff : currentColor,
+      fontWeight: '600'
+    });
+    rowText.x = pad + 14;
+    rowText.y = rowY + (loopRowH - rowText.height) / 2;
+    scrollContainer.addChild(rowText);
+
+    // Active indicator dot
+    if (isActive) {
+      const dot = new PIXI.Graphics();
+      dot.beginFill(0xffffff);
+      dot.drawCircle(W - pad - 18, rowY + loopRowH / 2, 4);
+      dot.endFill();
+      scrollContainer.addChild(dot);
+    }
   });
 
-  // Back button
-  const backBtnW = isMobile ? 90 : 130;
-  const backBtnH = isMobile ? 32 : 40;
-  layers.overlay.addChild(makeButton('BACK', W/2, H - footerH/2, () => { G.screen = 'PLAY'; G.dirty = true; }, backBtnW, backBtnH, p.vibe));
+  // Scroll indicator (if content overflows)
+  if (contentH > listAreaH) {
+    const scrollBarH = Math.max(20, (listAreaH / contentH) * listAreaH);
+    const scrollBarY = listAreaY + (G.mixScrollY / maxScroll) * (listAreaH - scrollBarH);
+    const scrollBar = new PIXI.Graphics();
+    scrollBar.beginFill(0x444444, 0.5);
+    scrollBar.drawRoundedRect(W - pad - 4, scrollBarY, 4, scrollBarH, 2);
+    scrollBar.endFill();
+    layers.overlay.addChild(scrollBar);
+  }
 }
 
 function makeButton(text, x, y, action, w, h, borderColor) {
