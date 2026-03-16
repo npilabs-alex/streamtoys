@@ -527,11 +527,11 @@ function drawCustomRect(g, x, y, w, h, rTL, rTR, rBR, rBL) {
 const Audio = {
   ready: false,
 
-  // Slot management: up to 8 loops per category
+  // Slot management per category
   slots: { BEAT: [], VIBE: [], MELODY: [] },
-  MAX_SLOTS_BEAT: 2,   // Max 2 beats
-  MAX_SLOTS_MELODY: 1, // Max 1 melody
-  MAX_SLOTS_VIBE: 3,   // VIBE is effects, can stack
+  MAX_SLOTS_BEAT: 3,   // Max 3 beats
+  MAX_SLOTS_MELODY: 1, // Max 1 melody (harmonic constraint)
+  MAX_SLOTS_VIBE: 5,   // VIBE is effects, can stack
 
   // Intro loop - gentle metronome pad that plays until user adds first loop
   introLoop: null,
