@@ -127,7 +127,8 @@ const LOOPS = {
     { id: 'steel_drum', name: 'STEEL DRUM', unlocked: true },
     { id: 'ambient_shimmer', name: 'SHIMMER', unlocked: true },
     { id: 'acid_303', name: 'ACID 303', unlocked: true },
-    { id: 'jazz_sax', name: 'JAZZY SAX', unlocked: true }
+    { id: 'jazz_sax', name: 'JAZZY SAX', unlocked: true },
+    { id: 'phonk_lead', name: 'PHONK LEAD', unlocked: true }
   ]
 };
 
@@ -800,34 +801,45 @@ const Audio = {
       return s;
     };
 
-    // 1. LOFI KEYS - soft, warm triangle
-    const lofiKeys = makeMelody('triangle', 0.02, 0.3, 0.3, 0.5, -10);
+    // 1. LOFI KEYS - soft, warm triangle with slight detune
+    const lofiKeys = new Tone.MonoSynth({
+      oscillator: { type: 'triangle', detune: 8 },
+      envelope: { attack: 0.02, decay: 0.4, sustain: 0.2, release: 0.8 },
+      filterEnvelope: { attack: 0.01, decay: 0.2, sustain: 0.3, release: 0.3, baseFrequency: 600, octaves: 2 },
+      filter: { Q: 2 }
+    });
+    lofiKeys.connect(melodyBus);
+    lofiKeys.connect(reverbSend);
+    lofiKeys.volume.value = -10;
 
-    // 2. TRAP BELLS - bright, short sine
+    // 2. TRAP BELLS - fat shimmering bells
     const trapBells = new Tone.MonoSynth({
-      oscillator: { type: 'sine' },
-      envelope: { attack: 0.001, decay: 0.4, sustain: 0.05, release: 0.6 },
-      filterEnvelope: { attack: 0.001, decay: 0.2, sustain: 0.1, release: 0.3, baseFrequency: 2000, octaves: 2 }
+      oscillator: { type: 'fatsine' },
+      envelope: { attack: 0.001, decay: 0.8, sustain: 0.02, release: 1.2 },
+      filterEnvelope: { attack: 0.001, decay: 0.2, sustain: 0.1, release: 0.3, baseFrequency: 3000, octaves: 2 },
+      filter: { Q: 1 }
     });
     trapBells.connect(melodyBus);
     trapBells.connect(reverbSend);
     trapBells.volume.value = -10;
 
-    // 3. SYNTH PLUCK - fast attack FM
+    // 3. SYNTH PLUCK - fat resonant pluck
     const synthPluck = new Tone.MonoSynth({
-      oscillator: { type: 'sawtooth' },
-      envelope: { attack: 0.001, decay: 0.25, sustain: 0.05, release: 0.4 },
-      filterEnvelope: { attack: 0.001, decay: 0.15, sustain: 0.1, release: 0.2, baseFrequency: 1500, octaves: 3 }
+      oscillator: { type: 'fatsawtooth' },
+      envelope: { attack: 0.001, decay: 0.2, sustain: 0.01, release: 0.3 },
+      filterEnvelope: { attack: 0.001, decay: 0.15, sustain: 0.1, release: 0.2, baseFrequency: 2000, octaves: 3 },
+      filter: { Q: 4 }
     });
     synthPluck.connect(melodyBus);
     synthPluck.connect(reverbSend);
     synthPluck.volume.value = -9;
 
-    // 4. RNB RHODES - warm electric piano
+    // 4. RNB RHODES - warm mellow keys
     const rnbRhodes = new Tone.MonoSynth({
-      oscillator: { type: 'sine' },
-      envelope: { attack: 0.01, decay: 0.5, sustain: 0.2, release: 0.8 },
-      filterEnvelope: { attack: 0.02, decay: 0.3, sustain: 0.3, release: 0.5, baseFrequency: 600, octaves: 2 }
+      oscillator: { type: 'triangle' },
+      envelope: { attack: 0.01, decay: 0.6, sustain: 0.3, release: 1.0 },
+      filterEnvelope: { attack: 0.02, decay: 0.3, sustain: 0.3, release: 0.5, baseFrequency: 500, octaves: 2 },
+      filter: { Q: 3 }
     });
     rnbRhodes.connect(melodyBus);
     rnbRhodes.connect(reverbSend);
@@ -843,11 +855,12 @@ const Audio = {
     guitarAmbient.connect(reverbSend);
     guitarAmbient.volume.value = -9;
 
-    // 6. SAW LEAD - bright, cutting lead
+    // 6. SAW LEAD - fat resonant lead
     const sawLead = new Tone.MonoSynth({
-      oscillator: { type: 'sawtooth' },
-      envelope: { attack: 0.01, decay: 0.2, sustain: 0.5, release: 0.3 },
-      filterEnvelope: { attack: 0.01, decay: 0.15, sustain: 0.4, release: 0.2, baseFrequency: 1200, octaves: 2.5 }
+      oscillator: { type: 'fatsawtooth' },
+      envelope: { attack: 0.005, decay: 0.15, sustain: 0.6, release: 0.2 },
+      filterEnvelope: { attack: 0.01, decay: 0.15, sustain: 0.4, release: 0.2, baseFrequency: 1800, octaves: 2.5 },
+      filter: { Q: 6 }
     });
     sawLead.connect(melodyBus);
     sawLead.connect(reverbSend);
@@ -908,7 +921,7 @@ const Audio = {
       oscillator: { type: 'sawtooth' },
       envelope: { attack: 0.005, decay: 0.15, sustain: 0.2, release: 0.1 },
       filterEnvelope: { attack: 0.001, decay: 0.12, sustain: 0.1, release: 0.08, baseFrequency: 400, octaves: 3 },
-      filter: { Q: 5, type: 'lowpass', rolloff: -24 }
+      filter: { Q: 8, type: 'lowpass', rolloff: -24 }
     });
     acid303.connect(melodyBus);
     acid303.volume.value = -10;
@@ -916,12 +929,23 @@ const Audio = {
     // 13. JAZZ SAX - expressive, breathy
     const jazzSax = new Tone.MonoSynth({
       oscillator: { type: 'sawtooth' },
-      envelope: { attack: 0.05, decay: 0.3, sustain: 0.5, release: 0.4 },
-      filterEnvelope: { attack: 0.03, decay: 0.2, sustain: 0.4, release: 0.3, baseFrequency: 700, octaves: 2 }
+      envelope: { attack: 0.08, decay: 0.4, sustain: 0.6, release: 0.5 },
+      filterEnvelope: { attack: 0.03, decay: 0.2, sustain: 0.4, release: 0.3, baseFrequency: 900, octaves: 2 },
+      filter: { Q: 3 }
     });
     jazzSax.connect(melodyBus);
     jazzSax.connect(reverbSend);
     jazzSax.volume.value = -9;
+
+    // 14. PHONK LEAD - dark, aggressive bass lead
+    const phonkLead = new Tone.MonoSynth({
+      oscillator: { type: 'fatsawtooth' },
+      envelope: { attack: 0.002, decay: 0.3, sustain: 0.1, release: 0.2 },
+      filterEnvelope: { attack: 0.001, decay: 0.15, sustain: 0.1, release: 0.1, baseFrequency: 300, octaves: 2 },
+      filter: { Q: 8 }
+    });
+    phonkLead.connect(melodyBus);
+    phonkLead.volume.value = -9;
 
     this.synths.MELODY = {
       lofi_keys: lofiKeys,
@@ -936,7 +960,8 @@ const Audio = {
       steel_drum: steelDrum,
       ambient_shimmer: shimmer,
       acid_303: acid303,
-      jazz_sax: jazzSax
+      jazz_sax: jazzSax,
+      phonk_lead: phonkLead
     };
 
     console.log('Synths created: 3 kicks (shared), 6 perc, 6 VIBE effects, 13 MELODY synths');
@@ -1018,7 +1043,8 @@ const Audio = {
       steel_drum: ['C5',null,'E5',null,'G5',null,'C5','E5',null,'G5',null,'E5','C5',null,'G4',null],
       ambient_shimmer: ['C6',null,null,null,'G5',null,null,null,'E5',null,null,null,'C5',null,null,null],
       acid_303: ['C3','C3','Eb3','C3','G3','G3','C3','Eb3','F3','F3','Eb3','C3','G2','G2','C3','Eb3'],
-      jazz_sax: ['C4','D4','Eb4','G4',null,'F4','Eb4','D4','C4',null,'Bb3','C4','D4',null,'Eb4','G4']
+      jazz_sax: ['C4','D4','Eb4','G4',null,'F4','Eb4','D4','C4',null,'Bb3','C4','D4',null,'Eb4','G4'],
+      phonk_lead: ['C3',null,'C3',null,'Eb3',null,'C3',null,'G2',null,'C3','Eb3',null,'C3',null,'G2']
     },
     MELODY_HARMONY: {
       lofi_keys: [null,null,['C3','G3'],null,null,null,['Bb2','F3'],null,null,null,['Ab2','Eb3'],null,null,null,['G2','D3'],null],
