@@ -1112,22 +1112,17 @@ const Audio = {
     const startTime = hasActiveLoops ? "@2n" : "@1m";
 
     if (cat === 'BEAT') {
-      // Shared step counter - updated by timing sequence, read by all others
-      slot.step = 0;
-      const stepSeq = new Tone.Sequence((t, step) => { slot.step = step; },
-        [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15], '16n');
-      stepSeq.start(startTime);
-      slot.sequences.push(stepSeq);
-
       // Kick pattern
       const kickSynth = this.synths.BEAT.kick[id];
       if (kickSynth) {
+        let step = 0;
         const kickSeq = new Tone.Sequence((t, n) => {
           const swingAmt = (G.swing * 0.33) * (60 / Tone.Transport.bpm.value / 4);
-          const st = (slot.step % 2 === 1) ? t + swingAmt : t;
+          const st = (step % 2 === 1) ? t + swingAmt : t;
           if (n) try {
             kickSynth.triggerAttackRelease(n, '8n', st);
           } catch(e) {}
+          step = (step + 1) % 16;
         }, pattern, '16n');
         kickSeq.start(startTime);
         slot.sequences.push(kickSeq);
@@ -1151,13 +1146,15 @@ const Audio = {
           if (!synth) return;
 
           const arr = this.parsePattern(patStr);
+          let step = 0;
           const seq = new Tone.Sequence((t, n) => {
             const swingAmt = (G.swing * 0.33) * (60 / Tone.Transport.bpm.value / 4);
-            const st = (slot.step % 2 === 1) ? t + swingAmt : t;
+            const st = (step % 2 === 1) ? t + swingAmt : t;
             if (n) try {
               if (cfg.note) synth.triggerAttackRelease(cfg.note, cfg.dur, st, cfg.vel);
               else synth.triggerAttackRelease(cfg.dur, st, cfg.vel);
             } catch(e) {}
+            step = (step + 1) % 16;
           }, arr, '16n');
           seq.start(startTime);
           slot.sequences.push(seq);
