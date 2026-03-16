@@ -3695,7 +3695,7 @@ function renderMix() {
       synthwave_kit: 'Retro gated drums',
       chip_beat: '8-bit arcade rhythm',
       tropical_bounce: 'Bright island percussion',
-      ambient_pulse: 'Soft pulsing rhythm bed',
+      phonk_dark: 'Dark cowbell phonk groove',
       acid_drive: 'Driving acid house groove',
       jazz_swing: 'Classic brushed swing feel'
     },
@@ -3788,16 +3788,23 @@ function renderMix() {
       // Draw active loop tiles (rounded squares with pulse)
       loops.forEach((loopId) => {
         const name = loopId.replace(/_/g, ' ').toUpperCase();
-        const tileSize = isMobile ? 32 : 40;
         const tilePad = isMobile ? 6 : 8;
+
+        // Calculate tile width based on text length
+        const charWidth = 8;
+        const textPadding = 16;
+        const minW = 48;
+        const maxW = isMobile ? 80 : 100;
+        const tileW = Math.min(maxW, Math.max(minW, name.length * charWidth + textPadding));
+        const tileH = isMobile ? 32 : 40;
 
         // Pulse glow effect (outer)
         const glow = new PIXI.Graphics();
         glow.beginFill(color, 0.3);
-        glow.drawRoundedRect(-3, -3, tileSize + 6, tileSize + 6, 8);
+        glow.drawRoundedRect(-3, -3, tileW + 6, tileH + 6, 8);
         glow.endFill();
         glow.x = chainX;
-        glow.y = pillY - (tileSize - pillH) / 2;
+        glow.y = pillY - (tileH - pillH) / 2;
         layers.overlay.addChild(glow);
 
         // Animate pulse
@@ -3809,10 +3816,10 @@ function renderMix() {
         // Main tile
         const tile = new PIXI.Graphics();
         tile.beginFill(color);
-        tile.drawRoundedRect(0, 0, tileSize, tileSize, 6);
+        tile.drawRoundedRect(0, 0, tileW, tileH, 6);
         tile.endFill();
         tile.x = chainX;
-        tile.y = pillY - (tileSize - pillH) / 2;
+        tile.y = pillY - (tileH - pillH) / 2;
         tile.interactive = true;
         tile.cursor = 'pointer';
         tile.on('pointerdown', () => {
@@ -3821,19 +3828,19 @@ function renderMix() {
         });
         layers.overlay.addChild(tile);
 
-        // Tile text (smaller, centered)
-        const tileText = new PIXI.Text(name.substring(0, 6), {
+        // Tile text (full name, centered)
+        const tileText = new PIXI.Text(name, {
           fontFamily: FONT_UI,
           fontSize: isMobile ? 7 : 8,
           fill: 0xffffff,
           fontWeight: '700'
         });
         tileText.anchor.set(0.5);
-        tileText.x = chainX + tileSize / 2;
-        tileText.y = tile.y + tileSize / 2;
+        tileText.x = chainX + tileW / 2;
+        tileText.y = tile.y + tileH / 2;
         layers.overlay.addChild(tileText);
 
-        chainX += tileSize + tilePad;
+        chainX += tileW + tilePad;
       });
     } else {
       // Faint label only
