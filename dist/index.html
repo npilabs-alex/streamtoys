@@ -612,6 +612,7 @@ const Audio = {
     // Direct to music bus - no extra processing for efficiency
     this.buses.BEAT = new Tone.Gain(G.mix.BEAT).connect(this.musicBus);
     this.buses.MELODY = new Tone.Gain(G.mix.MELODY).connect(this.musicBus);
+    this.buses.VIBE = new Tone.Gain(G.mix.VIBE).connect(this.masterBus);  // VIBE effects → vibeBus → master
 
     // ========== VIBE EFFECTS (created on-demand) ==========
     // Effects are only connected when activated to save CPU
@@ -1164,7 +1165,7 @@ const Audio = {
             fx.node.generate().then(() => {
               if (!fx.active) return; // User may have toggled off during generation
               this.musicBus.connect(fx.node);
-              fx.node.connect(this.masterBus);
+              fx.node.connect(this.buses.VIBE);
               fx.node.wet.rampTo(fx.targetWet, 0.5);
               console.log(`VIBE effect ON: ${id}`);
             });
@@ -1186,10 +1187,10 @@ const Audio = {
           } else if (id === 'distort_warm') {
             fx.node = new Tone.Distortion({ distortion: 0.3, wet: 0 });
           }
-          // Connect: musicBus → effect → masterBus
+          // Connect: musicBus → effect → vibeBus
           if (fx.node) {
             this.musicBus.connect(fx.node);
-            fx.node.connect(this.masterBus);
+            fx.node.connect(this.buses.VIBE);
           }
         }
 
