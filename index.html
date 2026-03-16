@@ -3825,6 +3825,7 @@ function renderMix() {
   // === SECTION 1: TEMPO ===
   drawControlRow('BPM', G.bpm, G.bpm.toString(), 80, 140, p.vibe, (v) => { console.log('BPM slider:', v); Audio.setBPM(Math.round(v)); });
   drawControlRow('PITCH', G.pitch, (G.pitch >= 0 ? '+' : '') + G.pitch, -12, 12, p.melody, (v) => { console.log('PITCH slider:', v); Audio.setPitch(Math.round(v)); });
+  drawControlRow('SWING', G.swing * 100, Math.round(G.swing * 100) + '%', 0, 100, p.beat, (v) => Audio.setSwing(v / 100));
 
   // Section padding
   ctrlY += isMobile ? 8 : 14;
