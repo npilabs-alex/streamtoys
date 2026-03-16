@@ -586,10 +586,12 @@ const Audio = {
     Tone.Transport.bpm.value = 115;
 
     // ========== MASTER OUTPUT CHAIN ==========
-    const limiter = new Tone.Limiter(-0.5).toDestination();
+    this.limiter = new Tone.Limiter(-0.5).toDestination();
+    this.analyser = new Tone.Analyser('waveform', 256);
+    this.limiter.connect(this.analyser);
     const masterComp = new Tone.Compressor({
       threshold: -18, ratio: 4, attack: 0.003, release: 0.15
-    }).connect(limiter);
+    }).connect(this.limiter);
 
     // Master filter for sweeps (EDM essential)
     this.masterFilter = new Tone.Filter({
@@ -643,6 +645,13 @@ const Audio = {
 
     this.ready = true;
     // Don't start Transport here - let startSession control it
+  },
+
+  getAmplitude() {
+    if (!this.analyser) return 0;
+    const values = this.analyser.getValue();
+    const sum = values.reduce((a, b) => a + Math.abs(b), 0);
+    return Math.min(1, sum / values.length * 8);
   },
 
   _initSFX() {
@@ -2788,6 +2797,34 @@ function renderGame() {
   const p = P(), g = new PIXI.Graphics();
   // Draw solid background (since PIXI canvas is transparent)
   g.beginFill(p.bg); g.drawRect(0, 0, W, H); g.endFill();
+
+  // Beat-reactive background - amplitude-driven radial colour pulse
+  const rawAmp = Audio.getAmplitude();
+  G.ampSmooth = (G.ampSmooth || 0) * 0.85 + rawAmp * 0.15;
+  const amp = G.ampSmooth;
+
+  const beatCount = Audio.slots?.BEAT?.length || 0;
+  const vibeCount = Audio.slots?.VIBE?.length || 0;
+  const melodyCount = Audio.slots?.MELODY?.length || 0;
+  const dominant = beatCount >= vibeCount && beatCount >= melodyCount ? 'BEAT'
+    : vibeCount >= melodyCount ? 'VIBE' : 'MELODY';
+  const bgColors = { BEAT: [180, 30, 30], VIBE: [30, 140, 70], MELODY: [30, 80, 180] };
+  const [dr, dg, db] = bgColors[dominant];
+
+  const cx = W / 2, cy = H / 2;
+  const maxRadius = Math.sqrt(cx * cx + cy * cy);
+  const steps = 8;
+
+  for (let i = steps; i >= 0; i--) {
+    const ratio = i / steps;
+    const alpha = amp * (1 - ratio) * 0.6;
+    const size = maxRadius * 2 * (1 - ratio * 0.7);
+    g.beginFill(PIXI.utils.rgb2hex([dr/255 * ratio, dg/255 * ratio, db/255 * ratio]), alpha);
+    g.drawRect(cx - size/2, cy - size/2, size, size);
+    g.endFill();
+  }
+
+  if (amp > 0.01) G.dirty = true;
 
   // Corner glow accents - palette colors with staggered pulse
   const now = Date.now();
