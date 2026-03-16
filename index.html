@@ -460,13 +460,16 @@ function resize() {
   W = window.innerWidth; H = window.innerHeight;
   app.renderer.resize(W, H);
   BgEffects.resize(W, H);
-  const topHUD = 50, botHUD = 70, pad = 8;
+  const isMobile = W < 500;
+  const topHUD = isMobile ? 80 : 100;  // New HUD height
+  const botHUD = isMobile ? 24 : 28;   // Bottom ticker height
+  const pad = 8;
   const availH = H - topHUD - botHUD - pad * 2;
   const availW = W - pad * 2;
   tileSize = Math.max(24, Math.min(Math.floor(availH / ROWS), Math.floor(availW / COLS)));
   gridW = COLS * tileSize; gridH = ROWS * tileSize;
   gridX = Math.floor((W - gridW) / 2);
-  gridY = topHUD + Math.floor((availH - gridH) / 2) + pad;
+  gridY = topHUD + pad;  // HUD bottom + 8px padding
   G.dirty = true;
   render();
 }
