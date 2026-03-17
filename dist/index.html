@@ -4846,8 +4846,10 @@ function triggerSpeedBoost(multiplier, duration) {
 
 // Game loop - optimized with smooth continuous falling and error handling
 let lastTime = 0;
-const FALL_SPEED = 1.2; // Grid cells per second (normal speed)
-const FALL_SPEED_FROZEN = 0.4; // Slower when frozen
+const getBPMFallSpeed = () => {
+  const t = (G.bpm - 80) / (140 - 80);
+  return 0.6 + t * 1.6;
+};
 let lastVisualY = 0;
 let frameCount = 0;
 
@@ -4886,7 +4888,7 @@ function gameLoop(delta) {
 
     // Smooth continuous falling
     if (G.screen === 'PLAY' && !G.paused && !G.over && !G.collapsing && G.piece) {
-      let speed = G.frozen ? FALL_SPEED_FROZEN : FALL_SPEED;
+      let speed = G.frozen ? getBPMFallSpeed() * 0.33 : getBPMFallSpeed();
       // Apply speed boost
       if (G.speedBoost.active) {
         speed *= G.speedBoost.multiplier;
