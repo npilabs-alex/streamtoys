@@ -448,6 +448,17 @@ async function init() {
   document.addEventListener('touchstart', onTouchStart, { passive: true });
   document.addEventListener('touchend', onTouchEnd, { passive: true });
 
+  // iOS AudioContext resume on page visibility change
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && Tone.context?.state === 'suspended') {
+      Tone.context.resume().then(() => {
+        if (Tone.Transport.state !== 'started' && G.screen === 'PLAY' && !G.paused) {
+          Tone.Transport.start();
+        }
+      });
+    }
+  });
+
   app.ticker.add(gameLoop);
 
   // Start directly at HOME screen (no loading)
@@ -4776,7 +4787,13 @@ function onKey(e) {
   G.dirty = true;
 }
 
-function onTouchStart(e) { if (e.touches.length === 1) { touchX = e.touches[0].clientX; touchY = e.touches[0].clientY; } }
+function onTouchStart(e) {
+  // Resume AudioContext on any touch (iOS requirement)
+  if (Tone.context?.state === 'suspended') {
+    Tone.context.resume();
+  }
+  if (e.touches.length === 1) { touchX = e.touches[0].clientX; touchY = e.touches[0].clientY; }
+}
 function onTouchEnd(e) {
   if (G.screen !== 'PLAY' || !touchX) return;
   const endX = e.changedTouches[0].clientX, endY = e.changedTouches[0].clientY;
@@ -4836,6 +4853,11 @@ let frameCount = 0;
 
 function gameLoop(delta) {
   try {
+    // Resume suspended AudioContext (iOS background/lock screen recovery)
+    if (Tone.context?.state === 'suspended' && G.screen === 'PLAY' && !G.paused) {
+      Tone.context.resume();
+    }
+
     const now = performance.now(), dt = Math.min(now - lastTime, 50) / 1000; // dt in seconds
     lastTime = now;
     frameCount++;
