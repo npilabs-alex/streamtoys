@@ -3888,11 +3888,11 @@ function renderMix() {
 
   curY = headerH;
 
-  // ========== SIGNAL CHAIN ==========
+  // ========== SIGNAL CHAIN (horizontal scroll on mobile) ==========
   const chainH = isMobile ? 50 : 60;
   const chainY = curY;
   const pillH = isMobile ? 26 : 32;
-  const pillY = chainY + (chainH - pillH) / 2;
+  const pillLocalY = (chainH - pillH) / 2;
 
   // Get active loops per category
   const activeLoops = {
@@ -3901,7 +3901,46 @@ function renderMix() {
     MELODY: Audio.slots?.MELODY?.map(s => s.id) || []
   };
 
-  let chainX = pad;
+  // Initialize chain scroll state
+  if (typeof G.chainScrollX !== 'number') G.chainScrollX = 0;
+
+  // Create chain container with mask for horizontal scroll
+  const chainContainer = new PIXI.Container();
+  chainContainer.y = chainY;
+  layers.overlay.addChild(chainContainer);
+
+  const chainMask = new PIXI.Graphics();
+  chainMask.beginFill(0xffffff);
+  chainMask.drawRect(0, chainY, W, chainH);
+  chainMask.endFill();
+  layers.overlay.addChild(chainMask);
+  chainContainer.mask = chainMask;
+
+  // Chain scroll hit area
+  const chainHit = new PIXI.Graphics();
+  chainHit.beginFill(0x000000, 0.001);
+  chainHit.drawRect(0, 0, W, chainH);
+  chainHit.endFill();
+  chainHit.interactive = true;
+  chainContainer.addChild(chainHit);
+
+  chainHit.on('pointerdown', (e) => {
+    G.chainDragging = true;
+    G.chainDragStartX = e.data.global.x;
+    G.chainDragStartScroll = G.chainScrollX;
+  });
+
+  chainHit.on('pointermove', (e) => {
+    if (!G.chainDragging) return;
+    const dx = G.chainDragStartX - e.data.global.x;
+    G.chainScrollX = Math.max(0, G.chainDragStartScroll + dx);
+    G.dirty = true;
+  });
+
+  chainHit.on('pointerup', () => { G.chainDragging = false; });
+  chainHit.on('pointerupoutside', () => { G.chainDragging = false; });
+
+  let chainX = pad - G.chainScrollX;
 
   ['BEAT', 'VIBE', 'MELODY'].forEach((cat, catIdx) => {
     const color = catColors[cat];
@@ -3927,8 +3966,8 @@ function renderMix() {
         glow.drawRoundedRect(-3, -3, tileW + 6, tileH + 6, 8);
         glow.endFill();
         glow.x = chainX;
-        glow.y = pillY - (tileH - pillH) / 2;
-        layers.overlay.addChild(glow);
+        glow.y = pillLocalY - (tileH - pillH) / 2;
+        chainContainer.addChild(glow);
 
         // Animate pulse
         const t = (Date.now() % 1500) / 1500;
@@ -3942,14 +3981,17 @@ function renderMix() {
         tile.drawRoundedRect(0, 0, tileW, tileH, 6);
         tile.endFill();
         tile.x = chainX;
-        tile.y = pillY - (tileH - pillH) / 2;
+        tile.y = pillLocalY - (tileH - pillH) / 2;
         tile.interactive = true;
         tile.cursor = 'pointer';
         tile.on('pointerdown', () => {
-          Audio.stopLoop(cat, loopId);
-          G.dirty = true;
+          // Only stop if not dragging
+          if (!G.chainDragging || Math.abs(G.chainScrollX - (G.chainDragStartScroll || 0)) < 5) {
+            Audio.stopLoop(cat, loopId);
+            G.dirty = true;
+          }
         });
-        layers.overlay.addChild(tile);
+        chainContainer.addChild(tile);
 
         // Tile text (full name, centered)
         const tileText = new PIXI.Text(name, {
@@ -3961,7 +4003,7 @@ function renderMix() {
         tileText.anchor.set(0.5);
         tileText.x = chainX + tileW / 2;
         tileText.y = tile.y + tileH / 2;
-        layers.overlay.addChild(tileText);
+        chainContainer.addChild(tileText);
 
         chainX += tileW + tilePad;
       });
@@ -3975,8 +4017,8 @@ function renderMix() {
       });
       label.alpha = 0.4;
       label.x = chainX;
-      label.y = pillY + (pillH - label.height) / 2;
-      layers.overlay.addChild(label);
+      label.y = pillLocalY + (pillH - label.height) / 2;
+      chainContainer.addChild(label);
       chainX += label.width + 6;
     }
 
@@ -3988,11 +4030,27 @@ function renderMix() {
         fill: 0x444444
       });
       arrow.x = chainX + 4;
-      arrow.y = pillY + (pillH - arrow.height) / 2;
-      layers.overlay.addChild(arrow);
+      arrow.y = pillLocalY + (pillH - arrow.height) / 2;
+      chainContainer.addChild(arrow);
       chainX += arrow.width + 12;
     }
   });
+
+  // Calculate total chain width and clamp scroll
+  const chainContentW = chainX + G.chainScrollX + pad;
+  const chainMaxScroll = Math.max(0, chainContentW - W);
+  G.chainScrollX = Math.min(G.chainScrollX, chainMaxScroll);
+
+  // Show scroll indicator if overflowing
+  if (chainContentW > W) {
+    const scrollW = Math.max(20, (W / chainContentW) * (W - pad * 2));
+    const scrollX = pad + (chainMaxScroll > 0 ? (G.chainScrollX / chainMaxScroll) * (W - pad * 2 - scrollW) : 0);
+    const scrollInd = new PIXI.Graphics();
+    scrollInd.beginFill(0x444444, 0.5);
+    scrollInd.drawRoundedRect(scrollX, chainY + chainH - 6, scrollW, 3, 1);
+    scrollInd.endFill();
+    layers.overlay.addChild(scrollInd);
+  }
 
   curY = chainY + chainH;
 
@@ -4341,35 +4399,30 @@ function renderMix() {
   layers.overlay.addChild(mask);
   scrollContainer.mask = mask;
 
-  // Scroll hit area for drag
+  // Scroll hit area for drag (state stored in G to persist across re-renders)
   const scrollHit = new PIXI.Graphics();
   scrollHit.beginFill(0x000000, 0.001); // Nearly invisible
   scrollHit.drawRect(0, 0, W, listAreaH);
   scrollHit.endFill();
   scrollHit.interactive = true;
-  scrollHit.cursor = 'grab';
+  scrollHit.cursor = G.mixDragging ? 'grabbing' : 'grab';
   scrollContainer.addChild(scrollHit);
 
-  let dragStartY = 0;
-  let dragStartScroll = 0;
-  let isDragging = false;
-
   scrollHit.on('pointerdown', (e) => {
-    isDragging = true;
-    dragStartY = e.data.global.y;
-    dragStartScroll = G.mixScrollY;
-    scrollHit.cursor = 'grabbing';
+    G.mixDragging = true;
+    G.mixDragStartY = e.data.global.y;
+    G.mixDragStartScroll = G.mixScrollY;
   });
 
   scrollHit.on('pointermove', (e) => {
-    if (!isDragging) return;
-    const dy = dragStartY - e.data.global.y;
-    G.mixScrollY = Math.max(0, Math.min(maxScroll, dragStartScroll + dy));
+    if (!G.mixDragging) return;
+    const dy = G.mixDragStartY - e.data.global.y;
+    G.mixScrollY = Math.max(0, Math.min(maxScroll, G.mixDragStartScroll + dy));
     G.dirty = true;
   });
 
-  scrollHit.on('pointerup', () => { isDragging = false; scrollHit.cursor = 'grab'; });
-  scrollHit.on('pointerupoutside', () => { isDragging = false; scrollHit.cursor = 'grab'; });
+  scrollHit.on('pointerup', () => { G.mixDragging = false; G.dirty = true; });
+  scrollHit.on('pointerupoutside', () => { G.mixDragging = false; G.dirty = true; });
 
   // Render all loop rows
   allLoops.forEach((loopId, i) => {
@@ -4393,7 +4446,7 @@ function renderMix() {
     row.cursor = 'pointer';
     row.on('pointerdown', (e) => {
       // Only toggle if not dragging
-      if (Math.abs(G.mixScrollY - dragStartScroll) < 5) {
+      if (Math.abs(G.mixScrollY - (G.mixDragStartScroll || 0)) < 5) {
         if (isActive) {
           Audio.stopLoop(currentCat, loopId);
         } else {
