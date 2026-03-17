@@ -4399,32 +4399,7 @@ function renderMix() {
   layers.overlay.addChild(mask);
   scrollContainer.mask = mask;
 
-  // Scroll hit area for drag (state stored in G to persist across re-renders)
-  const scrollHit = new PIXI.Graphics();
-  scrollHit.beginFill(0x000000, 0.001); // Nearly invisible
-  scrollHit.drawRect(0, 0, W, listAreaH);
-  scrollHit.endFill();
-  scrollHit.interactive = true;
-  scrollHit.cursor = G.mixDragging ? 'grabbing' : 'grab';
-  scrollContainer.addChild(scrollHit);
-
-  scrollHit.on('pointerdown', (e) => {
-    G.mixDragging = true;
-    G.mixDragStartY = e.data.global.y;
-    G.mixDragStartScroll = G.mixScrollY;
-  });
-
-  scrollHit.on('pointermove', (e) => {
-    if (!G.mixDragging) return;
-    const dy = G.mixDragStartY - e.data.global.y;
-    G.mixScrollY = Math.max(0, Math.min(maxScroll, G.mixDragStartScroll + dy));
-    G.dirty = true;
-  });
-
-  scrollHit.on('pointerup', () => { G.mixDragging = false; G.dirty = true; });
-  scrollHit.on('pointerupoutside', () => { G.mixDragging = false; G.dirty = true; });
-
-  // Render all loop rows
+  // Render all loop rows (scrollHit added AFTER rows so it intercepts touch first)
   allLoops.forEach((loopId, i) => {
     const isActive = currentActiveLoops.includes(loopId);
     const rowY = i * (loopRowH + loopRowPad) - G.mixScrollY;
@@ -4442,19 +4417,6 @@ function renderMix() {
     }
     row.drawRoundedRect(pad, rowY, W - pad * 2, loopRowH, 8);
     row.endFill();
-    row.interactive = true;
-    row.cursor = 'pointer';
-    row.on('pointerdown', (e) => {
-      // Only toggle if not dragging
-      if (Math.abs(G.mixScrollY - (G.mixDragStartScroll || 0)) < 5) {
-        if (isActive) {
-          Audio.stopLoop(currentCat, loopId);
-        } else {
-          Audio.startLoop(currentCat, loopId);
-        }
-        G.dirty = true;
-      }
-    });
     scrollContainer.addChild(row);
 
     // Loop name (positioned higher in row)
@@ -4492,6 +4454,59 @@ function renderMix() {
       scrollContainer.addChild(dot);
     }
   });
+
+  // Scroll hit area - added LAST so it sits on top and intercepts touch first
+  const scrollHit = new PIXI.Graphics();
+  scrollHit.beginFill(0x000000, 0.001); // Nearly invisible
+  scrollHit.drawRect(0, 0, W, listAreaH);
+  scrollHit.endFill();
+  scrollHit.interactive = true;
+  scrollHit.cursor = G.mixDragging ? 'grabbing' : 'grab';
+  scrollContainer.addChild(scrollHit);
+
+  scrollHit.on('pointerdown', (e) => {
+    G.mixDragging = true;
+    G.mixDragStartY = e.data.global.y;
+    G.mixDragStartX = e.data.global.x;
+    G.mixDragStartScroll = G.mixScrollY;
+    G.mixTapConsumed = false;
+  });
+
+  scrollHit.on('pointermove', (e) => {
+    if (!G.mixDragging) return;
+    const dy = G.mixDragStartY - e.data.global.y;
+    const dx = G.mixDragStartX - e.data.global.x;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    // Only scroll if moved more than 15px (distinguishes scroll from tap)
+    if (dist > 15) {
+      G.mixTapConsumed = true;
+      G.mixScrollY = Math.max(0, Math.min(maxScroll, G.mixDragStartScroll + dy));
+      G.dirty = true;
+    }
+  });
+
+  scrollHit.on('pointerup', (e) => {
+    // If this was a tap (not a scroll), find and activate the loop row
+    if (!G.mixTapConsumed && G.mixDragging) {
+      const tapY = e.data.global.y - listAreaY;
+      const rowIdx = Math.floor((tapY + G.mixScrollY) / (loopRowH + loopRowPad));
+      if (rowIdx >= 0 && rowIdx < allLoops.length) {
+        const loopId = allLoops[rowIdx];
+        const isActive = currentActiveLoops.includes(loopId);
+        if (isActive) {
+          Audio.stopLoop(currentCat, loopId);
+        } else {
+          Audio.startLoop(currentCat, loopId);
+        }
+        G.dirty = true;
+      }
+    }
+    G.mixDragging = false;
+    G.dirty = true;
+  });
+
+  scrollHit.on('pointerupoutside', () => { G.mixDragging = false; G.dirty = true; });
 
   // Scroll indicator (if content overflows)
   if (contentH > listAreaH) {
