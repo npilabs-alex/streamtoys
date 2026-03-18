@@ -2795,8 +2795,8 @@ function destroyChildren(container) {
 function render() {
   // Properly clean up and destroy/pool children
   // Note: layers.game is persistent (TileRenderer sprites) - don't destroy
+  // Note: layers.hud is persistent (HUD manages its own objects) - don't destroy
   destroyChildren(layers.bg);
-  destroyChildren(layers.hud);
   destroyChildren(layers.overlay);
 
   if (G.screen === 'LOADING') renderLoading();
