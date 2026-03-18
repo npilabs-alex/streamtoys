@@ -513,7 +513,7 @@ const TileRenderer = {
 
     // Pass 3: draw gradient circles on top (clipped by rounded rect naturally)
     const cx = size / 2, cy = size / 2;
-    const maxR = (size - gap * 2) / 2 * 0.92;
+    const maxR = (size - gap * 2) / 2 - radius * 0.3;
     const steps = 8;
 
     for (let i = steps; i >= 0; i--) {
@@ -676,19 +676,21 @@ const TileRenderer = {
         G.grid[a.r1][a.c1] = a.cell2;
         G.grid[a.r2][a.c2] = a.cell1;
 
-        // Swap sprites in grid and snap to final positions
+        // Swap sprites in grid
         const tmp = this.spriteGrid[a.r1][a.c1];
         this.spriteGrid[a.r1][a.c1] = this.spriteGrid[a.r2][a.c2];
         this.spriteGrid[a.r2][a.c2] = tmp;
 
-        // Snap to final positions
-        if (spr1) {
-          spr1.x = gridX + a.c2 * tileSize + tileSize / 2;
-          spr1.y = gridY + (a.r2 - BUFFER_ROWS) * tileSize + tileSize / 2;
+        // Snap to final positions - read from spriteGrid AFTER the swap
+        const snapSpr1 = this.spriteGrid[a.r1][a.c1];
+        const snapSpr2 = this.spriteGrid[a.r2][a.c2];
+        if (snapSpr1) {
+          snapSpr1.x = gridX + a.c1 * tileSize + tileSize / 2;
+          snapSpr1.y = gridY + (a.r1 - BUFFER_ROWS) * tileSize + tileSize / 2;
         }
-        if (spr2) {
-          spr2.x = gridX + a.c1 * tileSize + tileSize / 2;
-          spr2.y = gridY + (a.r1 - BUFFER_ROWS) * tileSize + tileSize / 2;
+        if (snapSpr2) {
+          snapSpr2.x = gridX + a.c2 * tileSize + tileSize / 2;
+          snapSpr2.y = gridY + (a.r2 - BUFFER_ROWS) * tileSize + tileSize / 2;
         }
 
         TileRenderer.needsSync = true;
