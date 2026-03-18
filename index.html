@@ -3000,12 +3000,6 @@ function renderGame() {
       let tx = x+gap, ty = y+gap;
       const tw = tileSize-gap*2, th = tileSize-gap*2;
 
-      // Cluster effect: Wave movement only
-      if (cluster) {
-        const wave = Math.sin(now * 0.006 + r * 0.4 + c * 0.3);
-        ty += wave * 3;
-      }
-
       if (isSelected) {
         // Selected tile: scale up slightly, white outline
         const scale = 1.15;
@@ -3018,18 +3012,13 @@ function renderGame() {
         g.endFill();
         g.lineStyle(0);  // Reset line style
       } else if (cluster) {
-        // Cluster tiles: solid bright fill with inner glow
-        const pulse = 0.5 + Math.sin(now * 0.005 + r * 0.4 + c * 0.3) * 0.5;
-        // Solid base fill
-        g.beginFill(grad.mid, bufferAlpha); g.drawRoundedRect(tx, ty, tw, th, radius); g.endFill();
-        // Inner glow - bright center fading out
-        const glowSize = tw * 0.35;
-        g.beginFill(grad.shine, (0.4 + pulse * 0.3) * bufferAlpha);
-        g.drawRoundedRect(tx + tw/2 - glowSize/2, ty + th/2 - glowSize/2, glowSize, glowSize, glowSize/2);
+        // Cluster tiles: solid bright fill + subtle outline (no animation)
+        // Always full opacity — clusters should read as fully active
+        g.lineStyle(2, 0xffffff, 0.4);
+        g.beginFill(grad.shine, 1.0);
+        g.drawRoundedRect(tx, ty, tw, th, radius);
         g.endFill();
-        g.beginFill(grad.shine, (0.2 + pulse * 0.15) * bufferAlpha);
-        g.drawRoundedRect(tx + 4, ty + 4, tw - 8, th - 8, radius - 2);
-        g.endFill();
+        g.lineStyle(0);  // Reset line style
       } else {
         // Normal tile with bufferAlpha
         g.beginFill(grad.mid, bufferAlpha); g.drawRoundedRect(tx, ty, tw, th, radius); g.endFill();
