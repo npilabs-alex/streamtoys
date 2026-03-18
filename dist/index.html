@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Pacifico&family=Press+Start+2P&family=Permanent+Marker&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.3.2/pixi.min.js"></script>
+  <!-- Filters will be added in Step 2 via ESM import -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -344,6 +345,9 @@ async function init() {
   layers.overlay = new PIXI.Container();
   app.stage.addChild(layers.bg, layers.game, layers.fx, layers.hud, layers.overlay);
 
+  // Initialize tile renderer (pre-generate textures)
+  TileRenderer.init();
+
   window.addEventListener('resize', resize);
   resize();
   document.addEventListener('keydown', onKey);
@@ -383,6 +387,7 @@ function resize() {
   gridW = COLS * tileSize; gridH = VISIBLE_ROWS * tileSize;
   gridX = Math.floor((W - gridW) / 2);
   gridY = topHUD + pad;  // HUD bottom + 8px padding
+  TileRenderer.updateMask();
   G.dirty = true;
   render();
 }
@@ -433,6 +438,246 @@ function drawCustomRect(g, x, y, w, h, rTL, rTR, rBR, rBL) {
   else g.lineTo(x, y);
   g.closePath();
 }
+
+// ============================================================================
+// TILE RENDERER - Pre-generated textures & sprite grid
+// ============================================================================
+// Bio palette: dark base, saturated mid, bright glow
+const BIO_PALETTE = {
+  BEAT:   { base: 0x031210, mid: 0x10c0a0, bright: 0x30ffe0 },
+  VIBE:   { base: 0x140610, mid: 0xc02880, bright: 0xff50c0 },
+  MELODY: { base: 0x0a1202, mid: 0x80c010, bright: 0xc0ff20 }
+};
+
+const TileRenderer = {
+  textures: {},      // { BEAT_idle, BEAT_cluster, VIBE_idle, ... }
+  spriteGrid: null,  // [row][col] => Sprite
+  tileContainer: null,
+  clipMask: null,    // Mask to clip buffer rows and grid overflow
+  needsSync: false,  // Set true when grid state changes
+  texSize: 64,       // Render texture size (will be scaled to tileSize)
+
+  init() {
+    // Create container for tile sprites, insert into layers.game
+    this.tileContainer = new PIXI.Container();
+    layers.game.addChild(this.tileContainer);
+
+    // Create clip mask for visible grid area
+    this.clipMask = new PIXI.Graphics();
+    this.tileContainer.mask = this.clipMask;
+    layers.game.addChild(this.clipMask);
+
+    // Generate textures for each category (idle + cluster variants)
+    ['BEAT', 'VIBE', 'MELODY'].forEach(cat => {
+      this.textures[`${cat}_idle`] = this._generateTexture(cat, false);
+      this.textures[`${cat}_cluster`] = this._generateTexture(cat, true);
+    });
+
+    console.log('TileRenderer: Initialized with', Object.keys(this.textures).length, 'textures');
+  },
+
+  updateMask() {
+    // Redraw mask to match current grid bounds (call after resize)
+    if (!this.clipMask) return;
+    this.clipMask.clear();
+    this.clipMask.beginFill(0xffffff);
+    this.clipMask.drawRect(gridX, gridY, gridW, gridH);
+    this.clipMask.endFill();
+  },
+
+  _generateTexture(cat, isCluster) {
+    const size = this.texSize;
+    const pal = BIO_PALETTE[cat];
+    const gap = 4;
+    const radius = Math.min(size * 0.18, 7);
+    const innerSize = size - gap * 2;
+
+    const gfx = new PIXI.Graphics();
+
+    // Radial gradient via concentric circles (8 steps for smooth falloff)
+    const cx = size / 2, cy = size / 2;
+    const maxR = innerSize / 2;
+    const steps = 8;
+
+    // Draw from outside in
+    for (let i = steps; i >= 0; i--) {
+      const t = i / steps;  // 1 = edge, 0 = center
+
+      // Interpolate color: edge = base, center = mid (or bright if cluster)
+      const targetColor = isCluster ? pal.bright : pal.mid;
+      const r1 = (pal.base >> 16) & 0xFF, g1 = (pal.base >> 8) & 0xFF, b1 = pal.base & 0xFF;
+      const r2 = (targetColor >> 16) & 0xFF, g2 = (targetColor >> 8) & 0xFF, b2 = targetColor & 0xFF;
+
+      const r = Math.round(r1 * t + r2 * (1 - t));
+      const g = Math.round(g1 * t + g2 * (1 - t));
+      const b = Math.round(b1 * t + b2 * (1 - t));
+      const color = (r << 16) | (g << 8) | b;
+
+      const circleR = maxR * (0.3 + 0.7 * t);  // Inner circles don't go to 0
+
+      gfx.beginFill(color, 1);
+      gfx.drawCircle(cx, cy, circleR);
+      gfx.endFill();
+    }
+
+    // Orbital dots (static for now - will animate in Step 2)
+    if (isCluster) {
+      const dotCount = 6;
+      const orbitR = maxR * 0.75;
+      const dotR = 2;
+      for (let i = 0; i < dotCount; i++) {
+        const angle = (i / dotCount) * Math.PI * 2;
+        const dx = cx + Math.cos(angle) * orbitR;
+        const dy = cy + Math.sin(angle) * orbitR;
+        gfx.beginFill(0xffffff, 0.8);
+        gfx.drawCircle(dx, dy, dotR);
+        gfx.endFill();
+      }
+    }
+
+    // Create RenderTexture and render graphics to it
+    const rt = PIXI.RenderTexture.create({ width: size, height: size });
+    app.renderer.render(gfx, { renderTexture: rt });
+    gfx.destroy();
+
+    return rt;
+  },
+
+  createSpriteGrid() {
+    // Clear existing sprites
+    if (this.spriteGrid) {
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          const spr = this.spriteGrid[r]?.[c];
+          if (spr) {
+            this.tileContainer.removeChild(spr);
+            spr.destroy();
+          }
+        }
+      }
+    }
+
+    // Create fresh grid
+    this.spriteGrid = [];
+    for (let r = 0; r < ROWS; r++) {
+      this.spriteGrid[r] = [];
+      for (let c = 0; c < COLS; c++) {
+        this.spriteGrid[r][c] = null;  // No sprite until cell is populated
+      }
+    }
+
+    console.log('TileRenderer: Created sprite grid', ROWS, 'x', COLS);
+  },
+
+  syncToGrid() {
+    // Guard: skip if grid not initialized yet
+    if (!this.spriteGrid || !G.grid) return;
+
+    // Diff-based sync: compare G.grid to spriteGrid
+    const cache = G.clusterCache || { inCluster: new Map() };
+    const inCluster = cache.inCluster;
+
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const cell = G.grid[r][c];
+        const spr = this.spriteGrid[r][c];
+
+        // Skip non-renderable cells (null or NOISE)
+        const shouldRender = cell && cell.type !== 'NOISE' &&
+                            !['SOCIAL', 'BOMB', 'FREEZE', 'SHUFFLE', 'DOUBLE'].includes(cell.type);
+
+        if (!shouldRender) {
+          // Remove sprite if cell is empty/noise
+          if (spr) {
+            spr.visible = false;
+          }
+          continue;
+        }
+
+        const isClusterTile = inCluster.has(`${r},${c}`);
+        const texKey = `${cell.type}_${isClusterTile ? 'cluster' : 'idle'}`;
+        const tex = this.textures[texKey];
+
+        if (!tex) continue;  // Skip if no texture for this type
+
+        if (!spr) {
+          // Create new sprite
+          const newSpr = new PIXI.Sprite(tex);
+          newSpr.anchor.set(0.5);
+
+          // Add rounded-rect mask to clip circular gradient to tile shape
+          const halfTex = this.texSize / 2;
+          const radius = Math.min(this.texSize * 0.18, 7);
+          const mask = new PIXI.Graphics();
+          mask.beginFill(0xffffff);
+          mask.drawRoundedRect(-halfTex, -halfTex, this.texSize, this.texSize, radius);
+          mask.endFill();
+          newSpr.addChild(mask);
+          newSpr.mask = mask;
+
+          this.tileContainer.addChild(newSpr);
+          this.spriteGrid[r][c] = newSpr;
+        } else {
+          // Update existing sprite texture if needed
+          spr.texture = tex;
+          spr.visible = true;
+        }
+      }
+    }
+  },
+
+  updatePositions() {
+    // Guard: skip if grid not initialized yet
+    if (!this.spriteGrid || !G.grid) return;
+
+    // Called every frame to position sprites and handle animations
+    const scale = tileSize / this.texSize;
+
+    for (let r = BUFFER_ROWS; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const spr = this.spriteGrid[r][c];
+        if (!spr || !spr.visible) continue;
+
+        const cell = G.grid[r][c];
+        if (!cell) continue;
+
+        // Base position (center of tile)
+        let x = gridX + c * tileSize + tileSize / 2;
+        let y = gridY + (r - BUFFER_ROWS) * tileSize + tileSize / 2;
+
+        // Fall animation offset
+        if (G.fallAnim?.moveMap) {
+          const move = G.fallAnim.moveMap.get(cell);
+          if (move) {
+            const t = Math.min(1, G.fallAnim.t);
+            const eased = t * (2 - t);  // Ease-out quad
+            const fromY = gridY + (move.fromR - BUFFER_ROWS) * tileSize + tileSize / 2;
+            const toY = gridY + (move.toR - BUFFER_ROWS) * tileSize + tileSize / 2;
+            y = fromY + (toY - fromY) * eased;
+          }
+        }
+
+        spr.x = x;
+        spr.y = y;
+        spr.scale.set(scale);
+
+        // Selection state: scale up
+        const isSelected = G.selected && G.selected.r === r && G.selected.c === c;
+        if (isSelected) {
+          spr.scale.set(scale * 1.15);
+        }
+      }
+    }
+
+    // Hide buffer row sprites
+    for (let r = 0; r < BUFFER_ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const spr = this.spriteGrid[r]?.[c];
+        if (spr) spr.visible = false;
+      }
+    }
+  }
+};
 
 // ============================================================================
 // SOUNDSCAPE ENGINE v2 - Studio Quality Audio Architecture
@@ -1615,6 +1860,7 @@ function initGrid() {
       G.grid[r][c] = { type };
     }
   }
+  TileRenderer.needsSync = true;
 }
 
 // Swap two tiles (Candy Crush style)
@@ -1631,6 +1877,9 @@ function swapTiles(r1, c1, r2, c2) {
 
   // Play swap sound
   Audio.playRotate();
+
+  // Mark sprites for resync
+  TileRenderer.needsSync = true;
 
   // Check for clusters after swap
   findClusters();
@@ -1651,6 +1900,9 @@ function collapseCluster(cluster) {
     spawnParticles(t.r, t.c, getColor(cluster.type), 8);
     G.grid[t.r][t.c] = null;
   }
+
+  // Mark sprites for resync
+  TileRenderer.needsSync = true;
 
   // Clear selection
   G.selected = null;
@@ -1726,6 +1978,7 @@ function fallFromBuffer() {
 function finishCollapseSequence() {
   G.fallAnim = null;
   G.collapsing = false;
+  TileRenderer.needsSync = true;
   findClusters();
   G.dirty = true;
 }
@@ -2182,8 +2435,8 @@ function destroyChildren(container) {
 
 function render() {
   // Properly clean up and destroy/pool children
+  // Note: layers.game is persistent (TileRenderer sprites) - don't destroy
   destroyChildren(layers.bg);
-  destroyChildren(layers.game);
   destroyChildren(layers.hud);
   destroyChildren(layers.overlay);
 
@@ -2714,71 +2967,41 @@ function renderGame() {
     layers.bg.addChild(cg);
   });
 
-  // Use cached cluster data (computed in findClusters, avoids per-frame garbage)
-  const cache = G.clusterCache || { inCluster: new Map(), tileSets: new Map() };
-  const inCluster = cache.inCluster;
-  const clusterTileSets = cache.tileSets;
+  // Sync sprite textures to grid state (only when grid changed)
+  if (TileRenderer.needsSync) {
+    TileRenderer.syncToGrid();
+    TileRenderer.needsSync = false;
+  }
 
-  const gap = 4, radius = Math.min(tileSize * 0.18, 7);
+  // Update sprite positions (handles fall animations, selection scale)
+  TileRenderer.updatePositions();
 
-  // Only render visible rows (skip buffer rows 0-7)
+  // Draw special tiles (SOCIAL, EFFECT) that still use immediate mode
+  const gap = 4;
   for (let r = BUFFER_ROWS; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
-      let x = gridX + c * tileSize, y = gridY + (r - BUFFER_ROWS) * tileSize;
       const cell = G.grid[r][c];
       if (!cell) continue;
 
-      // Fall animation offset: O(1) map lookup
+      const type = cell.type;
+      if (type === 'NOISE') continue;
+
+      // Calculate position with fall animation
+      let x = gridX + c * tileSize, y = gridY + (r - BUFFER_ROWS) * tileSize;
       if (G.fallAnim?.moveMap) {
         const move = G.fallAnim.moveMap.get(cell);
         if (move) {
           const t = Math.min(1, G.fallAnim.t);
-          const eased = t * (2 - t); // Ease-out quad
+          const eased = t * (2 - t);
           const fromY = gridY + (move.fromR - BUFFER_ROWS) * tileSize;
           const toY = gridY + (move.toR - BUFFER_ROWS) * tileSize;
           y = fromY + (toY - fromY) * eased;
         }
       }
 
-      const type = cell.type;
-
-      // NOISE tiles: invisible (skip rendering entirely)
-      if (type === 'NOISE') continue;
-
-      // Selection state
-      const isSelected = G.selected && G.selected.r === r && G.selected.c === c;
-
-      if (type === 'SOCIAL') { drawSocialTile(g, x, y, now); continue; }
-      if (EFFECT_TILES.includes(type)) { drawEffectTile(g, x, y, type, now); continue; }
-
-      const color = getColor(type), grad = getGradient(type), cluster = inCluster.get(`${r},${c}`);
-
-      // Tile dimensions
-      let tx = x+gap, ty = y+gap;
-      const tw = tileSize-gap*2, th = tileSize-gap*2;
-
-      if (isSelected) {
-        // Selected tile: scale up slightly, white outline
-        const scale = 1.15;
-        const scaledW = tw * scale, scaledH = th * scale;
-        const offsetX = (scaledW - tw) / 2, offsetY = (scaledH - th) / 2;
-
-        g.lineStyle(3, 0xffffff, 1);
-        g.beginFill(grad.mid, 1);
-        g.drawRoundedRect(tx - offsetX, ty - offsetY, scaledW, scaledH, radius);
-        g.endFill();
-        g.lineStyle(0);  // Reset line style
-      } else if (cluster) {
-        // Cluster tiles: solid bright fill + subtle outline (no animation)
-        g.lineStyle(2, 0xffffff, 0.4);
-        g.beginFill(grad.shine, 1.0);
-        g.drawRoundedRect(tx, ty, tw, th, radius);
-        g.endFill();
-        g.lineStyle(0);  // Reset line style
-      } else {
-        // Normal tile
-        g.beginFill(grad.mid, 1); g.drawRoundedRect(tx, ty, tw, th, radius); g.endFill();
-      }
+      // SOCIAL and EFFECT tiles still use immediate mode drawing
+      if (type === 'SOCIAL') { drawSocialTile(g, x, y, now); }
+      else if (EFFECT_TILES.includes(type)) { drawEffectTile(g, x, y, type, now); }
     }
   }
 
@@ -4465,6 +4688,10 @@ async function startSession() {
   }
 
   initGrid();
+
+  // Initialize sprite grid (sync handled by renderGame via needsSync flag)
+  TileRenderer.createSpriteGrid();
+
   G.screen = 'PLAY';
   G.dirty = true;
 
