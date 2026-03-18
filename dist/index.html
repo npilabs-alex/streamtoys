@@ -1731,6 +1731,27 @@ function initGrid() {
   }
 }
 
+// Swap two tiles (Candy Crush style)
+function swapTiles(r1, c1, r2, c2) {
+  const cell1 = G.grid[r1][c1];
+  const cell2 = G.grid[r2][c2];
+
+  // Both cells must exist (should always be true - no empty cells in redesign)
+  if (!cell1 || !cell2) return;
+
+  // Perform swap
+  G.grid[r1][c1] = cell2;
+  G.grid[r2][c2] = cell1;
+
+  // Play swap sound
+  Audio.playRotate();
+
+  // Check for clusters after swap
+  findClusters();
+
+  G.dirty = true;
+}
+
 // Tile types:
 // - BEAT, VIBE, MELODY: Regular colored tiles (form clusters)
 // - WILD: Matches any color in clusters (white outline)
@@ -2945,6 +2966,18 @@ function renderGame() {
       const cell = G.grid[r][c];
       if (!cell) continue;
 
+      const type = cell.type;
+
+      // NOISE tiles: invisible (skip rendering entirely)
+      if (type === 'NOISE') continue;
+
+      // Buffer row dimming (rows 0-7 render at 30% opacity)
+      const isBuffer = r < BUFFER_ROWS;
+      const bufferAlpha = isBuffer ? 0.3 : 1.0;
+
+      // Selection state
+      const isSelected = G.selected && G.selected.r === r && G.selected.c === c;
+
       // Apply wobble effect when in danger - subtle wobble
       if (G.dangerLevel > 0 || isEnding) {
         // Tiles near top wobble slightly more
@@ -2958,14 +2991,12 @@ function renderGame() {
         y += Math.cos(phase1 * 0.8) * tileWobble * 0.4;
       }
 
-      const type = cell.type;
-
       if (type === 'SOCIAL') { drawSocialTile(g, x, y, now); continue; }
       if (EFFECT_TILES.includes(type)) { drawEffectTile(g, x, y, type, now); continue; }
 
       const color = getColor(type), grad = getGradient(type), cluster = inCluster.get(`${r},${c}`);
 
-      // FROSTED GLASS STYLE with cluster effects
+      // Tile dimensions
       let tx = x+gap, ty = y+gap;
       const tw = tileSize-gap*2, th = tileSize-gap*2;
 
@@ -2975,22 +3006,33 @@ function renderGame() {
         ty += wave * 3;
       }
 
-      if (cluster) {
-        // Cluster tiles: solid fill with inner glow
+      if (isSelected) {
+        // Selected tile: scale up slightly, white outline
+        const scale = 1.15;
+        const scaledW = tw * scale, scaledH = th * scale;
+        const offsetX = (scaledW - tw) / 2, offsetY = (scaledH - th) / 2;
+
+        g.lineStyle(3, 0xffffff, 1);
+        g.beginFill(grad.mid, bufferAlpha);
+        g.drawRoundedRect(tx - offsetX, ty - offsetY, scaledW, scaledH, radius);
+        g.endFill();
+        g.lineStyle(0);  // Reset line style
+      } else if (cluster) {
+        // Cluster tiles: solid bright fill with inner glow
         const pulse = 0.5 + Math.sin(now * 0.005 + r * 0.4 + c * 0.3) * 0.5;
         // Solid base fill
-        g.beginFill(grad.mid, 1); g.drawRoundedRect(tx, ty, tw, th, radius); g.endFill();
+        g.beginFill(grad.mid, bufferAlpha); g.drawRoundedRect(tx, ty, tw, th, radius); g.endFill();
         // Inner glow - bright center fading out
         const glowSize = tw * 0.35;
-        g.beginFill(grad.shine, 0.4 + pulse * 0.3);
+        g.beginFill(grad.shine, (0.4 + pulse * 0.3) * bufferAlpha);
         g.drawRoundedRect(tx + tw/2 - glowSize/2, ty + th/2 - glowSize/2, glowSize, glowSize, glowSize/2);
         g.endFill();
-        g.beginFill(grad.shine, 0.2 + pulse * 0.15);
+        g.beginFill(grad.shine, (0.2 + pulse * 0.15) * bufferAlpha);
         g.drawRoundedRect(tx + 4, ty + 4, tw - 8, th - 8, radius - 2);
         g.endFill();
       } else {
-        // Solid tile color
-        g.beginFill(grad.mid, 1); g.drawRoundedRect(tx, ty, tw, th, radius); g.endFill();
+        // Normal tile with bufferAlpha
+        g.beginFill(grad.mid, bufferAlpha); g.drawRoundedRect(tx, ty, tw, th, radius); g.endFill();
       }
     }
   }
@@ -3035,11 +3077,56 @@ function renderGame() {
   gridHit.beginFill(0, 0.001); gridHit.drawRect(gridX, gridY, gridW, gridH); gridHit.endFill();
   gridHit.interactive = true;
   gridHit.on('pointerdown', e => {
-    const inWobblePeriod = G.over && G.sessionEndingAt > 0 && !G.sessionOverShown;
-    if (G.collapsing || G.paused || (G.over && !inWobblePeriod)) return;
+    if (G.collapsing || G.paused || G.over) return;
+
     const lx = e.data.global.x - gridX, ly = e.data.global.y - gridY;
     const c = Math.floor(lx / tileSize), r = Math.floor(ly / tileSize);
-    if (r >= 0 && r < ROWS && c >= 0 && c < COLS) collapse(r, c);
+
+    // Bounds check
+    if (c < 0 || c >= COLS || r < 0 || r >= ROWS) return;
+
+    // Buffer rows (0-7) are uninteractable
+    if (r < BUFFER_ROWS) return;
+
+    const cell = G.grid[r][c];
+    if (!cell) return;
+
+    // If nothing selected
+    if (!G.selected) {
+      // Only select colour tiles, not NOISE
+      if (cell.type !== 'NOISE') {
+        G.selected = { r, c };
+        G.dirty = true;
+      }
+      return;
+    }
+
+    // Tapped the same tile = deselect
+    if (G.selected.r === r && G.selected.c === c) {
+      G.selected = null;
+      G.dirty = true;
+      return;
+    }
+
+    // Check if adjacent (cardinal only: up/down/left/right)
+    const dr = Math.abs(G.selected.r - r);
+    const dc = Math.abs(G.selected.c - c);
+    const isAdjacent = (dr === 1 && dc === 0) || (dr === 0 && dc === 1);
+
+    if (isAdjacent) {
+      // Swap tiles (works with NOISE tiles too)
+      swapTiles(G.selected.r, G.selected.c, r, c);
+      G.selected = null;
+      G.dirty = true;
+    } else {
+      // Non-adjacent: change selection (only if tapped tile is colour, not NOISE)
+      if (cell.type !== 'NOISE') {
+        G.selected = { r, c };
+      } else {
+        G.selected = null;  // Tapped noise = deselect
+      }
+      G.dirty = true;
+    }
   });
   layers.game.addChild(gridHit);
 
