@@ -78,11 +78,23 @@ const PALETTES = {
       VIBE: { mid: 0x1DB954, shine: 0x4CD97D, bot: 0x159A42 },
       SOCIAL: { mid: 0xFBBF24, shine: 0xfef3c7, bot: 0xd99a00 }
     }
+  },
+  bio: {
+    name: 'BIO', bg: 0x040608, grid: 0x07080a,
+    beat: 0x10c0a0, melody: 0x80c010, vibe: 0xc02880,
+    social: [0x30ffe0, 0xff50c0, 0xc0ff20, 0xffffff],
+    text: 0xffffff, dim: 0x445566,
+    gradients: {
+      BEAT:   { mid: 0x10c0a0, shine: 0x30ffe0, bot: 0x031210 },
+      VIBE:   { mid: 0xc02880, shine: 0xff50c0, bot: 0x140610 },
+      MELODY: { mid: 0x80c010, shine: 0xc0ff20, bot: 0x0a1202 },
+      SOCIAL: { mid: 0xffffff, shine: 0xffffff, bot: 0x444444 }
+    }
   }
 };
-const PALETTE_ORDER = ['signal', 'analogue', 'vaporwave', 'sunrise'];
+const PALETTE_ORDER = ['bio', 'signal', 'analogue', 'vaporwave', 'sunrise'];
 
-let currentPalette = 'sunrise';
+let currentPalette = 'bio';
 const P = () => PALETTES[currentPalette];
 const CATS = ['BEAT', 'VIBE', 'MELODY'];
 
@@ -395,12 +407,14 @@ function resize() {
 function togglePalette() {
   const idx = PALETTE_ORDER.indexOf(currentPalette);
   currentPalette = PALETTE_ORDER[(idx + 1) % PALETTE_ORDER.length];
+  if (TileRenderer.textures) TileRenderer.regenerateTextures();
   G.dirty = true; render();
 }
 
 function setPalette(name) {
   if (PALETTES[name]) {
     currentPalette = name;
+    if (TileRenderer.textures) TileRenderer.regenerateTextures();
     G.dirty = true; render();
   }
 }
@@ -442,12 +456,6 @@ function drawCustomRect(g, x, y, w, h, rTL, rTR, rBR, rBL) {
 // ============================================================================
 // TILE RENDERER - Pre-generated textures & sprite grid
 // ============================================================================
-// Bio palette: dark base, saturated mid, bright glow
-const BIO_PALETTE = {
-  BEAT:   { base: 0x031210, mid: 0x10c0a0, bright: 0x30ffe0 },
-  VIBE:   { base: 0x140610, mid: 0xc02880, bright: 0xff50c0 },
-  MELODY: { base: 0x0a1202, mid: 0x80c010, bright: 0xc0ff20 }
-};
 
 const TileRenderer = {
   textures: {},      // { BEAT_idle, BEAT_cluster, VIBE_idle, ... }
@@ -487,29 +495,32 @@ const TileRenderer = {
 
   _generateTexture(cat, isCluster) {
     const size = this.texSize;
-    const pal = BIO_PALETTE[cat];
+    const p = P();
+    const grad = p.gradients[cat] || p.gradients.SOCIAL;
     const gap = 4;
     const radius = Math.min(size * 0.18, 7);
 
-    // Create rounded-rect mask shape (baked into texture)
-    const maskGfx = new PIXI.Graphics();
-    maskGfx.beginFill(0xffffff);
-    maskGfx.drawRoundedRect(gap, gap, size - gap * 2, size - gap * 2, radius);
-    maskGfx.endFill();
-
-    // Create circles graphics with mask applied
     const gfx = new PIXI.Graphics();
-    gfx.mask = maskGfx;
 
+    // Pass 1: fill full texture with palette background colour
+    gfx.beginFill(p.bg);
+    gfx.drawRect(0, 0, size, size);
+    gfx.endFill();
+
+    // Pass 2: draw rounded rect base in bot colour
+    gfx.beginFill(grad.bot);
+    gfx.drawRoundedRect(gap, gap, size - gap * 2, size - gap * 2, radius);
+    gfx.endFill();
+
+    // Pass 3: draw gradient circles on top (clipped by rounded rect naturally)
     const cx = size / 2, cy = size / 2;
     const maxR = (size - gap * 2) / 2;
     const steps = 8;
 
-    // Draw radial gradient via concentric circles
     for (let i = steps; i >= 0; i--) {
       const t = i / steps;  // 1 = edge, 0 = center
-      const targetColor = isCluster ? pal.bright : pal.mid;
-      const r1 = (pal.base >> 16) & 0xFF, g1 = (pal.base >> 8) & 0xFF, b1 = pal.base & 0xFF;
+      const targetColor = isCluster ? grad.shine : grad.mid;
+      const r1 = (grad.bot >> 16) & 0xFF, g1 = (grad.bot >> 8) & 0xFF, b1 = grad.bot & 0xFF;
       const r2 = (targetColor >> 16) & 0xFF, g2 = (targetColor >> 8) & 0xFF, b2 = targetColor & 0xFF;
       const r = Math.round(r1 * t + r2 * (1 - t));
       const g = Math.round(g1 * t + g2 * (1 - t));
@@ -521,14 +532,41 @@ const TileRenderer = {
       gfx.endFill();
     }
 
-    // Render with mask to texture
+    // Render to texture
     const rt = PIXI.RenderTexture.create({ width: size, height: size });
-    const container = new PIXI.Container();
-    container.addChild(maskGfx, gfx);
-    app.renderer.render(container, { renderTexture: rt });
-    container.destroy({ children: true });
+    app.renderer.render(gfx, { renderTexture: rt });
+    gfx.destroy();
 
     return rt;
+  },
+
+  regenerateTextures() {
+    // Dispose old textures
+    Object.values(this.textures).forEach(tex => tex.destroy(true));
+    this.textures = {};
+
+    // Regenerate with current palette
+    ['BEAT', 'VIBE', 'MELODY'].forEach(cat => {
+      this.textures[`${cat}_idle`] = this._generateTexture(cat, false);
+      this.textures[`${cat}_cluster`] = this._generateTexture(cat, true);
+    });
+
+    // Update all existing sprites to use new textures
+    if (this.spriteGrid && G.grid) {
+      const cache = G.clusterCache || { inCluster: new Map() };
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          const spr = this.spriteGrid[r]?.[c];
+          const cell = G.grid[r]?.[c];
+          if (spr && cell && this.textures[`${cell.type}_idle`]) {
+            const isCluster = cache.inCluster.has(`${r},${c}`);
+            spr.texture = this.textures[`${cell.type}_${isCluster ? 'cluster' : 'idle'}`];
+          }
+        }
+      }
+    }
+
+    console.log('TileRenderer: Regenerated textures for palette', currentPalette);
   },
 
   createSpriteGrid() {
@@ -638,6 +676,22 @@ const TileRenderer = {
         // Apply actual grid swap
         G.grid[a.r1][a.c1] = a.cell2;
         G.grid[a.r2][a.c2] = a.cell1;
+
+        // Swap sprites in grid and snap to final positions
+        const tmp = this.spriteGrid[a.r1][a.c1];
+        this.spriteGrid[a.r1][a.c1] = this.spriteGrid[a.r2][a.c2];
+        this.spriteGrid[a.r2][a.c2] = tmp;
+
+        // Snap to final positions
+        if (spr1) {
+          spr1.x = gridX + a.c2 * tileSize + tileSize / 2;
+          spr1.y = gridY + (a.r2 - BUFFER_ROWS) * tileSize + tileSize / 2;
+        }
+        if (spr2) {
+          spr2.x = gridX + a.c1 * tileSize + tileSize / 2;
+          spr2.y = gridY + (a.r1 - BUFFER_ROWS) * tileSize + tileSize / 2;
+        }
+
         TileRenderer.needsSync = true;
         findClusters();
         G.swapAnim = null;
