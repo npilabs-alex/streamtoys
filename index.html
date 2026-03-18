@@ -666,6 +666,14 @@ const TileRenderer = {
           this.tileContainer.addChild(newSpr);
           this.spriteGrid[r][c] = newSpr;
           targetSpr = newSpr;
+
+          // Drop animation: start above grid, lerp to final position
+          if (r >= BUFFER_ROWS) {
+            const finalY = gridY + (r - BUFFER_ROWS) * tileSize + tileSize / 2;
+            newSpr.x = gridX + c * tileSize + tileSize / 2;
+            newSpr.y = gridY - tileSize * 2;  // Start above grid
+            newSpr._targetY = finalY;
+          }
         } else {
           // Update existing sprite texture if needed
           spr.texture = tex;
@@ -712,10 +720,11 @@ const TileRenderer = {
         if (!cell) continue;
 
         // Base position (center of tile)
-        let x = gridX + c * tileSize + tileSize / 2;
-        let y = gridY + (r - BUFFER_ROWS) * tileSize + tileSize / 2;
+        const x = gridX + c * tileSize + tileSize / 2;
+        const targetY = gridY + (r - BUFFER_ROWS) * tileSize + tileSize / 2;
+        let y = targetY;
 
-        // Fall animation offset
+        // Fall animation offset (gravity-based column compaction)
         if (G.fallAnim?.moveMap) {
           const move = G.fallAnim.moveMap.get(cell);
           if (move) {
@@ -724,6 +733,18 @@ const TileRenderer = {
             const fromY = gridY + (move.fromR - BUFFER_ROWS) * tileSize + tileSize / 2;
             const toY = gridY + (move.toR - BUFFER_ROWS) * tileSize + tileSize / 2;
             y = fromY + (toY - fromY) * eased;
+          }
+        }
+
+        // Drop animation: lerp from above grid to target
+        if (spr._targetY !== undefined) {
+          const diff = spr._targetY - spr.y;
+          if (Math.abs(diff) > 0.5) {
+            y = spr.y + diff * 0.22;
+            G.dirty = true;  // Keep rendering until complete
+          } else {
+            y = spr._targetY;
+            delete spr._targetY;
           }
         }
 
