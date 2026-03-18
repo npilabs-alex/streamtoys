@@ -164,8 +164,7 @@ const G = {
   phase: 0,  // 0=start, 1=beat active, 2=beat+vibe, 3=all active
   selected: null,  // {r, c} or null for tile selection
   sessionTimer: 0,  // Counts only when all 3 loops active (ms)
-  // Collapse animations
-  slideAnim: null,  // { moves: [{tile, fromC, toC}], t: 0, row: r }
+  // Collapse animation
   fallAnim: null    // { moves: [{tile, fromR, toR, col}], t: 0 }
 };
 
@@ -1657,79 +1656,8 @@ function collapseCluster(cluster) {
   G.selected = null;
   G.dirty = true;
 
-  // Start slide animation for affected rows
-  const affectedRows = [...new Set(cluster.tiles.map(t => t.r))].sort((a, b) => a - b);
-  slideRowsSequential(affectedRows, 0);
-}
-
-// Slide rows one at a time, then fall from buffer
-function slideRowsSequential(rows, index) {
-  if (index >= rows.length) {
-    // All rows slid - now fall from buffer
-    fallFromBuffer();
-    return;
-  }
-
-  const row = rows[index];
-  const moves = buildSlideMovesForRow(row);
-
-  if (moves.length === 0) {
-    // No gaps to slide - continue to next row
-    slideRowsSequential(rows, index + 1);
-    return;
-  }
-
-  // Start slide animation with O(1) lookup map
-  G.slideAnim = {
-    moves,
-    moveMap: new Map(moves.map(m => [m.tile, m])),
-    t: 0,
-    row,
-    onComplete: () => slideRowsSequential(rows, index + 1)
-  };
-}
-
-// "Pack to center, gaps at edges" algorithm
-function buildSlideMovesForRow(row) {
-  const cells = G.grid[row];
-  const tiles = [];
-  const gaps = [];
-
-  // Collect solid tiles and gaps (NOISE tiles count as gaps)
-  for (let c = 0; c < COLS; c++) {
-    if (isSolid(cells[c])) {
-      tiles.push({ tile: cells[c], origC: c });
-    } else {
-      gaps.push(c);
-    }
-  }
-
-  if (gaps.length === 0) return []; // No gaps
-
-  const numTiles = tiles.length;
-  if (numTiles === 0) return []; // All gaps - nothing to slide
-
-  // Calculate centered positions for remaining tiles
-  const startC = Math.floor((COLS - numTiles) / 2);
-
-  const moves = [];
-  for (let i = 0; i < numTiles; i++) {
-    const targetC = startC + i;
-    const { tile, origC } = tiles[i];
-    if (origC !== targetC) {
-      moves.push({ tile, fromC: origC, toC: targetC });
-    }
-  }
-
-  // Apply final positions to grid immediately (animation is visual only)
-  // Clear row first
-  for (let c = 0; c < COLS; c++) cells[c] = null;
-  // Place tiles in centered positions
-  for (let i = 0; i < numTiles; i++) {
-    cells[startC + i] = tiles[i].tile;
-  }
-
-  return moves;
+  // Fill gaps with new tiles from buffer
+  fallFromBuffer();
 }
 
 // Fall from buffer to fill gaps
@@ -1796,7 +1724,6 @@ function fallFromBuffer() {
 
 // Complete the collapse sequence
 function finishCollapseSequence() {
-  G.slideAnim = null;
   G.fallAnim = null;
   G.collapsing = false;
   findClusters();
@@ -2801,17 +2728,7 @@ function renderGame() {
       const cell = G.grid[r][c];
       if (!cell) continue;
 
-      // Animation offsets: O(1) map lookup for animated cells
-      if (G.slideAnim?.moveMap) {
-        const move = G.slideAnim.moveMap.get(cell);
-        if (move) {
-          const t = Math.min(1, G.slideAnim.t);
-          const eased = t * (2 - t); // Ease-out quad
-          const fromX = gridX + move.fromC * tileSize;
-          const toX = gridX + move.toC * tileSize;
-          x = fromX + (toX - fromX) * eased;
-        }
-      }
+      // Fall animation offset: O(1) map lookup
       if (G.fallAnim?.moveMap) {
         const move = G.fallAnim.moveMap.get(cell);
         if (move) {
@@ -4697,20 +4614,8 @@ function gameLoop(delta) {
       G.dirty = true;
     }
 
-    // Collapse animations: slide rows, then fall from buffer
-    const slideMs = Math.max(80, 400 - (G.bpm - 60) * 2); // BPM-driven timing
-    const fallMs = slideMs * 1.2;
-
-    if (G.slideAnim) {
-      G.slideAnim.t += (dt * 1000) / slideMs;
-      if (G.slideAnim.t >= 1) {
-        // Slide complete - trigger onComplete callback
-        const callback = G.slideAnim.onComplete;
-        G.slideAnim = null;
-        if (callback) callback();
-      }
-      G.dirty = true;
-    }
+    // Fall animation timing
+    const fallMs = Math.max(32, Math.round((480 - (G.bpm - 60) * 2.4) / 3)); // 3x faster
 
     if (G.fallAnim) {
       G.fallAnim.t += (dt * 1000) / fallMs;
