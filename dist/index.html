@@ -490,55 +490,43 @@ const TileRenderer = {
     const pal = BIO_PALETTE[cat];
     const gap = 4;
     const radius = Math.min(size * 0.18, 7);
-    const innerSize = size - gap * 2;
 
+    // Create rounded-rect mask shape (baked into texture)
+    const maskGfx = new PIXI.Graphics();
+    maskGfx.beginFill(0xffffff);
+    maskGfx.drawRoundedRect(gap, gap, size - gap * 2, size - gap * 2, radius);
+    maskGfx.endFill();
+
+    // Create circles graphics with mask applied
     const gfx = new PIXI.Graphics();
+    gfx.mask = maskGfx;
 
-    // Radial gradient via concentric circles (8 steps for smooth falloff)
     const cx = size / 2, cy = size / 2;
-    const maxR = innerSize / 2;
+    const maxR = (size - gap * 2) / 2;
     const steps = 8;
 
-    // Draw from outside in
+    // Draw radial gradient via concentric circles
     for (let i = steps; i >= 0; i--) {
       const t = i / steps;  // 1 = edge, 0 = center
-
-      // Interpolate color: edge = base, center = mid (or bright if cluster)
       const targetColor = isCluster ? pal.bright : pal.mid;
       const r1 = (pal.base >> 16) & 0xFF, g1 = (pal.base >> 8) & 0xFF, b1 = pal.base & 0xFF;
       const r2 = (targetColor >> 16) & 0xFF, g2 = (targetColor >> 8) & 0xFF, b2 = targetColor & 0xFF;
-
       const r = Math.round(r1 * t + r2 * (1 - t));
       const g = Math.round(g1 * t + g2 * (1 - t));
       const b = Math.round(b1 * t + b2 * (1 - t));
       const color = (r << 16) | (g << 8) | b;
-
-      const circleR = maxR * (0.3 + 0.7 * t);  // Inner circles don't go to 0
-
+      const circleR = maxR * (0.3 + 0.7 * t);
       gfx.beginFill(color, 1);
       gfx.drawCircle(cx, cy, circleR);
       gfx.endFill();
     }
 
-    // Orbital dots (static for now - will animate in Step 2)
-    if (isCluster) {
-      const dotCount = 6;
-      const orbitR = maxR * 0.75;
-      const dotR = 2;
-      for (let i = 0; i < dotCount; i++) {
-        const angle = (i / dotCount) * Math.PI * 2;
-        const dx = cx + Math.cos(angle) * orbitR;
-        const dy = cy + Math.sin(angle) * orbitR;
-        gfx.beginFill(0xffffff, 0.8);
-        gfx.drawCircle(dx, dy, dotR);
-        gfx.endFill();
-      }
-    }
-
-    // Create RenderTexture and render graphics to it
+    // Render with mask to texture
     const rt = PIXI.RenderTexture.create({ width: size, height: size });
-    app.renderer.render(gfx, { renderTexture: rt });
-    gfx.destroy();
+    const container = new PIXI.Container();
+    container.addChild(maskGfx, gfx);
+    app.renderer.render(container, { renderTexture: rt });
+    container.destroy({ children: true });
 
     return rt;
   },
@@ -601,20 +589,9 @@ const TileRenderer = {
         if (!tex) continue;  // Skip if no texture for this type
 
         if (!spr) {
-          // Create new sprite
+          // Create new sprite (rounded-rect mask baked into texture)
           const newSpr = new PIXI.Sprite(tex);
           newSpr.anchor.set(0.5);
-
-          // Add rounded-rect mask to clip circular gradient to tile shape
-          const halfTex = this.texSize / 2;
-          const radius = Math.min(this.texSize * 0.18, 7);
-          const mask = new PIXI.Graphics();
-          mask.beginFill(0xffffff);
-          mask.drawRoundedRect(-halfTex, -halfTex, this.texSize, this.texSize, radius);
-          mask.endFill();
-          newSpr.addChild(mask);
-          newSpr.mask = mask;
-
           this.tileContainer.addChild(newSpr);
           this.spriteGrid[r][c] = newSpr;
         } else {
@@ -630,11 +607,54 @@ const TileRenderer = {
     // Guard: skip if grid not initialized yet
     if (!this.spriteGrid || !G.grid) return;
 
-    // Called every frame to position sprites and handle animations
     const scale = tileSize / this.texSize;
 
+    // Handle swap animation
+    let swappingCells = null;
+    if (G.swapAnim) {
+      const a = G.swapAnim;
+      a.t += app.ticker.deltaMS;
+      const progress = Math.min(1, a.t / a.duration);
+      const eased = 1 - Math.pow(1 - progress, 2);  // ease-out quad
+
+      const spr1 = this.spriteGrid[a.r1]?.[a.c1];
+      const spr2 = this.spriteGrid[a.r2]?.[a.c2];
+
+      if (spr1 && spr2) {
+        const x1 = gridX + a.c1 * tileSize + tileSize / 2;
+        const y1 = gridY + (a.r1 - BUFFER_ROWS) * tileSize + tileSize / 2;
+        const x2 = gridX + a.c2 * tileSize + tileSize / 2;
+        const y2 = gridY + (a.r2 - BUFFER_ROWS) * tileSize + tileSize / 2;
+
+        spr1.x = x1 + (x2 - x1) * eased;
+        spr1.y = y1 + (y2 - y1) * eased;
+        spr1.scale.set(scale);
+        spr2.x = x2 + (x1 - x2) * eased;
+        spr2.y = y2 + (y1 - y2) * eased;
+        spr2.scale.set(scale);
+      }
+
+      if (progress >= 1) {
+        // Apply actual grid swap
+        G.grid[a.r1][a.c1] = a.cell2;
+        G.grid[a.r2][a.c2] = a.cell1;
+        TileRenderer.needsSync = true;
+        findClusters();
+        G.swapAnim = null;
+      } else {
+        // Mark cells being swapped to skip in normal loop
+        swappingCells = new Set([`${a.r1},${a.c1}`, `${a.r2},${a.c2}`]);
+      }
+
+      G.dirty = true;
+    }
+
+    // Position all sprites
     for (let r = BUFFER_ROWS; r < ROWS; r++) {
       for (let c = 0; c < COLS; c++) {
+        // Skip sprites being animated by swap
+        if (swappingCells?.has(`${r},${c}`)) continue;
+
         const spr = this.spriteGrid[r][c];
         if (!spr || !spr.visible) continue;
 
@@ -1863,7 +1883,7 @@ function initGrid() {
   TileRenderer.needsSync = true;
 }
 
-// Swap two tiles (Candy Crush style)
+// Swap two tiles (Candy Crush style) with animation
 function swapTiles(r1, c1, r2, c2) {
   const cell1 = G.grid[r1][c1];
   const cell2 = G.grid[r2][c2];
@@ -1871,19 +1891,15 @@ function swapTiles(r1, c1, r2, c2) {
   // Both cells must exist (should always be true - no empty cells in redesign)
   if (!cell1 || !cell2) return;
 
-  // Perform swap
-  G.grid[r1][c1] = cell2;
-  G.grid[r2][c2] = cell1;
+  // Start swap animation instead of instant swap
+  G.swapAnim = {
+    r1, c1, r2, c2,
+    cell1, cell2,
+    t: 0,
+    duration: 120  // ms
+  };
 
-  // Play swap sound
   Audio.playRotate();
-
-  // Mark sprites for resync
-  TileRenderer.needsSync = true;
-
-  // Check for clusters after swap
-  findClusters();
-
   G.dirty = true;
 }
 
@@ -4842,7 +4858,7 @@ function gameLoop(delta) {
     }
 
     // Fall animation timing
-    const fallMs = Math.max(32, Math.round((480 - (G.bpm - 60) * 2.4) / 3)); // 3x faster
+    const fallMs = Math.max(16, Math.round((480 - (G.bpm - 60) * 2.4) / 6)); // 6x faster, snappy collapse
 
     if (G.fallAnim) {
       G.fallAnim.t += (dt * 1000) / fallMs;
