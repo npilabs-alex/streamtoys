@@ -26,8 +26,8 @@ console.log('SONGSUGAR: Script starting...');
 window.onerror = (msg, url, line) => { alert('Error: ' + msg + ' at line ' + line); };
 
 const COLS = 8, ROWS = 16;
-const VISIBLE_ROWS = 8;  // Bottom 8 rows (8-15) are playable
-const BUFFER_ROWS = 8;   // Top 8 rows (0-7) are hidden buffer
+const BUFFER_ROWS = 7;   // Top 7 rows (0-6) are hidden buffer
+const VISIBLE_ROWS = 9;  // Row 7 = preview, rows 8-15 = play area
 
 const PALETTES = {
   signal: {
@@ -2861,6 +2861,13 @@ function renderGame() {
       }
     }
   }
+
+  // Preview row overlay (row 7 = first visible row, index BUFFER_ROWS)
+  const previewY = gridY;  // First visible row is at top of grid
+  g.beginFill(0x000000, 0.4);
+  g.drawRect(gridX, previewY, gridW, tileSize);
+  g.endFill();
+
   layers.bg.addChild(g);
 
   // Grid tap
@@ -2876,8 +2883,8 @@ function renderGame() {
     // Bounds check
     if (c < 0 || c >= COLS || r < 0 || r >= ROWS) return;
 
-    // Buffer rows (0-7) are uninteractable
-    if (r < BUFFER_ROWS) return;
+    // Buffer rows (0-6) and preview row (7) are uninteractable
+    if (r <= BUFFER_ROWS) return;
 
     const cell = G.grid[r][c];
     if (!cell) return;
