@@ -25,7 +25,9 @@
 console.log('SONGSUGAR: Script starting...');
 window.onerror = (msg, url, line) => { alert('Error: ' + msg + ' at line ' + line); };
 
-const COLS = 8, ROWS = 12;
+const COLS = 8, ROWS = 16;
+const VISIBLE_ROWS = 8;  // Bottom 8 rows (8-15) are playable
+const BUFFER_ROWS = 8;   // Top 8 rows (0-7) are hidden buffer
 
 const PALETTES = {
   signal: {
@@ -161,6 +163,10 @@ const G = {
   melodyBrightness: 0.6,
   melodyDecay: 0.4,
   melodyOctave: 0,
+  // Redesign: swap-based gameplay
+  phase: 0,  // 0=start, 1=beat active, 2=beat+vibe, 3=all active
+  selected: null,  // {r, c} or null for tile selection
+  sessionTimer: 0,  // Counts only when all 3 loops active (ms)
   // Tutorial system
   tutorial: {
     active: false,
@@ -1668,8 +1674,62 @@ const Audio = {
   }
 };
 
-// Grid
-function initGrid() { G.grid = []; for (let r = 0; r < ROWS; r++) G.grid[r] = new Array(COLS).fill(null); }
+// Grid - Phase-based tile frequency weights
+// NOTE: Object key order matters for distribution - NOISE must be first in each object
+const PHASE_WEIGHTS = [
+  { NOISE: 0.60, BEAT: 0.35, VIBE: 0.05, MELODY: 0.00 },  // Phase 0: start
+  { NOISE: 0.40, BEAT: 0.15, VIBE: 0.35, MELODY: 0.10 },  // Phase 1: beat active
+  { NOISE: 0.25, BEAT: 0.15, VIBE: 0.20, MELODY: 0.40 },  // Phase 2: beat+vibe
+  { NOISE: 0.15, BEAT: 0.20, VIBE: 0.30, MELODY: 0.35 },  // Phase 3: all active
+];
+
+// Tile type using phase weights (for board population)
+function tileTypeForPhase(phase = 0) {
+  const weights = PHASE_WEIGHTS[phase];
+  const r = Math.random();
+  let cumulative = 0;
+  for (const [type, weight] of Object.entries(weights)) {
+    cumulative += weight;
+    if (r < cumulative) return type;
+  }
+  return 'NOISE';
+}
+
+// Safe placement check: returns true if placing type at r,c would create adjacent match
+function wouldCreateAdjacent(grid, r, c, type) {
+  if (type === 'NOISE') return false;  // Noise never clusters
+  const dirs = [[-1,0], [1,0], [0,-1], [0,1]];
+  for (const [dr, dc] of dirs) {
+    const nr = r + dr, nc = c + dc;
+    if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS) {
+      // grid[nr] exists if nr < r (already built), grid[nr][nc] exists if nc < c (same row)
+      if (grid[nr]?.[nc]?.type === type) return true;
+    }
+  }
+  return false;
+}
+
+// Initialize grid: fully populated, safe placement (no pre-existing clusters)
+function initGrid() {
+  G.grid = [];
+  for (let r = 0; r < ROWS; r++) {
+    G.grid[r] = [];
+    for (let c = 0; c < COLS; c++) {
+      // Try up to 10 times to find a safe tile (no adjacent same-colour)
+      let type, attempts = 0;
+      do {
+        type = tileTypeForPhase(G.phase || 0);
+        attempts++;
+      } while (wouldCreateAdjacent(G.grid, r, c, type) && attempts < 10);
+
+      // Fallback to NOISE if can't find safe placement
+      if (wouldCreateAdjacent(G.grid, r, c, type)) {
+        type = 'NOISE';
+      }
+      G.grid[r][c] = { type };
+    }
+  }
+}
 
 // Tile types:
 // - BEAT, VIBE, MELODY: Regular colored tiles (form clusters)
