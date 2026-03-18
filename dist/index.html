@@ -360,6 +360,10 @@ async function init() {
   // Initialize tile renderer (pre-generate textures)
   TileRenderer.init();
 
+  // Initialize vignette and HUD
+  Vignette.init();
+  HUD.init();
+
   window.addEventListener('resize', resize);
   resize();
   document.addEventListener('keydown', onKey);
@@ -400,6 +404,7 @@ function resize() {
   gridX = Math.floor((W - gridW) / 2);
   gridY = topHUD + pad;  // HUD bottom + 8px padding
   TileRenderer.updateMask();
+  Vignette.resize();
   G.dirty = true;
   render();
 }
@@ -666,6 +671,14 @@ const TileRenderer = {
           this.tileContainer.addChild(newSpr);
           this.spriteGrid[r][c] = newSpr;
           targetSpr = newSpr;
+
+          // Drop animation: start above grid, lerp to final position
+          if (r >= BUFFER_ROWS) {
+            const finalY = gridY + (r - BUFFER_ROWS) * tileSize + tileSize / 2;
+            newSpr.x = gridX + c * tileSize + tileSize / 2;
+            newSpr.y = gridY - tileSize * 2;  // Start above grid
+            newSpr._targetY = finalY;
+          }
         } else {
           // Update existing sprite texture if needed
           spr.texture = tex;
@@ -712,10 +725,11 @@ const TileRenderer = {
         if (!cell) continue;
 
         // Base position (center of tile)
-        let x = gridX + c * tileSize + tileSize / 2;
-        let y = gridY + (r - BUFFER_ROWS) * tileSize + tileSize / 2;
+        const x = gridX + c * tileSize + tileSize / 2;
+        const targetY = gridY + (r - BUFFER_ROWS) * tileSize + tileSize / 2;
+        let y = targetY;
 
-        // Fall animation offset
+        // Fall animation offset (gravity-based column compaction)
         if (G.fallAnim?.moveMap) {
           const move = G.fallAnim.moveMap.get(cell);
           if (move) {
@@ -724,6 +738,18 @@ const TileRenderer = {
             const fromY = gridY + (move.fromR - BUFFER_ROWS) * tileSize + tileSize / 2;
             const toY = gridY + (move.toR - BUFFER_ROWS) * tileSize + tileSize / 2;
             y = fromY + (toY - fromY) * eased;
+          }
+        }
+
+        // Drop animation: lerp from above grid to target
+        if (spr._targetY !== undefined) {
+          const diff = spr._targetY - spr.y;
+          if (Math.abs(diff) > 0.5) {
+            y = spr.y + diff * 0.22;
+            G.dirty = true;  // Keep rendering until complete
+          } else {
+            y = spr._targetY;
+            delete spr._targetY;
           }
         }
 
@@ -880,6 +906,122 @@ const TileRenderer = {
     if (this.particles.length > 0 || this.rings.length > 0 || this.collapsingSprites.length > 0) {
       G.dirty = true;
     }
+  }
+};
+
+// ============================================================================
+// VIGNETTE - Static background gradient overlay
+// ============================================================================
+const Vignette = {
+  gfx: null,
+
+  init() {
+    this.gfx = new PIXI.Graphics();
+    layers.bg.addChildAt(this.gfx, 0);  // Add at bottom of bg layer
+    this.draw();
+  },
+
+  draw() {
+    if (!this.gfx) return;
+    this.gfx.clear();
+
+    const cx = W / 2, cy = H / 2;
+    const maxR = Math.sqrt(cx * cx + cy * cy) * 1.2;
+
+    // 6 concentric circles from transparent center to dark edge
+    for (let i = 6; i >= 0; i--) {
+      const ratio = i / 6;
+      const alpha = (1 - ratio) * 0.5;  // Max 0.5 alpha at edge
+      const radius = maxR * (0.3 + 0.7 * ratio);
+      this.gfx.beginFill(0x000000, alpha);
+      this.gfx.drawCircle(cx, cy, radius);
+      this.gfx.endFill();
+    }
+  },
+
+  resize() {
+    this.draw();
+  }
+};
+
+// ============================================================================
+// HUD - Persistent HUD elements with diff-based updates
+// ============================================================================
+const HUD = {
+  initialized: false,
+  bars: {},      // { BEAT: Graphics, VIBE: Graphics, MELODY: Graphics }
+  labels: {},    // { BEAT: Text, VIBE: Text, MELODY: Text }
+  lastValues: { BEAT: -1, VIBE: -1, MELODY: -1 },
+  container: null,
+
+  init() {
+    this.container = new PIXI.Container();
+    layers.hud.addChild(this.container);
+
+    // Create persistent bar graphics and labels for each category
+    const cats = ['BEAT', 'VIBE', 'MELODY'];
+    cats.forEach(cat => {
+      this.bars[cat] = new PIXI.Graphics();
+      this.container.addChild(this.bars[cat]);
+
+      this.labels[cat] = new PIXI.Text(cat[0], {
+        fontFamily: FONT_UI, fontSize: 9, fill: 0x888888, fontWeight: '600'
+      });
+      this.labels[cat].anchor.set(0, 0.5);
+      this.container.addChild(this.labels[cat]);
+    });
+
+    this.initialized = true;
+  },
+
+  update() {
+    if (!this.initialized) return;
+
+    const p = P();
+    const isMobile = W < 500;
+    const pad = isMobile ? 10 : 16;
+    const barH = 3;
+    const barY = gridY - 8;  // Just above grid
+    const barW = gridW;
+    const singleBarW = (barW - 4) / 3;  // 3 bars with 2px gaps
+
+    const cats = ['BEAT', 'VIBE', 'MELODY'];
+    cats.forEach((cat, i) => {
+      const progress = Math.min(G.res[cat] / G.unlockCost, 1);
+
+      // Only redraw if value changed
+      if (this.lastValues[cat] !== G.res[cat]) {
+        this.lastValues[cat] = G.res[cat];
+
+        const grad = p.gradients[cat] || p.gradients.SOCIAL;
+        const barX = gridX + i * (singleBarW + 2);
+
+        this.bars[cat].clear();
+        // Background (unfilled)
+        this.bars[cat].beginFill(p.grid, 0.5);
+        this.bars[cat].drawRect(barX, barY, singleBarW, barH);
+        this.bars[cat].endFill();
+        // Filled portion
+        if (progress > 0) {
+          this.bars[cat].beginFill(grad.shine);
+          this.bars[cat].drawRect(barX, barY, singleBarW * progress, barH);
+          this.bars[cat].endFill();
+        }
+
+        // Position label
+        this.labels[cat].x = barX;
+        this.labels[cat].y = barY - 6;
+        this.labels[cat].style.fill = progress >= 1 ? grad.shine : 0x666666;
+      }
+    });
+  },
+
+  hide() {
+    if (this.container) this.container.visible = false;
+  },
+
+  show() {
+    if (this.container) this.container.visible = true;
   }
 };
 
@@ -3459,6 +3601,9 @@ function renderHUD() {
   const isMobile = W < 500;
   const pad = isMobile ? 10 : 16;
   const now = Date.now();
+
+  // Update persistent HUD resource bars
+  HUD.update();
 
   // Initialize pending unlocks tracking
   if (!G.pendingUnlocks) G.pendingUnlocks = [];
