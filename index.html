@@ -2302,8 +2302,9 @@ function fallFromBuffer() {
       }
     }
 
-    // Fill remaining top rows (0 to writeR) with new tiles
-    for (let r = writeR; r >= 0; r--) {
+    // Fill only gapsInCol tiles (not entire buffer)
+    let spawnedInCol = 0;
+    for (let r = writeR; r >= 0 && spawnedInCol < gapsInCol; r--) {
       // Generate new tile with safe placement
       let type, attempts = 0;
       do {
@@ -2319,6 +2320,7 @@ function fallFromBuffer() {
       G.grid[r][c] = newTile;
       // Animate from off-screen (row -1) to final position
       moves.push({ tile: newTile, fromR: r - (writeR + 1), toR: r, col: c, isNew: true });
+      spawnedInCol++;
     }
   }
 
@@ -3381,6 +3383,7 @@ function renderGame() {
   gridHit.beginFill(0, 0.001); gridHit.drawRect(gridX, gridY, gridW, gridH); gridHit.endFill();
   gridHit.interactive = true;
   gridHit.on('pointerdown', e => {
+    e.stopPropagation();
     if (G.collapsing || G.paused) return;
 
     const lx = e.data.global.x - gridX, ly = e.data.global.y - gridY;
