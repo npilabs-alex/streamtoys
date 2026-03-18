@@ -381,7 +381,7 @@ function resize() {
   const availH = H - topHUD - botHUD - pad * 2;
   const availW = W - pad * 2;
   tileSize = Math.max(24, Math.min(Math.floor(availH / ROWS), Math.floor(availW / COLS)));
-  gridW = COLS * tileSize; gridH = ROWS * tileSize;
+  gridW = COLS * tileSize; gridH = VISIBLE_ROWS * tileSize;
   gridX = Math.floor((W - gridW) / 2);
   gridY = topHUD + pad;  // HUD bottom + 8px padding
   G.dirty = true;
@@ -2878,7 +2878,7 @@ function renderGame() {
     if (G.collapsing || G.paused) return;
 
     const lx = e.data.global.x - gridX, ly = e.data.global.y - gridY;
-    const c = Math.floor(lx / tileSize), r = Math.floor(ly / tileSize);
+    const c = Math.floor(lx / tileSize), r = Math.floor(ly / tileSize) + BUFFER_ROWS;
 
     // Bounds check
     if (c < 0 || c >= COLS || r < 0 || r >= ROWS) return;
