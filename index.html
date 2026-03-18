@@ -1561,7 +1561,7 @@ const Audio = {
 // Grid - Phase-based tile frequency weights
 // NOTE: Object key order matters for distribution - NOISE must be first in each object
 const PHASE_WEIGHTS = [
-  { NOISE: 0.60, BEAT: 0.35, VIBE: 0.05, MELODY: 0.00 },  // Phase 0: start
+  { NOISE: 0.20, BEAT: 0.40, VIBE: 0.25, MELODY: 0.15 },  // Phase 0: colourful start
   { NOISE: 0.40, BEAT: 0.15, VIBE: 0.35, MELODY: 0.10 },  // Phase 1: beat active
   { NOISE: 0.25, BEAT: 0.15, VIBE: 0.20, MELODY: 0.40 },  // Phase 2: beat+vibe
   { NOISE: 0.15, BEAT: 0.20, VIBE: 0.30, MELODY: 0.35 },  // Phase 3: all active
@@ -1578,6 +1578,9 @@ function tileTypeForPhase(phase = 0) {
   }
   return 'NOISE';
 }
+
+// Helper: true if cell is a solid (non-NOISE) tile
+function isSolid(cell) { return cell && cell.type !== 'NOISE'; }
 
 // Safe placement check: returns true if placing type at r,c would create adjacent match
 function wouldCreateAdjacent(grid, r, c, type) {
@@ -1692,9 +1695,9 @@ function buildSlideMovesForRow(row) {
   const tiles = [];
   const gaps = [];
 
-  // Collect tiles and gaps
+  // Collect solid tiles and gaps (NOISE tiles count as gaps)
   for (let c = 0; c < COLS; c++) {
-    if (cells[c]) {
+    if (isSolid(cells[c])) {
       tiles.push({ tile: cells[c], origC: c });
     } else {
       gaps.push(c);
@@ -1735,18 +1738,18 @@ function fallFromBuffer() {
 
   // For each column, find gaps in visible area and drop from buffer
   for (let c = 0; c < COLS; c++) {
-    // Count nulls in visible rows (BUFFER_ROWS to ROWS-1)
+    // Count gaps in visible rows (NOISE tiles count as gaps)
     let gapsInCol = 0;
     for (let r = BUFFER_ROWS; r < ROWS; r++) {
-      if (!G.grid[r][c]) gapsInCol++;
+      if (!isSolid(G.grid[r][c])) gapsInCol++;
     }
 
     if (gapsInCol === 0) continue;
 
-    // Compact column downward (gravity within column)
+    // Compact column downward (gravity within column, only solid tiles fall)
     let writeR = ROWS - 1;
     for (let readR = ROWS - 1; readR >= 0; readR--) {
-      if (G.grid[readR][c]) {
+      if (isSolid(G.grid[readR][c])) {
         if (readR !== writeR) {
           moves.push({ tile: G.grid[readR][c], fromR: readR, toR: writeR, col: c });
           G.grid[writeR][c] = G.grid[readR][c];
@@ -2154,7 +2157,7 @@ function spawnParticles(r, c, color, count, intensity = 1) {
   const actualCount = Math.min(count, MAX_PARTICLES - particles.length);
   if (actualCount <= 0) return;
 
-  const x = gridX + c * tileSize + tileSize/2, y = gridY + r * tileSize + tileSize/2;
+  const x = gridX + c * tileSize + tileSize/2, y = gridY + (r - BUFFER_ROWS) * tileSize + tileSize/2;
   for (let i = 0; i < actualCount; i++) {
     const size = 4 + Math.random() * 4;
     const p = new PIXI.Graphics();
@@ -2173,7 +2176,7 @@ function spawnGoldParticles(r, c, count) {
   const actualCount = Math.min(count, MAX_PARTICLES - particles.length, 15); // Max 15 gold particles
   if (actualCount <= 0) return;
 
-  const x = gridX + c * tileSize + tileSize/2, y = gridY + r * tileSize + tileSize/2;
+  const x = gridX + c * tileSize + tileSize/2, y = gridY + (r - BUFFER_ROWS) * tileSize + tileSize/2;
   const golds = P().social;
   for (let i = 0; i < actualCount; i++) {
     const size = 5 + Math.random() * 5;
