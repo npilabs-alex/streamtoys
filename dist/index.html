@@ -166,110 +166,7 @@ const G = {
   sessionTimer: 0,  // Counts only when all 3 loops active (ms)
   // Collapse animations
   slideAnim: null,  // { moves: [{tile, fromC, toC}], t: 0, row: r }
-  fallAnim: null,   // { moves: [{tile, fromR, toR, col}], t: 0 }
-  // Tutorial system
-  tutorial: {
-    active: false,
-    step: 0,
-    stats: { tapCount: 0, moveCount: 0, rotateCount: 0, dropCount: 0, clustersCleared: 0, loopToggled: false }
-  }
-};
-
-// Tutorial steps - learn by doing
-const TUTORIAL_STEPS = [
-  { id: 'welcome', instruction: 'Welcome to SongSugar!', subtext: 'Tap anywhere to begin', detect: 'tap', required: 1 },
-  { id: 'move', instruction: 'MOVE', subtext: 'Swipe left/right or use arrow keys', detect: 'move', required: 3 },
-  { id: 'rotate', instruction: 'ROTATE', subtext: 'Tap the piece, press Space, or Up arrow', detect: 'rotate', required: 2 },
-  { id: 'drop', instruction: 'DROP', subtext: 'Swipe down or press Down arrow', detect: 'drop', required: 1 },
-  { id: 'cluster', instruction: 'BUILD CLUSTERS', subtext: 'Match 3+ same-colored tiles to clear them', detect: 'cluster', required: 1 },
-  { id: 'mix', instruction: 'UNLOCK SOUNDS', subtext: 'Open MIX and toggle a loop on/off', detect: 'loop', required: 1 }
-];
-
-// Tutorial Manager
-const TutorialManager = {
-  start() {
-    G.tutorial.active = true;
-    G.tutorial.step = 0;
-    G.tutorial.stats = { tapCount: 0, moveCount: 0, rotateCount: 0, dropCount: 0, clustersCleared: 0, loopToggled: false };
-    // Only intro pad plays - no beat loop at start
-    G.dirty = true;
-  },
-
-  getCurrentStep() {
-    return TUTORIAL_STEPS[G.tutorial.step] || null;
-  },
-
-  check() {
-    if (!G.tutorial.active) return;
-    const step = this.getCurrentStep();
-    if (!step) return;
-
-    const stats = G.tutorial.stats;
-    let complete = false;
-
-    switch (step.detect) {
-      case 'tap': complete = stats.tapCount >= step.required; break;
-      case 'move': complete = stats.moveCount >= step.required; break;
-      case 'rotate': complete = stats.rotateCount >= step.required; break;
-      case 'drop': complete = stats.dropCount >= step.required; break;
-      case 'cluster': complete = stats.clustersCleared >= step.required; break;
-      case 'loop': complete = stats.loopToggled; break;
-    }
-
-    if (complete) this.advance();
-  },
-
-  advance() {
-    G.tutorial.step++;
-    // Play a pleasant sound on step completion
-    if (Audio.ready && Audio.sfx.bell) {
-      try { Audio.sfx.bell.triggerAttackRelease('E5', '16n', Tone.now(), 0.3); } catch(e) {}
-    }
-    if (G.tutorial.step >= TUTORIAL_STEPS.length) {
-      this.complete();
-    }
-    G.dirty = true;
-  },
-
-  complete() {
-    G.tutorial.active = false;
-    localStorage.setItem('songsugar_tutorial_completed', 'true');
-    // Celebration effect
-    G.comboPopups.push({ text: 'READY TO PLAY!', x: W/2, y: H/2, life: 2, color: P().vibe });
-    if (Audio.ready && Audio.sfx.poly) {
-      try { Audio.sfx.poly.triggerAttackRelease(['C4', 'E4', 'G4', 'C5'], '8n', Tone.now(), 0.5); } catch(e) {}
-    }
-    G.dirty = true;
-  },
-
-  skip() {
-    G.tutorial.active = false;
-    localStorage.setItem('songsugar_tutorial_completed', 'true');
-    G.dirty = true;
-  },
-
-  // Safe environment: clear top rows if stuck during tutorial
-  clearDangerRows() {
-    if (!G.tutorial.active) return;
-    for (let r = 0; r < 2; r++) {
-      for (let c = 0; c < COLS; c++) {
-        if (G.grid[r] && G.grid[r][c]) {
-          G.grid[r][c] = null;
-        }
-      }
-    }
-    applyGravity();
-    findClusters();
-    updateDangerLevel();
-  },
-
-  // Record actions
-  recordTap() { G.tutorial.stats.tapCount++; this.check(); },
-  recordMove() { G.tutorial.stats.moveCount++; this.check(); },
-  recordRotate() { G.tutorial.stats.rotateCount++; this.check(); },
-  recordDrop() { G.tutorial.stats.dropCount++; this.check(); },
-  recordCluster() { G.tutorial.stats.clustersCleared++; this.check(); },
-  recordLoopToggle() { G.tutorial.stats.loopToggled = true; this.check(); }
+  fallAnim: null    // { moves: [{tile, fromR, toR, col}], t: 0 }
 };
 
 let W, H, tileSize, gridX, gridY, gridW, gridH, app, layers = {};
@@ -1928,14 +1825,7 @@ function tileType() {
 }
 
 function makePiece() {
-  // During early tutorial steps, use simpler 2-tile pieces
-  let shapes;
-  if (G.tutorial.active && G.tutorial.step < 4) {
-    // Simple 2-tile pieces for move/rotate/drop steps
-    shapes = [[[0,0],[1,0]], [[0,0],[0,1]]];
-  } else {
-    shapes = [[[0,0],[1,0]], [[0,0],[0,1]], [[0,0],[1,0],[2,0]], [[0,0],[0,1],[0,2]], [[0,0],[1,0],[0,1]], [[0,0],[1,0],[1,1]], [[0,0],[1,1]], [[0,0],[1,0],[0,1],[1,1]]];
-  }
+  const shapes = [[[0,0],[1,0]], [[0,0],[0,1]], [[0,0],[1,0],[2,0]], [[0,0],[0,1],[0,2]], [[0,0],[1,0],[0,1]], [[0,0],[1,0],[1,1]], [[0,0],[1,1]], [[0,0],[1,0],[0,1],[1,1]]];
   const shape = shapes[Math.floor(Math.random() * shapes.length)];
   const tiles = shape.map(([dx,dy]) => ({ type: tileType(), dx, dy }));
   // Calculate piece width to ensure it fits
@@ -2247,9 +2137,6 @@ async function collapse(r, c) {
     if (cluster.tiles.length >= 4) shake(cluster.tiles.length);
     G.dirty = true;
 
-    // Tutorial: record cluster clear
-    if (G.tutorial.active) TutorialManager.recordCluster();
-
     await sleep(80);
     applyGravity(); findClusters();
     G.collapsing = false;
@@ -2372,15 +2259,9 @@ function render() {
 
   if (G.screen === 'LOADING') renderLoading();
   else if (G.screen === 'HOME') renderHome();
-  else if (G.screen === 'PLAY') {
-    renderGame();
-    if (G.tutorial.active) renderTutorialOverlay();
-  }
+  else if (G.screen === 'PLAY') { renderGame(); }
   else if (G.screen === 'PAUSE') { renderGame(); renderPause(); }
-  else if (G.screen === 'MIX') {
-    renderMix();
-    if (G.tutorial.active) renderTutorialOverlay();
-  }
+  else if (G.screen === 'MIX') { renderMix(); }
   else if (G.screen === 'SETTINGS') { renderGame(); renderSettings(); }
 
   G.dirty = false;
@@ -2474,197 +2355,6 @@ function renderLoading() {
 // ============================================================================
 // TUTORIAL OVERLAY
 // ============================================================================
-
-function getTutorialHighlightBounds(stepId) {
-  const isMobile = W < 500;
-  const pad = 10;
-
-  switch (stepId) {
-    case 'welcome':
-      // Full screen - no specific highlight
-      return null;
-    case 'move':
-    case 'rotate':
-    case 'drop':
-      // Highlight the falling piece area
-      if (G.piece) {
-        const minX = gridX + G.piece.x * tileSize - pad;
-        const maxX = gridX + (G.piece.x + Math.max(...G.piece.tiles.map(t => t.dx)) + 1) * tileSize + pad;
-        const minY = gridY + G.pieceVisualY * tileSize - pad;
-        const maxY = gridY + (G.pieceVisualY + Math.max(...G.piece.tiles.map(t => t.dy)) + 1) * tileSize + pad;
-        return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
-      }
-      // Fallback to grid center
-      return { x: gridX + gridW/4, y: gridY, width: gridW/2, height: gridH/3 };
-    case 'cluster':
-      // Highlight the grid
-      return { x: gridX - pad, y: gridY - pad, width: gridW + pad*2, height: gridH + pad*2 };
-    case 'mix':
-      // Highlight the MIX button area (bottom of screen)
-      if (G.screen === 'MIX') {
-        // Highlight the loop list when in MIX screen
-        return { x: 20, y: H * 0.4, width: W - 40, height: H * 0.4 };
-      }
-      // Highlight where MIX button would be (HUD area)
-      return { x: W/2 - 60, y: H - 70, width: 120, height: 50 };
-    default:
-      return null;
-  }
-}
-
-function renderTutorialOverlay() {
-  if (!G.tutorial.active) return;
-
-  const p = P();
-  const isMobile = W < 500;
-  const step = TutorialManager.getCurrentStep();
-  if (!step) return;
-
-  const now = Date.now();
-  const pulse = 0.6 + Math.sin(now * 0.004) * 0.4;
-
-  // ========== DIM LAYER WITH CUTOUT ==========
-  const dim = new PIXI.Graphics();
-  const bounds = getTutorialHighlightBounds(step.id);
-
-  if (bounds) {
-    // Draw full screen dim
-    dim.beginFill(0x000000, 0.65);
-    dim.drawRect(0, 0, W, H);
-    dim.endFill();
-
-    // Cut out the highlighted area using blend mode
-    dim.beginHole();
-    dim.drawRoundedRect(bounds.x, bounds.y, bounds.width, bounds.height, 12);
-    dim.endHole();
-
-    // Pulsing border around cutout
-    const borderG = new PIXI.Graphics();
-    borderG.lineStyle(3 + pulse * 2, p.vibe, 0.5 + pulse * 0.5);
-    borderG.drawRoundedRect(bounds.x - 2, bounds.y - 2, bounds.width + 4, bounds.height + 4, 14);
-    layers.overlay.addChild(borderG);
-
-    // Animated glow
-    const glowG = new PIXI.Graphics();
-    glowG.lineStyle(8, p.vibe, pulse * 0.3);
-    glowG.drawRoundedRect(bounds.x - 4, bounds.y - 4, bounds.width + 8, bounds.height + 8, 16);
-    layers.overlay.addChild(glowG);
-  } else {
-    // Welcome step - lighter dim, tap anywhere
-    dim.beginFill(0x000000, 0.5);
-    dim.drawRect(0, 0, W, H);
-    dim.endFill();
-  }
-  layers.overlay.addChild(dim);
-
-  // ========== INSTRUCTION TEXT ==========
-  const instructionY = isMobile ? 60 : 80;
-  const instructionSize = isMobile ? 24 : 32;
-  const subtextSize = isMobile ? 12 : 14;
-
-  const instruction = new PIXI.Text(step.instruction, {
-    fontFamily: FONT_UI, fontSize: instructionSize, fill: p.text, fontWeight: '800',
-    dropShadow: true, dropShadowBlur: 8, dropShadowDistance: 0, dropShadowColor: 0x000000, dropShadowAlpha: 0.6
-  });
-  instruction.anchor.set(0.5); instruction.x = W/2; instruction.y = instructionY;
-  layers.overlay.addChild(instruction);
-
-  const subtext = new PIXI.Text(step.subtext, {
-    fontFamily: FONT_UI, fontSize: subtextSize, fill: p.dim, fontWeight: '500'
-  });
-  subtext.anchor.set(0.5); subtext.x = W/2; subtext.y = instructionY + instructionSize + 8;
-  layers.overlay.addChild(subtext);
-
-  // ========== ANIMATED GESTURE HINTS ==========
-  if (bounds && step.id !== 'cluster' && step.id !== 'mix') {
-    const hintG = new PIXI.Graphics();
-    const centerX = bounds.x + bounds.width / 2;
-    const centerY = bounds.y + bounds.height / 2;
-    const hintAlpha = 0.4 + pulse * 0.4;
-
-    if (step.id === 'move') {
-      // Left-right arrows
-      const arrowOffset = 40 + Math.sin(now * 0.005) * 10;
-      hintG.beginFill(p.beat, hintAlpha);
-      // Left arrow
-      hintG.moveTo(centerX - arrowOffset - 15, centerY);
-      hintG.lineTo(centerX - arrowOffset, centerY - 10);
-      hintG.lineTo(centerX - arrowOffset, centerY + 10);
-      hintG.closePath();
-      // Right arrow
-      hintG.moveTo(centerX + arrowOffset + 15, centerY);
-      hintG.lineTo(centerX + arrowOffset, centerY - 10);
-      hintG.lineTo(centerX + arrowOffset, centerY + 10);
-      hintG.closePath();
-      hintG.endFill();
-    } else if (step.id === 'rotate') {
-      // Circular tap indicator
-      const tapRadius = 20 + pulse * 8;
-      hintG.lineStyle(2, p.melody, hintAlpha);
-      hintG.drawCircle(centerX, centerY, tapRadius);
-      hintG.beginFill(p.melody, hintAlpha * 0.3);
-      hintG.drawCircle(centerX, centerY, tapRadius * 0.5);
-      hintG.endFill();
-    } else if (step.id === 'drop') {
-      // Down arrow
-      const arrowOffset = 30 + Math.sin(now * 0.006) * 15;
-      hintG.beginFill(p.vibe, hintAlpha);
-      hintG.moveTo(centerX, centerY + arrowOffset + 20);
-      hintG.lineTo(centerX - 12, centerY + arrowOffset);
-      hintG.lineTo(centerX + 12, centerY + arrowOffset);
-      hintG.closePath();
-      hintG.endFill();
-    }
-    layers.overlay.addChild(hintG);
-  }
-
-  // ========== PROGRESS DOTS ==========
-  const dotsY = H - (isMobile ? 50 : 60);
-  const dotR = isMobile ? 5 : 6;
-  const dotGap = isMobile ? 12 : 16;
-  const totalDotsW = TUTORIAL_STEPS.length * dotR * 2 + (TUTORIAL_STEPS.length - 1) * dotGap;
-  const dotsStartX = W/2 - totalDotsW/2;
-
-  const dotsG = new PIXI.Graphics();
-  TUTORIAL_STEPS.forEach((s, i) => {
-    const dx = dotsStartX + i * (dotR * 2 + dotGap) + dotR;
-    const isComplete = i < G.tutorial.step;
-    const isCurrent = i === G.tutorial.step;
-
-    if (isComplete) {
-      dotsG.beginFill(p.vibe, 0.9);
-    } else if (isCurrent) {
-      dotsG.beginFill(p.beat, 0.8 + pulse * 0.2);
-    } else {
-      dotsG.beginFill(p.dim, 0.4);
-    }
-    dotsG.drawCircle(dx, dotsY, isCurrent ? dotR + 1 : dotR);
-    dotsG.endFill();
-  });
-  layers.overlay.addChild(dotsG);
-
-  // ========== SKIP BUTTON ==========
-  const skipSize = isMobile ? 10 : 12;
-  const skipBtn = new PIXI.Text('SKIP', {
-    fontFamily: FONT_UI, fontSize: skipSize, fill: p.dim, fontWeight: '600'
-  });
-  skipBtn.anchor.set(1, 0); skipBtn.x = W - 20; skipBtn.y = 20;
-  skipBtn.interactive = true; skipBtn.cursor = 'pointer';
-  skipBtn.on('pointerdown', () => TutorialManager.skip());
-  layers.overlay.addChild(skipBtn);
-
-  // ========== TAP HANDLER FOR WELCOME STEP ==========
-  if (step.id === 'welcome') {
-    dim.interactive = true;
-    dim.cursor = 'pointer';
-    dim.on('pointerdown', () => {
-      TutorialManager.recordTap();
-    });
-  }
-
-  // Keep animating
-  G.dirty = true;
-}
 
 // Home screen - runs actual game engine underneath with fade mask
 let homeGrid = [];
@@ -2987,7 +2677,7 @@ function renderHome() {
   curY += taglineSize + noteToBtn;
 
   // ========== START SESSION BUTTON (Primary) ==========
-  layers.overlay.addChild(makeButton('START SESSION', W/2, curY + btnH/2, startSessionWithTutorial, btnW, btnH, p.beat));
+  layers.overlay.addChild(makeButton('START SESSION', W/2, curY + btnH/2, startSession, btnW, btnH, p.beat));
   curY += btnH + btnGap;
 
   // ========== LOAD SESSION BUTTON (Disabled) ==========
@@ -3101,9 +2791,10 @@ function renderGame() {
 
   const gap = 4, radius = Math.min(tileSize * 0.18, 7);
 
-  for (let r = 0; r < ROWS; r++) {
+  // Only render visible rows (skip buffer rows 0-7)
+  for (let r = BUFFER_ROWS; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
-      let x = gridX + c * tileSize, y = gridY + r * tileSize;
+      let x = gridX + c * tileSize, y = gridY + (r - BUFFER_ROWS) * tileSize;
       const cell = G.grid[r][c];
       if (!cell) continue;
 
@@ -3123,8 +2814,8 @@ function renderGame() {
         if (move) {
           const t = Math.min(1, G.fallAnim.t);
           const eased = t * (2 - t); // Ease-out quad
-          const fromY = gridY + move.fromR * tileSize;
-          const toY = gridY + move.toR * tileSize;
+          const fromY = gridY + (move.fromR - BUFFER_ROWS) * tileSize;
+          const toY = gridY + (move.toR - BUFFER_ROWS) * tileSize;
           y = fromY + (toY - fromY) * eased;
         }
       }
@@ -3133,10 +2824,6 @@ function renderGame() {
 
       // NOISE tiles: invisible (skip rendering entirely)
       if (type === 'NOISE') continue;
-
-      // Buffer row dimming (rows 0-7 render at 30% opacity)
-      const isBuffer = r < BUFFER_ROWS;
-      const bufferAlpha = isBuffer ? 0.3 : 1.0;
 
       // Selection state
       const isSelected = G.selected && G.selected.r === r && G.selected.c === c;
@@ -3157,59 +2844,24 @@ function renderGame() {
         const offsetX = (scaledW - tw) / 2, offsetY = (scaledH - th) / 2;
 
         g.lineStyle(3, 0xffffff, 1);
-        g.beginFill(grad.mid, bufferAlpha);
+        g.beginFill(grad.mid, 1);
         g.drawRoundedRect(tx - offsetX, ty - offsetY, scaledW, scaledH, radius);
         g.endFill();
         g.lineStyle(0);  // Reset line style
       } else if (cluster) {
         // Cluster tiles: solid bright fill + subtle outline (no animation)
-        // Always full opacity — clusters should read as fully active
         g.lineStyle(2, 0xffffff, 0.4);
         g.beginFill(grad.shine, 1.0);
         g.drawRoundedRect(tx, ty, tw, th, radius);
         g.endFill();
         g.lineStyle(0);  // Reset line style
       } else {
-        // Normal tile with bufferAlpha
-        g.beginFill(grad.mid, bufferAlpha); g.drawRoundedRect(tx, ty, tw, th, radius); g.endFill();
+        // Normal tile
+        g.beginFill(grad.mid, 1); g.drawRoundedRect(tx, ty, tw, th, radius); g.endFill();
       }
     }
   }
   layers.bg.addChild(g);
-
-  // Falling piece (ghost removed)
-  if (G.piece && !G.paused && !G.collapsing) {
-    const pg = new PIXI.Graphics();
-    let minX = Infinity, minY = Infinity, maxX = 0, maxY = 0;
-    // Use continuous visual Y for smooth falling
-    const visualY = G.pieceVisualY;
-
-    for (const t of G.piece.tiles) {
-      const c = G.piece.x + t.dx, r = visualY + t.dy;
-      if (r < -0.5) continue;
-      const x = gridX + c * tileSize, y = gridY + r * tileSize;
-      minX = Math.min(minX, x); minY = Math.min(minY, y);
-      maxX = Math.max(maxX, x + tileSize); maxY = Math.max(maxY, y + tileSize);
-
-      if (t.type === 'SOCIAL') { drawSocialTile(pg, x, y, now); }
-      else if (EFFECT_TILES.includes(t.type)) { drawEffectTile(pg, x, y, t.type, now); }
-      else {
-        const grad = getGradient(t.type);
-        const tx = x+gap, ty = y+gap, tw = tileSize-gap*2, th = tileSize-gap*2;
-        // Solid tile color
-        pg.beginFill(grad.mid, 1); pg.drawRoundedRect(tx, ty, tw, th, radius); pg.endFill();
-      }
-    }
-    layers.game.addChild(pg);
-
-    if (minX !== Infinity) {
-      const hit = new PIXI.Graphics();
-      hit.beginFill(0, 0.001); hit.drawRect(minX-15, minY-15, maxX-minX+30, maxY-minY+30); hit.endFill();
-      hit.interactive = true;
-      hit.on('pointerdown', e => { e.stopPropagation(); rotate(); G.dirty = true; });
-      layers.game.addChild(hit);
-    }
-  }
 
   // Grid tap
   const gridHit = new PIXI.Graphics();
@@ -4841,17 +4493,6 @@ function makeButton(text, x, y, action, w, h, borderColor) {
 
 // Game logic
 
-// Start session with tutorial check for first-time players
-async function startSessionWithTutorial() {
-  const tutorialCompleted = localStorage.getItem('songsugar_tutorial_completed');
-  await startSession();
-
-  // Activate tutorial for first-time players
-  if (!tutorialCompleted) {
-    TutorialManager.start();
-  }
-}
-
 async function startSession() {
   // Stop any existing audio first
   Audio.stopAll();
@@ -4882,8 +4523,6 @@ async function startSession() {
   G.frozen = false; G.comboPopups = []; G.doubleScore = false;
   G.speedBoost = { active: false, multiplier: 1, endTime: 0 }; // Reset speed boost
   G.pieceVisualY = 0; G.lastRender = 0;
-  // Reset tutorial state
-  G.tutorial = { active: false, step: 0, stats: { tapCount: 0, moveCount: 0, rotateCount: 0, dropCount: 0, clustersCleared: 0, loopToggled: false } };
 
   // Properly destroy all particles
   while (particles.length) {
@@ -4899,7 +4538,6 @@ async function startSession() {
   }
 
   initGrid();
-  spawn();
   G.screen = 'PLAY';
   G.dirty = true;
 
@@ -4921,8 +4559,6 @@ function toggleLoop(cat, id) {
     const loop = G.loops[cat].find(l => l.id === id);
     if (loop?.unlocked) { Audio.startLoop(cat, id); active.push(loop); }
   }
-  // Tutorial: record loop toggle
-  if (G.tutorial.active) TutorialManager.recordLoopToggle();
 }
 
 function pauseSession() {
@@ -4985,29 +4621,8 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 // Input
 let touchX, touchY;
 function onKey(e) {
-  const keyTime = performance.now();
-  console.log('KEY EVENT:', e.key, 'at', keyTime.toFixed(1));
-  if (!['ArrowLeft','ArrowRight','ArrowDown','ArrowUp',' ','r','R'].includes(e.key)) return;
-  e.preventDefault();
-  if (G.screen !== 'PLAY' || G.paused || G.collapsing || !G.piece) return;
-
-  if (e.key === 'ArrowLeft' && canPlace(G.piece, G.piece.x-1, G.piece.y)) {
-    G.piece.x--; Audio.playMove();
-    if (G.tutorial.active) TutorialManager.recordMove();
-  }
-  else if (e.key === 'ArrowRight' && canPlace(G.piece, G.piece.x+1, G.piece.y)) {
-    G.piece.x++; Audio.playMove();
-    if (G.tutorial.active) TutorialManager.recordMove();
-  }
-  else if (e.key === 'ArrowDown') {
-    while (canPlace(G.piece, G.piece.x, G.piece.y+1)) G.piece.y++;
-    G.pieceVisualY = G.piece.y; Audio.playDrop();
-    if (G.tutorial.active) TutorialManager.recordDrop();
-  }
-  else if (['ArrowUp',' ','r','R'].includes(e.key)) {
-    if (rotate() && G.tutorial.active) TutorialManager.recordRotate();
-  }
-  G.dirty = true;
+  // Keyboard input stub - redesign uses tap/swap, not keyboard
+  // Keep handler registered for potential future use
 }
 
 function onTouchStart(e) {
@@ -5018,45 +4633,8 @@ function onTouchStart(e) {
   if (e.touches.length === 1) { touchX = e.touches[0].clientX; touchY = e.touches[0].clientY; }
 }
 function onTouchEnd(e) {
-  if (G.screen !== 'PLAY' || !touchX) return;
-  const endX = e.changedTouches[0].clientX, endY = e.changedTouches[0].clientY;
-  const dx = endX - touchX, dy = endY - touchY;
-
-  if (!G.collapsing && !G.paused && G.piece) {
-    // Small tap = rotate if on piece area, otherwise let PIXI handle grid taps
-    if (Math.abs(dx) < 20 && Math.abs(dy) < 20) {
-      // Check if tap is on the falling piece
-      const pieceScreenY = gridY + G.pieceVisualY * tileSize;
-      const pieceMinX = gridX + G.piece.x * tileSize - 10;
-      const pieceMaxX = gridX + (G.piece.x + Math.max(...G.piece.tiles.map(t => t.dx)) + 1) * tileSize + 10;
-      const pieceMinY = pieceScreenY - 10;
-      const pieceMaxY = pieceScreenY + (Math.max(...G.piece.tiles.map(t => t.dy)) + 1) * tileSize + 10;
-
-      if (endX >= pieceMinX && endX <= pieceMaxX && endY >= pieceMinY && endY <= pieceMaxY) {
-        if (rotate() && G.tutorial.active) TutorialManager.recordRotate();
-        G.dirty = true;
-      }
-      // Grid taps are handled by PIXI
-    } else if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 25) {
-      // Horizontal swipe = move piece
-      if (dx > 0 && canPlace(G.piece, G.piece.x+1, G.piece.y)) {
-        G.piece.x++; Audio.playMove();
-        if (G.tutorial.active) TutorialManager.recordMove();
-      }
-      else if (dx < 0 && canPlace(G.piece, G.piece.x-1, G.piece.y)) {
-        G.piece.x--; Audio.playMove();
-        if (G.tutorial.active) TutorialManager.recordMove();
-      }
-      G.dirty = true;
-    } else if (dy > 35) {
-      // Swipe down = hard drop
-      while (canPlace(G.piece, G.piece.x, G.piece.y+1)) G.piece.y++;
-      G.pieceVisualY = G.piece.y;
-      Audio.playDrop();
-      if (G.tutorial.active) TutorialManager.recordDrop();
-      G.dirty = true;
-    }
-  }
+  // Grid taps are handled by PIXI pointerdown events
+  // This handler only clears touch state
   touchX = touchY = null;
 }
 
@@ -5135,56 +4713,10 @@ function gameLoop(delta) {
       G.dirty = true;
     }
 
-    // Smooth continuous falling
-    if (G.screen === 'PLAY' && !G.paused && !G.collapsing && G.piece) {
-      let speed = G.frozen ? getBPMFallSpeed() * 0.33 : getBPMFallSpeed();
-      // Apply speed boost
-      if (G.speedBoost.active) {
-        speed *= G.speedBoost.multiplier;
-      }
-      const fallAmount = speed * dt;
-      let targetVisualY = G.pieceVisualY + fallAmount;
-
-      // Check if we can move to next row
-      const canMoveDown = canPlace(G.piece, G.piece.x, G.piece.y + 1);
-
-      if (canMoveDown) {
-        // Can move down - allow visual to progress
-        if (targetVisualY >= G.piece.y + 1) {
-          G.piece.y++;
-        }
-        // Clamp visual to not exceed current grid position + 1
-        G.pieceVisualY = Math.min(targetVisualY, G.piece.y + 0.99);
-      } else {
-        // Can't move down - clamp visual to current position and land
-        if (G.pieceVisualY >= G.piece.y) {
-          G.pieceVisualY = G.piece.y;
-          place();
-          G.piece = null;
-          G.needsSpawn = true; // Flag for spawn instead of setTimeout
-        } else {
-          // Still catching up to grid position
-          G.pieceVisualY = Math.min(targetVisualY, G.piece.y);
-        }
-      }
-
-      // Only mark dirty if visual position changed enough to matter (more than 0.5 pixels)
-      if (Math.abs(G.pieceVisualY - lastVisualY) * tileSize > 0.5) {
-        G.dirty = true;
-        lastVisualY = G.pieceVisualY;
-      }
-    }
-
     // Check and reset freeze state
     if (G.frozen && Date.now() >= G.freezeEnd) {
       G.frozen = false;
       G.dirty = true;
-    }
-
-    // Spawn new piece when ready (including after recovery)
-    if (G.screen === 'PLAY' && !G.paused && !G.collapsing && !G.piece) {
-      G.needsSpawn = false;
-      spawn();
     }
 
     // Render at ~60fps when needed

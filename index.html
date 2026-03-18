@@ -2791,9 +2791,10 @@ function renderGame() {
 
   const gap = 4, radius = Math.min(tileSize * 0.18, 7);
 
-  for (let r = 0; r < ROWS; r++) {
+  // Only render visible rows (skip buffer rows 0-7)
+  for (let r = BUFFER_ROWS; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
-      let x = gridX + c * tileSize, y = gridY + r * tileSize;
+      let x = gridX + c * tileSize, y = gridY + (r - BUFFER_ROWS) * tileSize;
       const cell = G.grid[r][c];
       if (!cell) continue;
 
@@ -2813,8 +2814,8 @@ function renderGame() {
         if (move) {
           const t = Math.min(1, G.fallAnim.t);
           const eased = t * (2 - t); // Ease-out quad
-          const fromY = gridY + move.fromR * tileSize;
-          const toY = gridY + move.toR * tileSize;
+          const fromY = gridY + (move.fromR - BUFFER_ROWS) * tileSize;
+          const toY = gridY + (move.toR - BUFFER_ROWS) * tileSize;
           y = fromY + (toY - fromY) * eased;
         }
       }
@@ -2823,10 +2824,6 @@ function renderGame() {
 
       // NOISE tiles: invisible (skip rendering entirely)
       if (type === 'NOISE') continue;
-
-      // Buffer row dimming (rows 0-7 render at 30% opacity)
-      const isBuffer = r < BUFFER_ROWS;
-      const bufferAlpha = isBuffer ? 0.3 : 1.0;
 
       // Selection state
       const isSelected = G.selected && G.selected.r === r && G.selected.c === c;
@@ -2847,59 +2844,24 @@ function renderGame() {
         const offsetX = (scaledW - tw) / 2, offsetY = (scaledH - th) / 2;
 
         g.lineStyle(3, 0xffffff, 1);
-        g.beginFill(grad.mid, bufferAlpha);
+        g.beginFill(grad.mid, 1);
         g.drawRoundedRect(tx - offsetX, ty - offsetY, scaledW, scaledH, radius);
         g.endFill();
         g.lineStyle(0);  // Reset line style
       } else if (cluster) {
         // Cluster tiles: solid bright fill + subtle outline (no animation)
-        // Always full opacity — clusters should read as fully active
         g.lineStyle(2, 0xffffff, 0.4);
         g.beginFill(grad.shine, 1.0);
         g.drawRoundedRect(tx, ty, tw, th, radius);
         g.endFill();
         g.lineStyle(0);  // Reset line style
       } else {
-        // Normal tile with bufferAlpha
-        g.beginFill(grad.mid, bufferAlpha); g.drawRoundedRect(tx, ty, tw, th, radius); g.endFill();
+        // Normal tile
+        g.beginFill(grad.mid, 1); g.drawRoundedRect(tx, ty, tw, th, radius); g.endFill();
       }
     }
   }
   layers.bg.addChild(g);
-
-  // Falling piece (ghost removed)
-  if (G.piece && !G.paused && !G.collapsing) {
-    const pg = new PIXI.Graphics();
-    let minX = Infinity, minY = Infinity, maxX = 0, maxY = 0;
-    // Use continuous visual Y for smooth falling
-    const visualY = G.pieceVisualY;
-
-    for (const t of G.piece.tiles) {
-      const c = G.piece.x + t.dx, r = visualY + t.dy;
-      if (r < -0.5) continue;
-      const x = gridX + c * tileSize, y = gridY + r * tileSize;
-      minX = Math.min(minX, x); minY = Math.min(minY, y);
-      maxX = Math.max(maxX, x + tileSize); maxY = Math.max(maxY, y + tileSize);
-
-      if (t.type === 'SOCIAL') { drawSocialTile(pg, x, y, now); }
-      else if (EFFECT_TILES.includes(t.type)) { drawEffectTile(pg, x, y, t.type, now); }
-      else {
-        const grad = getGradient(t.type);
-        const tx = x+gap, ty = y+gap, tw = tileSize-gap*2, th = tileSize-gap*2;
-        // Solid tile color
-        pg.beginFill(grad.mid, 1); pg.drawRoundedRect(tx, ty, tw, th, radius); pg.endFill();
-      }
-    }
-    layers.game.addChild(pg);
-
-    if (minX !== Infinity) {
-      const hit = new PIXI.Graphics();
-      hit.beginFill(0, 0.001); hit.drawRect(minX-15, minY-15, maxX-minX+30, maxY-minY+30); hit.endFill();
-      hit.interactive = true;
-      hit.on('pointerdown', e => { e.stopPropagation(); rotate(); G.dirty = true; });
-      layers.game.addChild(hit);
-    }
-  }
 
   // Grid tap
   const gridHit = new PIXI.Graphics();
@@ -4576,7 +4538,6 @@ async function startSession() {
   }
 
   initGrid();
-  spawn();
   G.screen = 'PLAY';
   G.dirty = true;
 
@@ -4660,26 +4621,8 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 // Input
 let touchX, touchY;
 function onKey(e) {
-  const keyTime = performance.now();
-  console.log('KEY EVENT:', e.key, 'at', keyTime.toFixed(1));
-  if (!['ArrowLeft','ArrowRight','ArrowDown','ArrowUp',' ','r','R'].includes(e.key)) return;
-  e.preventDefault();
-  if (G.screen !== 'PLAY' || G.paused || G.collapsing || !G.piece) return;
-
-  if (e.key === 'ArrowLeft' && canPlace(G.piece, G.piece.x-1, G.piece.y)) {
-    G.piece.x--; Audio.playMove();
-  }
-  else if (e.key === 'ArrowRight' && canPlace(G.piece, G.piece.x+1, G.piece.y)) {
-    G.piece.x++; Audio.playMove();
-  }
-  else if (e.key === 'ArrowDown') {
-    while (canPlace(G.piece, G.piece.x, G.piece.y+1)) G.piece.y++;
-    G.pieceVisualY = G.piece.y; Audio.playDrop();
-  }
-  else if (['ArrowUp',' ','r','R'].includes(e.key)) {
-    rotate();
-  }
-  G.dirty = true;
+  // Keyboard input stub - redesign uses tap/swap, not keyboard
+  // Keep handler registered for potential future use
 }
 
 function onTouchStart(e) {
@@ -4690,42 +4633,8 @@ function onTouchStart(e) {
   if (e.touches.length === 1) { touchX = e.touches[0].clientX; touchY = e.touches[0].clientY; }
 }
 function onTouchEnd(e) {
-  if (G.screen !== 'PLAY' || !touchX) return;
-  const endX = e.changedTouches[0].clientX, endY = e.changedTouches[0].clientY;
-  const dx = endX - touchX, dy = endY - touchY;
-
-  if (!G.collapsing && !G.paused && G.piece) {
-    // Small tap = rotate if on piece area, otherwise let PIXI handle grid taps
-    if (Math.abs(dx) < 20 && Math.abs(dy) < 20) {
-      // Check if tap is on the falling piece
-      const pieceScreenY = gridY + G.pieceVisualY * tileSize;
-      const pieceMinX = gridX + G.piece.x * tileSize - 10;
-      const pieceMaxX = gridX + (G.piece.x + Math.max(...G.piece.tiles.map(t => t.dx)) + 1) * tileSize + 10;
-      const pieceMinY = pieceScreenY - 10;
-      const pieceMaxY = pieceScreenY + (Math.max(...G.piece.tiles.map(t => t.dy)) + 1) * tileSize + 10;
-
-      if (endX >= pieceMinX && endX <= pieceMaxX && endY >= pieceMinY && endY <= pieceMaxY) {
-        rotate();
-        G.dirty = true;
-      }
-      // Grid taps are handled by PIXI
-    } else if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 25) {
-      // Horizontal swipe = move piece
-      if (dx > 0 && canPlace(G.piece, G.piece.x+1, G.piece.y)) {
-        G.piece.x++; Audio.playMove();
-      }
-      else if (dx < 0 && canPlace(G.piece, G.piece.x-1, G.piece.y)) {
-        G.piece.x--; Audio.playMove();
-      }
-      G.dirty = true;
-    } else if (dy > 35) {
-      // Swipe down = hard drop
-      while (canPlace(G.piece, G.piece.x, G.piece.y+1)) G.piece.y++;
-      G.pieceVisualY = G.piece.y;
-      Audio.playDrop();
-      G.dirty = true;
-    }
-  }
+  // Grid taps are handled by PIXI pointerdown events
+  // This handler only clears touch state
   touchX = touchY = null;
 }
 
@@ -4804,56 +4713,10 @@ function gameLoop(delta) {
       G.dirty = true;
     }
 
-    // Smooth continuous falling
-    if (G.screen === 'PLAY' && !G.paused && !G.collapsing && G.piece) {
-      let speed = G.frozen ? getBPMFallSpeed() * 0.33 : getBPMFallSpeed();
-      // Apply speed boost
-      if (G.speedBoost.active) {
-        speed *= G.speedBoost.multiplier;
-      }
-      const fallAmount = speed * dt;
-      let targetVisualY = G.pieceVisualY + fallAmount;
-
-      // Check if we can move to next row
-      const canMoveDown = canPlace(G.piece, G.piece.x, G.piece.y + 1);
-
-      if (canMoveDown) {
-        // Can move down - allow visual to progress
-        if (targetVisualY >= G.piece.y + 1) {
-          G.piece.y++;
-        }
-        // Clamp visual to not exceed current grid position + 1
-        G.pieceVisualY = Math.min(targetVisualY, G.piece.y + 0.99);
-      } else {
-        // Can't move down - clamp visual to current position and land
-        if (G.pieceVisualY >= G.piece.y) {
-          G.pieceVisualY = G.piece.y;
-          place();
-          G.piece = null;
-          G.needsSpawn = true; // Flag for spawn instead of setTimeout
-        } else {
-          // Still catching up to grid position
-          G.pieceVisualY = Math.min(targetVisualY, G.piece.y);
-        }
-      }
-
-      // Only mark dirty if visual position changed enough to matter (more than 0.5 pixels)
-      if (Math.abs(G.pieceVisualY - lastVisualY) * tileSize > 0.5) {
-        G.dirty = true;
-        lastVisualY = G.pieceVisualY;
-      }
-    }
-
     // Check and reset freeze state
     if (G.frozen && Date.now() >= G.freezeEnd) {
       G.frozen = false;
       G.dirty = true;
-    }
-
-    // Spawn new piece when ready (including after recovery)
-    if (G.screen === 'PLAY' && !G.paused && !G.collapsing && !G.piece) {
-      G.needsSpawn = false;
-      spawn();
     }
 
     // Render at ~60fps when needed
