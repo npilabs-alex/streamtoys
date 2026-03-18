@@ -470,10 +470,9 @@ const TileRenderer = {
     this.tileContainer = new PIXI.Container();
     layers.game.addChild(this.tileContainer);
 
-    // Create clip mask for visible grid area
+    // Create clip mask for visible grid area (not added to scene graph - PIXI v7 applies masks without needing visible child)
     this.clipMask = new PIXI.Graphics();
     this.tileContainer.mask = this.clipMask;
-    layers.game.addChild(this.clipMask);
 
     // Generate textures for each category (idle + cluster variants)
     ['BEAT', 'VIBE', 'MELODY'].forEach(cat => {
@@ -514,7 +513,7 @@ const TileRenderer = {
 
     // Pass 3: draw gradient circles on top (clipped by rounded rect naturally)
     const cx = size / 2, cy = size / 2;
-    const maxR = (size - gap * 2) / 2;
+    const maxR = (size - gap * 2) / 2 * 0.92;
     const steps = 8;
 
     for (let i = steps; i >= 0; i--) {
