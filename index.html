@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Pacifico&family=Press+Start+2P&family=Permanent+Marker&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.3.2/pixi.min.js"></script>
-  <!-- Filters will be added in Step 2 via ESM import -->
+  <script src="https://cdn.jsdelivr.net/npm/pixi-filters@5.1.1/dist/browser/pixi-filters.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -464,6 +464,7 @@ const TileRenderer = {
   clipMask: null,    // Mask to clip buffer rows and grid overflow
   needsSync: false,  // Set true when grid state changes
   texSize: 64,       // Render texture size (will be scaled to tileSize)
+  filterCache: new WeakMap(),  // Cache GlowFilter instances per sprite
 
   init() {
     // Create container for tile sprites, insert into layers.game
@@ -625,16 +626,39 @@ const TileRenderer = {
 
         if (!tex) continue;  // Skip if no texture for this type
 
+        let targetSpr = spr;
         if (!spr) {
           // Create new sprite (rounded-rect mask baked into texture)
           const newSpr = new PIXI.Sprite(tex);
           newSpr.anchor.set(0.5);
           this.tileContainer.addChild(newSpr);
           this.spriteGrid[r][c] = newSpr;
+          targetSpr = newSpr;
         } else {
           // Update existing sprite texture if needed
           spr.texture = tex;
           spr.visible = true;
+        }
+
+        // Apply/remove cluster glow filter
+        if (isClusterTile && targetSpr) {
+          let cached = this.filterCache.get(targetSpr);
+          if (!cached) cached = { cluster: null, selected: null };
+          if (!cached.cluster && PIXI.filters?.GlowFilter) {
+            const grad = P().gradients[cell.type] || P().gradients.SOCIAL;
+            cached.cluster = new PIXI.filters.GlowFilter({
+              distance: 15, outerStrength: 2.5, innerStrength: 0.5,
+              color: grad.shine, quality: 0.3
+            });
+            this.filterCache.set(targetSpr, cached);
+          }
+          if (cached.cluster) {
+            targetSpr.filters = [cached.cluster];
+          }
+          targetSpr._isCluster = true;
+        } else if (targetSpr) {
+          targetSpr.filters = null;
+          targetSpr._isCluster = false;
         }
       }
     }
@@ -673,12 +697,35 @@ const TileRenderer = {
 
         spr.x = x;
         spr.y = y;
-        spr.scale.set(scale);
 
-        // Selection state: scale up
+        // Cluster pulse animation
         const isSelected = G.selected && G.selected.r === r && G.selected.c === c;
-        if (isSelected) {
-          spr.scale.set(scale * 1.15);
+        if (spr._isCluster && !isSelected) {
+          const pulse = 1 + 0.04 * Math.sin(Date.now() * 0.006);
+          spr.scale.set(scale * pulse);
+        } else if (isSelected) {
+          // Selected tile: white glow + scale 1.1
+          spr.scale.set(scale * 1.1);
+          let cached = this.filterCache.get(spr);
+          if (!cached) cached = { cluster: null, selected: null };
+          if (!cached.selected && PIXI.filters?.GlowFilter) {
+            cached.selected = new PIXI.filters.GlowFilter({
+              distance: 12, outerStrength: 2, innerStrength: 0,
+              color: 0xffffff, quality: 0.3
+            });
+            this.filterCache.set(spr, cached);
+          }
+          if (cached.selected) {
+            spr.filters = [cached.selected];
+          }
+          spr._wasSelected = true;
+        } else {
+          spr.scale.set(scale);
+          // Clear selection filter if was selected
+          if (spr._wasSelected) {
+            spr.filters = spr._isCluster ? spr.filters : null;
+            spr._wasSelected = false;
+          }
         }
       }
     }
