@@ -1,0 +1,1885 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SONGSUGAR - Complete Palette Mockups</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Permanent+Marker&family=Pacifico&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0a0a0f;
+      color: #fff;
+      padding: 40px;
+      font-family: 'Inter', sans-serif;
+    }
+
+    h1 {
+      font-size: 32px;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .subtitle {
+      color: #666;
+      margin-bottom: 50px;
+      text-align: center;
+    }
+
+    .palette-section {
+      margin-bottom: 80px;
+      padding: 40px;
+      border-radius: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .palette-section::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: 0.15;
+      pointer-events: none;
+    }
+
+    .palette-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .palette-name {
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #888;
+    }
+
+    .color-swatches {
+      display: flex;
+      gap: 8px;
+    }
+
+    .swatch {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      border: 2px solid rgba(255,255,255,0.2);
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      position: relative;
+      z-index: 1;
+    }
+
+    @media (max-width: 900px) {
+      .content-grid { grid-template-columns: 1fr; }
+    }
+
+    .panel {
+      background: rgba(0,0,0,0.4);
+      border-radius: 16px;
+      padding: 25px;
+      backdrop-filter: blur(10px);
+    }
+
+    .panel-label {
+      font-size: 11px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 20px;
+    }
+
+    /* Wordmark */
+    .wordmark {
+      font-family: 'Pacifico', cursive;
+      font-size: 48px;
+      text-align: center;
+    }
+
+    /* Tiles */
+    .tiles-row {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .tile {
+      width: 60px;
+      height: 60px;
+      border-radius: 12px;
+      position: relative;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    }
+
+    .tile::before {
+      content: '';
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 30px;
+      height: 12px;
+      background: rgba(255,255,255,0.35);
+      border-radius: 50%;
+    }
+
+    .tile-label {
+      font-size: 9px;
+      text-align: center;
+      margin-top: 8px;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Messages */
+    .message {
+      font-family: 'Permanent Marker', cursive;
+      font-size: 36px;
+      text-align: center;
+      margin: 15px 0;
+    }
+
+    /* UI */
+    .ui-row {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      flex-wrap: wrap;
+    }
+
+    .ui-item {
+      text-align: center;
+    }
+
+    .ui-label {
+      font-size: 10px;
+      color: #556;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+
+    .ui-value {
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    /* Palette backgrounds */
+    .bg-signal {
+      background: linear-gradient(135deg, #080D14 0%, #0c1420 50%, #080D14 100%);
+      border: 1px solid #1a2535;
+    }
+    .bg-signal::before {
+      background:
+        radial-gradient(ellipse at 20% 30%, rgba(0, 229, 255, 0.2) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 70%, rgba(255, 45, 120, 0.15) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 50%, rgba(170, 255, 0, 0.1) 0%, transparent 50%);
+    }
+
+    .bg-analogue {
+      background: linear-gradient(135deg, #1A1208 0%, #251a0e 50%, #1A1208 100%);
+      border: 1px solid #3a2a18;
+    }
+    .bg-analogue::before {
+      background:
+        radial-gradient(ellipse at 20% 30%, rgba(212, 82, 26, 0.2) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 70%, rgba(232, 160, 144, 0.15) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 50%, rgba(46, 125, 122, 0.1) 0%, transparent 50%);
+    }
+
+    .bg-vaporwave {
+      background: linear-gradient(135deg, #1a0a2e 0%, #2d1b4e 50%, #1a0a2e 100%);
+      border: 1px solid #4a2a6e;
+    }
+    .bg-vaporwave::before {
+      background:
+        radial-gradient(ellipse at 20% 30%, rgba(157, 78, 221, 0.25) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 70%, rgba(255, 107, 157, 0.2) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 50%, rgba(0, 212, 255, 0.15) 0%, transparent 50%);
+    }
+
+    .bg-sunrise {
+      background: linear-gradient(135deg, #1a0f0a 0%, #2a1a10 50%, #1a0f0a 100%);
+      border: 1px solid #4a2a1a;
+    }
+    .bg-sunrise::before {
+      background:
+        radial-gradient(ellipse at 20% 30%, rgba(255, 107, 53, 0.25) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 70%, rgba(232, 121, 249, 0.2) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 50%, rgba(255, 128, 102, 0.15) 0%, transparent 50%);
+    }
+
+    /* ============ CLUSTER STYLES ============ */
+    .cluster-section {
+      margin-bottom: 60px;
+      padding: 40px;
+      background: linear-gradient(135deg, #0a0a12 0%, #151520 50%, #0a0a12 100%);
+      border-radius: 20px;
+      border: 1px solid #2a2a3a;
+    }
+
+    .cluster-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 30px;
+      margin-top: 30px;
+    }
+
+    .cluster-option {
+      background: rgba(0,0,0,0.4);
+      border-radius: 16px;
+      padding: 25px;
+      text-align: center;
+    }
+
+    .cluster-option h3 {
+      font-size: 14px;
+      color: #888;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .cluster-demo {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 15px;
+    }
+
+    /* Base cluster shape - L-shaped 4 tiles */
+    .cluster {
+      position: relative;
+      width: 130px;
+      height: 130px;
+    }
+
+    .cluster-tile {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      border-radius: 10px;
+    }
+
+    /* Positions for L-shape */
+    .cluster-tile:nth-child(1) { top: 0; left: 0; }
+    .cluster-tile:nth-child(2) { top: 0; left: 65px; }
+    .cluster-tile:nth-child(3) { top: 65px; left: 0; }
+    .cluster-tile:nth-child(4) { top: 65px; left: 65px; border-radius: 10px 0 10px 10px; }
+
+    /* Style 1: Outer Glow */
+    .cluster-glow .cluster-tile {
+      background: linear-gradient(135deg, #00E5FF 0%, #0099bb 100%);
+      box-shadow:
+        0 0 20px rgba(0, 229, 255, 0.6),
+        0 0 40px rgba(0, 229, 255, 0.3),
+        inset 0 2px 4px rgba(255,255,255,0.3);
+    }
+    .cluster-glow .cluster-tile::before {
+      content: '';
+      position: absolute;
+      top: 6px; left: 50%; transform: translateX(-50%);
+      width: 28px; height: 10px;
+      background: rgba(255,255,255,0.4);
+      border-radius: 50%;
+    }
+
+    /* Style 2: 3D Extruded */
+    .cluster-3d .cluster-tile {
+      background: linear-gradient(180deg, #FF6B9D 0%, #FF2D78 50%, #cc1a55 100%);
+      box-shadow:
+        0 6px 0 #aa1545,
+        0 8px 0 #881035,
+        0 10px 0 #660a28,
+        0 12px 15px rgba(0,0,0,0.4);
+      transform: translateY(-2px);
+    }
+    .cluster-3d .cluster-tile::before {
+      content: '';
+      position: absolute;
+      top: 4px; left: 50%; transform: translateX(-50%);
+      width: 30px; height: 12px;
+      background: rgba(255,255,255,0.35);
+      border-radius: 50%;
+    }
+
+    /* Style 3: Inner Bevel */
+    .cluster-bevel .cluster-tile {
+      background: linear-gradient(145deg, #c0ff60 0%, #AAFF00 30%, #88cc00 100%);
+      box-shadow:
+        inset 3px 3px 6px rgba(255,255,255,0.4),
+        inset -3px -3px 6px rgba(0,0,0,0.3),
+        0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    /* Style 4: Neon Outline */
+    .cluster-neon .cluster-tile {
+      background: rgba(0, 229, 255, 0.15);
+      border: 3px solid #00E5FF;
+      box-shadow:
+        0 0 10px #00E5FF,
+        0 0 20px rgba(0, 229, 255, 0.5),
+        inset 0 0 15px rgba(0, 229, 255, 0.3);
+    }
+
+    /* Style 5: Gradient Mesh */
+    .cluster-mesh .cluster-tile {
+      background:
+        linear-gradient(135deg, rgba(157, 78, 221, 0.9) 0%, transparent 50%),
+        linear-gradient(225deg, rgba(0, 212, 255, 0.9) 0%, transparent 50%),
+        linear-gradient(315deg, rgba(255, 107, 157, 0.9) 0%, transparent 50%),
+        #2d1b4e;
+      box-shadow: 0 4px 20px rgba(157, 78, 221, 0.4);
+    }
+    .cluster-mesh .cluster-tile::before {
+      content: '';
+      position: absolute;
+      top: 5px; left: 50%; transform: translateX(-50%);
+      width: 26px; height: 10px;
+      background: rgba(255,255,255,0.25);
+      border-radius: 50%;
+    }
+
+    /* Style 6: Pulse Animation */
+    .cluster-pulse .cluster-tile {
+      background: linear-gradient(135deg, #FF6B35 0%, #d94a15 100%);
+      animation: clusterPulse 1.5s ease-in-out infinite;
+    }
+    .cluster-pulse .cluster-tile::before {
+      content: '';
+      position: absolute;
+      top: 6px; left: 50%; transform: translateX(-50%);
+      width: 28px; height: 10px;
+      background: rgba(255,255,255,0.4);
+      border-radius: 50%;
+    }
+    @keyframes clusterPulse {
+      0%, 100% {
+        box-shadow: 0 0 15px rgba(255, 107, 53, 0.5), 0 4px 8px rgba(0,0,0,0.3);
+        transform: scale(1);
+      }
+      50% {
+        box-shadow: 0 0 30px rgba(255, 107, 53, 0.8), 0 0 50px rgba(255, 107, 53, 0.4), 0 6px 12px rgba(0,0,0,0.4);
+        transform: scale(1.02);
+      }
+    }
+
+    /* ============ MERGED CLUSTER STYLES (Connected Shape) ============ */
+    .merged-cluster {
+      position: relative;
+      width: 180px;
+      height: 130px;
+    }
+
+    /* Style 7: Merged Blob with Glow */
+    .cluster-merged-glow {
+      background: linear-gradient(135deg, #00E5FF 0%, #0099bb 100%);
+      width: 125px;
+      height: 125px;
+      border-radius: 12px 12px 50px 12px;
+      clip-path: polygon(0 0, 100% 0, 100% 48%, 52% 48%, 52% 100%, 0 100%);
+      box-shadow:
+        0 0 25px rgba(0, 229, 255, 0.7),
+        0 0 50px rgba(0, 229, 255, 0.4),
+        inset 0 3px 8px rgba(255,255,255,0.4);
+      position: relative;
+    }
+    .cluster-merged-glow::before {
+      content: '';
+      position: absolute;
+      top: 8px; left: 15%;
+      width: 35%; height: 15px;
+      background: rgba(255,255,255,0.4);
+      border-radius: 50%;
+    }
+    .cluster-merged-glow::after {
+      content: '';
+      position: absolute;
+      top: 8px; right: 15%;
+      width: 25%; height: 12px;
+      background: rgba(255,255,255,0.3);
+      border-radius: 50%;
+    }
+
+    /* Style 8: Merged 3D Block */
+    .cluster-merged-3d {
+      background: linear-gradient(180deg, #FF6B9D 0%, #FF2D78 40%, #cc1a55 100%);
+      width: 125px;
+      height: 125px;
+      border-radius: 10px;
+      clip-path: polygon(0 0, 100% 0, 100% 48%, 52% 48%, 52% 100%, 0 100%);
+      box-shadow:
+        6px 6px 0 #aa1545,
+        9px 9px 0 #881035,
+        12px 12px 0 #660a28,
+        12px 15px 20px rgba(0,0,0,0.5);
+      position: relative;
+    }
+    .cluster-merged-3d::before {
+      content: '';
+      position: absolute;
+      top: 6px; left: 12%;
+      width: 30%; height: 12px;
+      background: rgba(255,255,255,0.35);
+      border-radius: 50%;
+    }
+
+    /* Style 9: Merged Neon Wire */
+    .cluster-merged-neon {
+      background: rgba(170, 255, 0, 0.1);
+      width: 125px;
+      height: 125px;
+      border: 4px solid #AAFF00;
+      border-radius: 10px;
+      clip-path: polygon(0 0, 100% 0, 100% 48%, 52% 48%, 52% 100%, 0 100%);
+      box-shadow:
+        0 0 15px #AAFF00,
+        0 0 30px rgba(170, 255, 0, 0.5),
+        inset 0 0 20px rgba(170, 255, 0, 0.3);
+      position: relative;
+    }
+
+    /* Style 10: Merged + Soft Shadow (no hard 3D layers) */
+    .cluster-merged-soft {
+      background: linear-gradient(180deg, #66f0ff 0%, #00E5FF 40%, #00a5bb 100%);
+      width: 125px;
+      height: 125px;
+      border-radius: 10px;
+      clip-path: polygon(0 0, 100% 0, 100% 48%, 52% 48%, 52% 100%, 0 100%);
+      box-shadow:
+        8px 8px 20px rgba(0, 100, 130, 0.8),
+        0 0 30px rgba(0, 229, 255, 0.4);
+      position: relative;
+    }
+    .cluster-merged-soft::before {
+      content: '';
+      position: absolute;
+      top: 5px; left: 8%;
+      width: 40%; height: 12px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.5), rgba(255,255,255,0.1));
+      border-radius: 10px;
+    }
+
+    /* Style 11: Merged + Gradient Glow (soft, no hard edges) */
+    .cluster-merged-gradient {
+      background: linear-gradient(135deg, #ff6b9d 0%, #FF2D78 50%, #cc1a55 100%);
+      width: 125px;
+      height: 125px;
+      border-radius: 10px;
+      clip-path: polygon(0 0, 100% 0, 100% 48%, 52% 48%, 52% 100%, 0 100%);
+      box-shadow:
+        0 8px 25px rgba(200, 20, 80, 0.7),
+        0 0 40px rgba(255, 45, 120, 0.5),
+        inset 0 2px 10px rgba(255,255,255,0.3);
+      position: relative;
+    }
+    .cluster-merged-gradient::before {
+      content: '';
+      position: absolute;
+      top: 4px; left: 6%;
+      width: 45%; height: 10px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.6), rgba(255,255,255,0.1));
+      border-radius: 10px;
+    }
+
+    /* Style 12: Merged + Inner Depth (gradient creates depth illusion) */
+    .cluster-merged-depth {
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.3) 0%, transparent 30%),
+        linear-gradient(180deg, #ccff66 0%, #AAFF00 35%, #77bb00 70%, #446600 100%);
+      width: 125px;
+      height: 125px;
+      border-radius: 10px;
+      clip-path: polygon(0 0, 100% 0, 100% 48%, 52% 48%, 52% 100%, 0 100%);
+      box-shadow:
+        0 6px 20px rgba(60, 100, 0, 0.8),
+        0 0 25px rgba(170, 255, 0, 0.4);
+      position: relative;
+      border-bottom: 4px solid #335500;
+      border-right: 4px solid #446600;
+    }
+
+    /* Style 13: Individual 3D Tiles (tight gap, looks merged) */
+    .cluster-tight-3d {
+      display: flex;
+      gap: 2px;
+      padding: 8px;
+      background: radial-gradient(ellipse at center, rgba(0, 229, 255, 0.15) 0%, transparent 70%);
+      border-radius: 12px;
+      box-shadow: 0 0 30px rgba(0, 229, 255, 0.4);
+    }
+
+    /* Style 14: Merged + Pulse Glow (soft, animated) */
+    .cluster-merged-pulse {
+      background: linear-gradient(180deg, #66f0ff 0%, #00E5FF 40%, #00a5bb 100%);
+      width: 125px;
+      height: 125px;
+      border-radius: 10px;
+      clip-path: polygon(0 0, 100% 0, 100% 48%, 52% 48%, 52% 100%, 0 100%);
+      position: relative;
+      animation: mergedPulse 1.5s ease-in-out infinite;
+    }
+    .cluster-merged-pulse::before {
+      content: '';
+      position: absolute;
+      top: 5px; left: 8%;
+      width: 40%; height: 12px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.5), rgba(255,255,255,0.1));
+      border-radius: 10px;
+    }
+    @keyframes mergedPulse {
+      0%, 100% {
+        box-shadow:
+          0 6px 15px rgba(0, 100, 130, 0.6),
+          0 0 20px rgba(0, 229, 255, 0.4);
+      }
+      50% {
+        box-shadow:
+          0 8px 25px rgba(0, 100, 130, 0.8),
+          0 0 40px rgba(0, 229, 255, 0.7),
+          0 0 60px rgba(0, 229, 255, 0.3);
+      }
+    }
+
+    /* Style 11: Neon + 3D (WILD/Special Tiles Only - NO pulse) */
+    .cluster-neon-3d {
+      background: linear-gradient(180deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 165, 0, 0.2) 100%);
+      width: 52px;
+      height: 52px;
+      border: 3px solid #FFD700;
+      border-radius: 8px;
+      box-shadow:
+        4px 4px 0 #cc9900,
+        7px 7px 0 #997700,
+        10px 10px 0 #664400,
+        0 0 15px #FFD700,
+        0 0 30px rgba(255, 215, 0, 0.6),
+        inset 0 0 15px rgba(255, 215, 0, 0.3);
+      position: relative;
+    }
+    .cluster-neon-3d::before {
+      content: '★';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 24px;
+      color: #FFD700;
+      text-shadow: 0 0 10px #FFD700;
+    }
+
+    /* 3D Extended tiles for BEAT, MELODY, VIBE (solid, no neon outline) */
+    .tile-3d-beat {
+      background: linear-gradient(180deg, #66f0ff 0%, #00E5FF 40%, #00a5bb 100%);
+      width: 52px; height: 52px;
+      border-radius: 8px;
+      box-shadow:
+        4px 4px 0 #0099aa, 7px 7px 0 #006677, 10px 10px 0 #003344,
+        10px 12px 15px rgba(0,0,0,0.4);
+      position: relative;
+    }
+    .tile-3d-beat::before {
+      content: '';
+      position: absolute;
+      top: 4px; left: 10%;
+      width: 40%; height: 8px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.5), rgba(255,255,255,0.2));
+      border-radius: 8px;
+    }
+    .tile-3d-melody {
+      background: linear-gradient(180deg, #ff6b9d 0%, #FF2D78 40%, #cc1a55 100%);
+      width: 52px; height: 52px;
+      border-radius: 8px;
+      box-shadow:
+        4px 4px 0 #cc1a55, 7px 7px 0 #991040, 10px 10px 0 #660825,
+        10px 12px 15px rgba(0,0,0,0.4);
+      position: relative;
+    }
+    .tile-3d-melody::before {
+      content: '';
+      position: absolute;
+      top: 4px; left: 10%;
+      width: 40%; height: 8px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.5), rgba(255,255,255,0.2));
+      border-radius: 8px;
+    }
+    .tile-3d-vibe {
+      background: linear-gradient(180deg, #ccff66 0%, #AAFF00 40%, #77bb00 100%);
+      width: 52px; height: 52px;
+      border-radius: 8px;
+      box-shadow:
+        4px 4px 0 #77bb00, 7px 7px 0 #558800, 10px 10px 0 #335500,
+        10px 12px 15px rgba(0,0,0,0.4);
+      position: relative;
+    }
+    .tile-3d-vibe::before {
+      content: '';
+      position: absolute;
+      top: 4px; left: 10%;
+      width: 40%; height: 8px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.5), rgba(255,255,255,0.2));
+      border-radius: 8px;
+    }
+
+    /* ============ APPROACH COMPARISON ============ */
+    .approach-section {
+      max-width: 1200px;
+      margin: 0 auto 60px;
+      padding: 30px;
+      background: rgba(255,255,255,0.03);
+      border-radius: 20px;
+      border: 2px solid #9D4EDD;
+    }
+    .approach-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 30px;
+      margin-top: 20px;
+    }
+    .approach-card {
+      background: rgba(0,0,0,0.3);
+      border-radius: 16px;
+      padding: 20px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .approach-card h3 {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 16px;
+    }
+    .approach-demo {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      align-items: flex-start;
+      margin-bottom: 15px;
+    }
+    .approach-demo-col {
+      text-align: center;
+    }
+    .approach-demo-col p {
+      font-size: 10px;
+      color: #888;
+      margin-top: 8px;
+    }
+    .approach-card .description {
+      font-size: 12px;
+      color: #aaa;
+      line-height: 1.5;
+      text-align: center;
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+    }
+
+    /* Approach A: Individual 3D + shared glow (no merge) */
+    .approachA-cluster {
+      display: grid;
+      grid-template-columns: repeat(2, 44px);
+      gap: 3px;
+      padding: 10px;
+      background: radial-gradient(ellipse at center, rgba(0, 229, 255, 0.2) 0%, transparent 70%);
+      border-radius: 14px;
+      box-shadow: 0 0 25px rgba(0, 229, 255, 0.5), 0 0 50px rgba(0, 229, 255, 0.2);
+    }
+    .approachA-cluster .tile {
+      width: 44px; height: 44px;
+      border-radius: 6px;
+      position: relative;
+    }
+    .approachA-cluster .tile::before {
+      content: '';
+      position: absolute;
+      border-radius: 6px;
+    }
+    /* 3D extrusion for individual tiles */
+    .approachA-cluster .tile.beat {
+      background: linear-gradient(180deg, #66f0ff 0%, #00E5FF 40%, #00a5bb 100%);
+      box-shadow: 3px 3px 0 #0088aa, 5px 5px 0 #006688, 5px 7px 10px rgba(0,0,0,0.4);
+    }
+    .approachA-cluster .tile.beat::before {
+      top: 3px; left: 8%; width: 35%; height: 6px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.5), rgba(255,255,255,0.1));
+    }
+    /* L-shape: hide 4th tile */
+    .approachA-cluster .tile:nth-child(4) { visibility: hidden; }
+
+    /* Approach A: Single tile */
+    .approachA-single {
+      width: 52px; height: 52px;
+      border-radius: 8px;
+      background: linear-gradient(180deg, #66f0ff 0%, #00E5FF 40%, #00a5bb 100%);
+      box-shadow: 4px 4px 0 #0088aa, 6px 6px 0 #006688, 8px 8px 0 #004466, 8px 10px 12px rgba(0,0,0,0.4);
+      position: relative;
+    }
+    .approachA-single::before {
+      content: '';
+      position: absolute;
+      top: 4px; left: 10%;
+      width: 40%; height: 8px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.5), rgba(255,255,255,0.1));
+      border-radius: 8px;
+    }
+
+    /* Approach B: Individual 3D, merged uses soft shadow */
+    .approachB-single {
+      width: 52px; height: 52px;
+      border-radius: 8px;
+      background: linear-gradient(180deg, #ff6b9d 0%, #FF2D78 40%, #cc1a55 100%);
+      box-shadow: 4px 4px 0 #aa1545, 6px 6px 0 #881035, 8px 8px 0 #660828, 8px 10px 12px rgba(0,0,0,0.4);
+      position: relative;
+    }
+    .approachB-single::before {
+      content: '';
+      position: absolute;
+      top: 4px; left: 10%;
+      width: 40%; height: 8px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.5), rgba(255,255,255,0.1));
+      border-radius: 8px;
+    }
+    .approachB-merged {
+      width: 100px; height: 100px;
+      border-radius: 10px;
+      clip-path: polygon(0 0, 100% 0, 100% 48%, 52% 48%, 52% 100%, 0 100%);
+      background: linear-gradient(180deg, #ff6b9d 0%, #FF2D78 40%, #cc1a55 100%);
+      box-shadow: 0 8px 20px rgba(150, 20, 60, 0.7), 0 0 30px rgba(255, 45, 120, 0.4);
+      position: relative;
+    }
+    .approachB-merged::before {
+      content: '';
+      position: absolute;
+      top: 5px; left: 8%;
+      width: 40%; height: 10px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.5), rgba(255,255,255,0.1));
+      border-radius: 8px;
+    }
+
+    /* Approach C: Consistent soft style everywhere */
+    .approachC-single {
+      width: 52px; height: 52px;
+      border-radius: 8px;
+      background: linear-gradient(180deg, #ccff66 0%, #AAFF00 40%, #77bb00 100%);
+      box-shadow: 0 6px 15px rgba(80, 120, 0, 0.7), 0 0 20px rgba(170, 255, 0, 0.3);
+      position: relative;
+    }
+    .approachC-single::before {
+      content: '';
+      position: absolute;
+      top: 4px; left: 10%;
+      width: 40%; height: 8px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.5), rgba(255,255,255,0.1));
+      border-radius: 8px;
+    }
+    .approachC-merged {
+      width: 100px; height: 100px;
+      border-radius: 10px;
+      clip-path: polygon(0 0, 100% 0, 100% 48%, 52% 48%, 52% 100%, 0 100%);
+      background: linear-gradient(180deg, #ccff66 0%, #AAFF00 40%, #77bb00 100%);
+      box-shadow: 0 8px 20px rgba(80, 120, 0, 0.7), 0 0 30px rgba(170, 255, 0, 0.4);
+      position: relative;
+    }
+    .approachC-merged::before {
+      content: '';
+      position: absolute;
+      top: 5px; left: 8%;
+      width: 40%; height: 10px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.5), rgba(255,255,255,0.1));
+      border-radius: 8px;
+    }
+
+    /* ============ SPECIAL TILES ============ */
+    /* Game Effect Tiles - White/Off-white outline with icons */
+    .effect-tile {
+      width: 56px; height: 56px;
+      border-radius: 8px;
+      border: 3px solid rgba(255, 255, 255, 0.9);
+      background: rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      filter:
+        drop-shadow(2px 2px 0 rgba(150,150,150,0.5))
+        drop-shadow(2px 2px 0 rgba(100,100,100,0.4))
+        drop-shadow(2px 2px 0 rgba(60,60,60,0.3));
+    }
+    .effect-tile .icon {
+      font-size: 26px;
+      line-height: 1;
+      color: #ffffff;
+      text-shadow: 0 0 8px rgba(255,255,255,0.6);
+    }
+    /* Warm palette variant */
+    .effect-tile.warm {
+      border-color: #f5e6d0;
+      background: rgba(245, 230, 208, 0.1);
+    }
+    .effect-tile.warm .icon {
+      color: #f5e6d0;
+      text-shadow: 0 0 8px rgba(245, 230, 208, 0.6);
+    }
+
+    /* Special Rare Tiles - Gold outline with outer glow */
+    .special-tile {
+      width: 56px; height: 56px;
+      border-radius: 8px;
+      border: 3px solid #FFD700;
+      background: rgba(255, 215, 0, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow:
+        0 0 15px rgba(255, 215, 0, 0.6),
+        0 0 30px rgba(255, 215, 0, 0.3),
+        inset 0 0 15px rgba(255, 215, 0, 0.1);
+      filter:
+        drop-shadow(2px 2px 0 #b8960a)
+        drop-shadow(2px 2px 0 #8a7008)
+        drop-shadow(2px 2px 0 #5c4a05);
+    }
+    .special-tile .icon {
+      font-size: 26px;
+      line-height: 1;
+      color: #FFD700;
+      text-shadow: 0 0 15px #FFD700;
+    }
+
+    /* Special tiles section layout */
+    .special-tiles-grid {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .special-tile-demo {
+      text-align: center;
+    }
+    .special-tile-demo p {
+      font-size: 11px;
+      color: #888;
+      margin-top: 10px;
+    }
+    .special-tile-demo .label {
+      font-size: 10px;
+      color: #666;
+      margin-top: 3px;
+    }
+
+    /* ============ DROP-SHADOW 3D TILES ============ */
+    /* Individual tiles - BEAT */
+    .ds-tile-beat {
+      width: 52px; height: 52px;
+      border-radius: 8px;
+      background: linear-gradient(180deg, #66f0ff 0%, #00E5FF 40%, #00a5bb 100%);
+      filter:
+        drop-shadow(2px 2px 0 #0088aa)
+        drop-shadow(2px 2px 0 #006677)
+        drop-shadow(2px 2px 0 #004455)
+        drop-shadow(2px 2px 0 #003344);
+      position: relative;
+    }
+    .ds-tile-beat::before {
+      content: '';
+      position: absolute;
+      top: 4px; left: 10%;
+      width: 40%; height: 8px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.5), rgba(255,255,255,0.1));
+      border-radius: 8px;
+    }
+
+    /* Individual tiles - MELODY */
+    .ds-tile-melody {
+      width: 52px; height: 52px;
+      border-radius: 8px;
+      background: linear-gradient(180deg, #ff6b9d 0%, #FF2D78 40%, #cc1a55 100%);
+      filter:
+        drop-shadow(2px 2px 0 #aa1545)
+        drop-shadow(2px 2px 0 #881035)
+        drop-shadow(2px 2px 0 #660828)
+        drop-shadow(2px 2px 0 #44051a);
+      position: relative;
+    }
+    .ds-tile-melody::before {
+      content: '';
+      position: absolute;
+      top: 4px; left: 10%;
+      width: 40%; height: 8px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.5), rgba(255,255,255,0.1));
+      border-radius: 8px;
+    }
+
+    /* Individual tiles - VIBE */
+    .ds-tile-vibe {
+      width: 52px; height: 52px;
+      border-radius: 8px;
+      background: linear-gradient(180deg, #ccff66 0%, #AAFF00 40%, #77bb00 100%);
+      filter:
+        drop-shadow(2px 2px 0 #66aa00)
+        drop-shadow(2px 2px 0 #558800)
+        drop-shadow(2px 2px 0 #446600)
+        drop-shadow(2px 2px 0 #334400);
+      position: relative;
+    }
+    .ds-tile-vibe::before {
+      content: '';
+      position: absolute;
+      top: 4px; left: 10%;
+      width: 40%; height: 8px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.5), rgba(255,255,255,0.1));
+      border-radius: 8px;
+    }
+
+    /* Merged clusters - wrapper applies drop-shadow filter */
+    /* Cluster pulse animation - scale + glow */
+    @keyframes clusterPulseBeat {
+      0%, 100% { transform: scale(1); filter: drop-shadow(2px 2px 0 #0088aa) drop-shadow(2px 2px 0 #006677) drop-shadow(2px 2px 0 #004455) drop-shadow(2px 2px 0 #003344); }
+      50% { transform: scale(1.04); filter: drop-shadow(2px 2px 0 #0088aa) drop-shadow(2px 2px 0 #006677) drop-shadow(2px 2px 0 #004455) drop-shadow(2px 2px 0 #003344) drop-shadow(0 0 20px rgba(0,229,255,0.7)); }
+    }
+    @keyframes clusterPulseMelody {
+      0%, 100% { transform: scale(1); filter: drop-shadow(2px 2px 0 #aa1545) drop-shadow(2px 2px 0 #881035) drop-shadow(2px 2px 0 #660828) drop-shadow(2px 2px 0 #44051a); }
+      50% { transform: scale(1.04); filter: drop-shadow(2px 2px 0 #aa1545) drop-shadow(2px 2px 0 #881035) drop-shadow(2px 2px 0 #660828) drop-shadow(2px 2px 0 #44051a) drop-shadow(0 0 20px rgba(255,45,120,0.7)); }
+    }
+    @keyframes clusterPulseVibe {
+      0%, 100% { transform: scale(1); filter: drop-shadow(2px 2px 0 #66aa00) drop-shadow(2px 2px 0 #558800) drop-shadow(2px 2px 0 #446600) drop-shadow(2px 2px 0 #334400); }
+      50% { transform: scale(1.04); filter: drop-shadow(2px 2px 0 #66aa00) drop-shadow(2px 2px 0 #558800) drop-shadow(2px 2px 0 #446600) drop-shadow(2px 2px 0 #334400) drop-shadow(0 0 20px rgba(170,255,0,0.7)); }
+    }
+
+    .ds-merged-beat-wrap {
+      animation: clusterPulseBeat 1.5s ease-in-out infinite;
+    }
+    .ds-merged-beat {
+      width: 90px; height: 90px;
+      border-radius: 8px;
+      clip-path: polygon(0 0, 100% 0, 100% 48%, 55% 48%, 55% 100%, 0 100%);
+      background: linear-gradient(180deg, #66f0ff 0%, #00E5FF 40%, #00a5bb 100%);
+      position: relative;
+    }
+    .ds-merged-beat::before {
+      content: '';
+      position: absolute;
+      top: 5px; left: 8%;
+      width: 45%; height: 8px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.5), rgba(255,255,255,0.1));
+      border-radius: 8px;
+    }
+
+    .ds-merged-melody-wrap {
+      animation: clusterPulseMelody 1.5s ease-in-out infinite;
+      animation-delay: 0.3s;
+    }
+    .ds-merged-melody {
+      width: 90px; height: 90px;
+      border-radius: 8px;
+      clip-path: polygon(0 0, 100% 0, 100% 48%, 55% 48%, 55% 100%, 0 100%);
+      background: linear-gradient(180deg, #ff6b9d 0%, #FF2D78 40%, #cc1a55 100%);
+      position: relative;
+    }
+    .ds-merged-melody::before {
+      content: '';
+      position: absolute;
+      top: 5px; left: 8%;
+      width: 45%; height: 8px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.5), rgba(255,255,255,0.1));
+      border-radius: 8px;
+    }
+
+    .ds-merged-vibe-wrap {
+      animation: clusterPulseVibe 1.5s ease-in-out infinite;
+      animation-delay: 0.6s;
+    }
+    .ds-merged-vibe {
+      width: 90px; height: 90px;
+      border-radius: 8px;
+      clip-path: polygon(0 0, 100% 0, 100% 48%, 55% 48%, 55% 100%, 0 100%);
+      background: linear-gradient(180deg, #ccff66 0%, #AAFF00 40%, #77bb00 100%);
+      position: relative;
+    }
+    .ds-merged-vibe::before {
+      content: '';
+      position: absolute;
+      top: 5px; left: 8%;
+      width: 45%; height: 8px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.5), rgba(255,255,255,0.1));
+      border-radius: 8px;
+    }
+
+    /* Larger cluster shapes */
+    .ds-cluster-L-wrap, .ds-cluster-T-wrap, .ds-cluster-plus-wrap, .ds-cluster-big-wrap {
+      animation: clusterPulseBeat 1.5s ease-in-out infinite;
+    }
+    .ds-cluster-T-wrap { animation-delay: 0.2s; }
+    .ds-cluster-plus-wrap { animation-delay: 0.4s; }
+    .ds-cluster-big-wrap { animation-delay: 0.6s; }
+    .ds-cluster-L {
+      width: 100px; height: 100px;
+      border-radius: 8px;
+      clip-path: polygon(0 0, 66% 0, 66% 50%, 100% 50%, 100% 100%, 0 100%);
+      background: linear-gradient(180deg, #66f0ff 0%, #00E5FF 40%, #00a5bb 100%);
+    }
+    .ds-cluster-T {
+      width: 120px; height: 80px;
+      border-radius: 8px;
+      clip-path: polygon(0 0, 100% 0, 100% 50%, 66% 50%, 66% 100%, 33% 100%, 33% 50%, 0 50%);
+      background: linear-gradient(180deg, #66f0ff 0%, #00E5FF 40%, #00a5bb 100%);
+    }
+    .ds-cluster-plus {
+      width: 90px; height: 90px;
+      border-radius: 6px;
+      clip-path: polygon(33% 0, 66% 0, 66% 33%, 100% 33%, 100% 66%, 66% 66%, 66% 100%, 33% 100%, 33% 66%, 0 66%, 0 33%, 33% 33%);
+      background: linear-gradient(180deg, #66f0ff 0%, #00E5FF 40%, #00a5bb 100%);
+    }
+    .ds-cluster-big {
+      width: 120px; height: 80px;
+      border-radius: 8px;
+      clip-path: polygon(0 0, 100% 0, 100% 50%, 75% 50%, 75% 100%, 0 100%);
+      background: linear-gradient(180deg, #66f0ff 0%, #00E5FF 40%, #00a5bb 100%);
+    }
+
+    /* ============ ROUNDED VS SQUARE COMPARISON ============ */
+    .corner-comparison {
+      display: flex;
+      gap: 40px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    .corner-demo {
+      text-align: center;
+    }
+    .corner-demo p {
+      font-size: 11px;
+      color: #888;
+      margin-top: 10px;
+    }
+
+    /* Merged 3D with ROUNDED corners */
+    .merged-3d-rounded {
+      width: 100px; height: 100px;
+      border-radius: 10px;
+      clip-path: polygon(0 0, 100% 0, 100% 48%, 52% 48%, 52% 100%, 0 100%);
+      background: linear-gradient(180deg, #66f0ff 0%, #00E5FF 40%, #00a5bb 100%);
+      position: relative;
+    }
+    .merged-3d-rounded::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 10px;
+      clip-path: polygon(0 0, 100% 0, 100% 48%, 52% 48%, 52% 100%, 0 100%);
+      box-shadow: 4px 4px 0 #0088aa, 7px 7px 0 #006677, 10px 10px 0 #004455;
+      z-index: -1;
+    }
+    .merged-3d-rounded-wrap {
+      position: relative;
+      filter: drop-shadow(4px 4px 0 #0088aa) drop-shadow(3px 3px 0 #006677) drop-shadow(3px 3px 0 #004455);
+    }
+    .merged-3d-rounded-alt {
+      width: 100px; height: 100px;
+      border-radius: 10px;
+      clip-path: polygon(0 0, 100% 0, 100% 48%, 52% 48%, 52% 100%, 0 100%);
+      background: linear-gradient(180deg, #66f0ff 0%, #00E5FF 40%, #00a5bb 100%);
+    }
+
+    /* Merged 3D with SQUARE corners */
+    .merged-3d-square-wrap {
+      position: relative;
+      filter: drop-shadow(4px 4px 0 #aa1545) drop-shadow(3px 3px 0 #881035) drop-shadow(3px 3px 0 #660828);
+    }
+    .merged-3d-square {
+      width: 100px; height: 100px;
+      border-radius: 0;
+      clip-path: polygon(0 0, 100% 0, 100% 48%, 52% 48%, 52% 100%, 0 100%);
+      background: linear-gradient(180deg, #ff6b9d 0%, #FF2D78 40%, #cc1a55 100%);
+    }
+
+    /* Square tiles individual */
+    .tile-square-3d {
+      width: 52px; height: 52px;
+      border-radius: 0;
+      background: linear-gradient(180deg, #ff6b9d 0%, #FF2D78 40%, #cc1a55 100%);
+      box-shadow: 4px 4px 0 #aa1545, 6px 6px 0 #881035, 8px 8px 0 #660828, 8px 10px 10px rgba(0,0,0,0.4);
+      position: relative;
+    }
+    .tile-square-3d::before {
+      content: '';
+      position: absolute;
+      top: 3px; left: 8%;
+      width: 40%; height: 6px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.4), rgba(255,255,255,0.1));
+    }
+
+    /* Square merged with stacked layers (proper approach) */
+    .merged-square-stacked {
+      position: relative;
+      width: 110px; height: 110px;
+    }
+    .merged-square-layer {
+      position: absolute;
+      width: 100px; height: 100px;
+      clip-path: polygon(0 0, 100% 0, 100% 48%, 52% 48%, 52% 100%, 0 100%);
+    }
+    .merged-square-layer.l1 { background: #335500; top: 10px; left: 10px; }
+    .merged-square-layer.l2 { background: #558800; top: 7px; left: 7px; }
+    .merged-square-layer.l3 { background: #77bb00; top: 4px; left: 4px; }
+    .merged-square-layer.main {
+      background: linear-gradient(180deg, #ccff66 0%, #AAFF00 40%, #77bb00 100%);
+      top: 0; left: 0;
+    }
+    .merged-square-layer.main::before {
+      content: '';
+      position: absolute;
+      top: 4px; left: 6%;
+      width: 40%; height: 8px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.5), rgba(255,255,255,0.1));
+    }
+
+    .cluster-note {
+      font-size: 11px;
+      color: #666;
+      margin-top: 10px;
+      line-height: 1.4;
+    }
+
+  </style>
+</head>
+<body>
+  <h1>SONGSUGAR Palette Options</h1>
+  <p class="subtitle">4 Complete Themes: Wordmark + Tiles + Messages (Retro Stack) + UI</p>
+
+  <!-- ============ SPECIAL TILES ============ -->
+  <div class="approach-section" style="border-color: #FFD700;">
+    <h2 style="text-align: center; margin-bottom: 5px; color: #FFD700;">Special Tiles</h2>
+    <p style="text-align: center; color: #888; margin-bottom: 25px;">Game effect tiles (white outline) and rare special tiles (gold outline + glow)</p>
+
+    <!-- Game Effect Tiles -->
+    <h3 style="color: #fff; margin-bottom: 15px; text-align: center;">Game Effect Tiles <span style="color: #888; font-weight: normal; font-size: 14px;">— White/Off-white Outline</span></h3>
+    <div class="special-tiles-grid">
+      <div class="special-tile-demo">
+        <div class="effect-tile"><span style="font-size:28px;color:#fff;">★</span></div>
+        <p>WILD</p>
+        <span class="label">Matches any color</span>
+      </div>
+      <div class="special-tile-demo">
+        <div class="effect-tile"><span style="font-size:26px;">💣</span></div>
+        <p>BOMB</p>
+        <span class="label">Clears area</span>
+      </div>
+      <div class="special-tile-demo">
+        <div class="effect-tile"><span style="font-size:28px;">❄️</span></div>
+        <p>FREEZE</p>
+        <span class="label">Slows drop</span>
+      </div>
+      <div class="special-tile-demo">
+        <div class="effect-tile"><span style="font-size:26px;">🔀</span></div>
+        <p>SHUFFLE</p>
+        <span class="label">Rearranges board</span>
+      </div>
+      <div class="special-tile-demo">
+        <div class="effect-tile"><span style="font-family:system-ui;font-weight:bold;font-size:22px;color:#fff;">2×</span></div>
+        <p>2× SCORE</p>
+        <span class="label">Double points</span>
+      </div>
+    </div>
+
+    <!-- Warm palette variant -->
+    <h4 style="color: #888; margin: 25px 0 15px; text-align: center; font-size: 13px;">Warm Palette Variant (Analogue/Sunrise)</h4>
+    <div class="special-tiles-grid">
+      <div class="special-tile-demo">
+        <div class="effect-tile warm"><span style="font-size:28px;color:#f5e6d0;">★</span></div>
+        <p style="color: #f5e6d0;">WILD</p>
+      </div>
+      <div class="special-tile-demo">
+        <div class="effect-tile warm"><span style="font-size:26px;">💣</span></div>
+        <p style="color: #f5e6d0;">BOMB</p>
+      </div>
+      <div class="special-tile-demo">
+        <div class="effect-tile warm"><span style="font-size:28px;">❄️</span></div>
+        <p style="color: #f5e6d0;">FREEZE</p>
+      </div>
+    </div>
+
+    <!-- Rare Special Tiles -->
+    <h3 style="color: #FFD700; margin: 35px 0 15px; text-align: center;">Rare Special Tiles <span style="color: #888; font-weight: normal; font-size: 14px;">— Gold Outline + Glow</span></h3>
+    <div class="special-tiles-grid">
+      <div class="special-tile-demo">
+        <div class="special-tile"><span style="font-size:28px;color:#FFD700;text-shadow:0 0 15px #FFD700;">✦</span></div>
+        <p style="color: #FFD700;">STAR</p>
+        <span class="label">Super rare bonus</span>
+      </div>
+      <div class="special-tile-demo">
+        <div class="special-tile"><span style="font-size:26px;">👑</span></div>
+        <p style="color: #FFD700;">CROWN</p>
+        <span class="label">King combo</span>
+      </div>
+      <div class="special-tile-demo">
+        <div class="special-tile"><span style="font-size:26px;">💎</span></div>
+        <p style="color: #FFD700;">DIAMOND</p>
+        <span class="label">Precious drop</span>
+      </div>
+      <div class="special-tile-demo">
+        <div class="special-tile"><span style="font-size:26px;color:#FFD700;text-shadow:0 0 15px #FFD700;">⚡</span></div>
+        <p style="color: #FFD700;">LIGHTNING</p>
+        <span class="label">Chain reaction</span>
+      </div>
+    </div>
+
+    <p style="text-align: center; color: #aaa; margin-top: 25px; font-size: 12px;">
+      Game effect tiles use <strong>outline only</strong> (no fill). Rare tiles add <strong>outer glow</strong> to stand out.
+    </p>
+  </div>
+
+  <!-- ============ DROP-SHADOW 3D APPROACH ============ -->
+  <div class="approach-section" style="border-color: #00E5FF;">
+    <h2 style="text-align: center; margin-bottom: 5px; color: #00E5FF;">Drop-Shadow 3D Approach</h2>
+    <p style="text-align: center; color: #888; margin-bottom: 25px;">Using CSS filter: drop-shadow() for 3D extrusion - works on any shape</p>
+
+    <div class="approach-grid">
+      <!-- BEAT -->
+      <div class="approach-card" style="border-color: #00E5FF;">
+        <h3 style="color: #00E5FF;">BEAT</h3>
+        <div class="approach-demo">
+          <div class="approach-demo-col">
+            <div class="ds-tile-beat"></div>
+            <p>Individual</p>
+          </div>
+          <div class="approach-demo-col">
+            <div class="ds-merged-beat-wrap">
+              <div class="ds-merged-beat"></div>
+            </div>
+            <p>Merged Cluster</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- MELODY -->
+      <div class="approach-card" style="border-color: #FF2D78;">
+        <h3 style="color: #FF2D78;">MELODY</h3>
+        <div class="approach-demo">
+          <div class="approach-demo-col">
+            <div class="ds-tile-melody"></div>
+            <p>Individual</p>
+          </div>
+          <div class="approach-demo-col">
+            <div class="ds-merged-melody-wrap">
+              <div class="ds-merged-melody"></div>
+            </div>
+            <p>Merged Cluster</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIBE -->
+      <div class="approach-card" style="border-color: #AAFF00;">
+        <h3 style="color: #AAFF00;">VIBE</h3>
+        <div class="approach-demo">
+          <div class="approach-demo-col">
+            <div class="ds-tile-vibe"></div>
+            <p>Individual</p>
+          </div>
+          <div class="approach-demo-col">
+            <div class="ds-merged-vibe-wrap">
+              <div class="ds-merged-vibe"></div>
+            </div>
+            <p>Merged Cluster</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Larger merged cluster examples -->
+    <h3 style="text-align: center; color: #fff; margin: 30px 0 20px;">Larger Cluster Shapes</h3>
+    <div class="corner-comparison">
+      <div class="corner-demo">
+        <div class="ds-cluster-L-wrap">
+          <div class="ds-cluster-L"></div>
+        </div>
+        <p>L-Shape (4 tiles)</p>
+      </div>
+      <div class="corner-demo">
+        <div class="ds-cluster-T-wrap">
+          <div class="ds-cluster-T"></div>
+        </div>
+        <p>T-Shape (5 tiles)</p>
+      </div>
+      <div class="corner-demo">
+        <div class="ds-cluster-plus-wrap">
+          <div class="ds-cluster-plus"></div>
+        </div>
+        <p>Plus (5 tiles)</p>
+      </div>
+      <div class="corner-demo">
+        <div class="ds-cluster-big-wrap">
+          <div class="ds-cluster-big"></div>
+        </div>
+        <p>Big Blob (6 tiles)</p>
+      </div>
+    </div>
+
+    <p style="text-align: center; color: #aaa; margin-top: 25px; font-size: 12px;">
+      <strong>drop-shadow follows the shape perfectly</strong> - no sharp internal corner artifacts!
+    </p>
+  </div>
+
+  <!-- ============ APPROACH COMPARISON ============ -->
+  <div class="approach-section">
+    <h2 style="text-align: center; margin-bottom: 5px; color: #9D4EDD;">Three Approaches - Side by Side</h2>
+    <p style="text-align: center; color: #888; margin-bottom: 25px;">Comparing how individual tiles vs clustered tiles look in each approach</p>
+
+    <div class="approach-grid">
+      <!-- Approach A -->
+      <div class="approach-card" style="border-color: #00E5FF;">
+        <h3 style="color: #00E5FF;">A. No Visual Merge</h3>
+        <div class="approach-demo">
+          <div class="approach-demo-col">
+            <div class="approachA-single"></div>
+            <p>Individual</p>
+          </div>
+          <div class="approach-demo-col">
+            <div class="approachA-cluster">
+              <div class="tile beat"></div>
+              <div class="tile beat"></div>
+              <div class="tile beat"></div>
+              <div class="tile beat"></div>
+            </div>
+            <p>Clustered</p>
+          </div>
+        </div>
+        <div class="description">
+          Individual tiles stay 3D extended. When clustered, they keep separate shapes but share a unified glow. <strong>Tiles don't fuse.</strong>
+        </div>
+      </div>
+
+      <!-- Approach B -->
+      <div class="approach-card" style="border-color: #FF2D78;">
+        <h3 style="color: #FF2D78;">B. Two Visual Modes</h3>
+        <div class="approach-demo">
+          <div class="approach-demo-col">
+            <div class="approachB-single"></div>
+            <p>Individual (3D)</p>
+          </div>
+          <div class="approach-demo-col">
+            <div class="approachB-merged"></div>
+            <p>Clustered (Soft)</p>
+          </div>
+        </div>
+        <div class="description">
+          Individual tiles are 3D extended. When clustered, they <strong>merge into one shape</strong> with soft shadow (no hard 3D).
+        </div>
+      </div>
+
+      <!-- Approach C -->
+      <div class="approach-card" style="border-color: #AAFF00;">
+        <h3 style="color: #AAFF00;">C. Consistent Soft</h3>
+        <div class="approach-demo">
+          <div class="approach-demo-col">
+            <div class="approachC-single"></div>
+            <p>Individual</p>
+          </div>
+          <div class="approach-demo-col">
+            <div class="approachC-merged"></div>
+            <p>Clustered</p>
+          </div>
+        </div>
+        <div class="description">
+          Both individual and merged use same soft shadow style. <strong>No hard 3D anywhere.</strong> Simpler, consistent.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ CLUSTER EFFECT OPTIONS ============ -->
+  <div class="cluster-section">
+    <h2 style="text-align: center; margin-bottom: 10px; color: #fff;">Cluster Effect Options</h2>
+    <p style="text-align: center; color: #666; margin-bottom: 30px;">When 3+ tiles connect, they form a cluster. Choose the visual effect style.</p>
+
+    <div class="cluster-grid">
+      <!-- Individual Tiles with Effects -->
+      <div class="cluster-option">
+        <h3>1. Outer Glow</h3>
+        <div class="cluster-demo">
+          <div class="cluster cluster-glow">
+            <div class="cluster-tile"></div>
+            <div class="cluster-tile"></div>
+            <div class="cluster-tile"></div>
+          </div>
+        </div>
+        <p class="cluster-note">Individual tiles with shared glow effect. Clean, modern look.</p>
+      </div>
+
+      <div class="cluster-option">
+        <h3>2. 3D Extruded</h3>
+        <div class="cluster-demo">
+          <div class="cluster cluster-3d">
+            <div class="cluster-tile"></div>
+            <div class="cluster-tile"></div>
+            <div class="cluster-tile"></div>
+          </div>
+        </div>
+        <p class="cluster-note">Deep 3D shadow layers. Bold, tactile feel.</p>
+      </div>
+
+      <div class="cluster-option">
+        <h3>3. Inner Bevel</h3>
+        <div class="cluster-demo">
+          <div class="cluster cluster-bevel">
+            <div class="cluster-tile"></div>
+            <div class="cluster-tile"></div>
+            <div class="cluster-tile"></div>
+          </div>
+        </div>
+        <p class="cluster-note">Soft bevel with inner shadows. Subtle depth.</p>
+      </div>
+
+      <div class="cluster-option">
+        <h3>4. Neon Outline</h3>
+        <div class="cluster-demo">
+          <div class="cluster cluster-neon">
+            <div class="cluster-tile"></div>
+            <div class="cluster-tile"></div>
+            <div class="cluster-tile"></div>
+          </div>
+        </div>
+        <p class="cluster-note">Glowing neon border. Cyberpunk aesthetic.</p>
+      </div>
+
+      <div class="cluster-option">
+        <h3>5. Gradient Mesh</h3>
+        <div class="cluster-demo">
+          <div class="cluster cluster-mesh">
+            <div class="cluster-tile"></div>
+            <div class="cluster-tile"></div>
+            <div class="cluster-tile"></div>
+          </div>
+        </div>
+        <p class="cluster-note">Multi-color gradient blend. Vaporwave vibes.</p>
+      </div>
+
+      <div class="cluster-option">
+        <h3>6. Pulse Animation</h3>
+        <div class="cluster-demo">
+          <div class="cluster cluster-pulse">
+            <div class="cluster-tile"></div>
+            <div class="cluster-tile"></div>
+            <div class="cluster-tile"></div>
+          </div>
+        </div>
+        <p class="cluster-note">Breathing glow animation. Draws attention.</p>
+      </div>
+
+      <!-- Merged Shape Clusters -->
+      <div class="cluster-option">
+        <h3>7. Merged + Glow</h3>
+        <div class="cluster-demo">
+          <div class="merged-cluster">
+            <div class="cluster-merged-glow"></div>
+          </div>
+        </div>
+        <p class="cluster-note">Single merged shape with glow. Blob-like.</p>
+      </div>
+
+      <div class="cluster-option">
+        <h3>8. Merged + 3D</h3>
+        <div class="cluster-demo">
+          <div class="merged-cluster">
+            <div class="cluster-merged-3d"></div>
+          </div>
+        </div>
+        <p class="cluster-note">Merged shape with 3D extrusion. Chunky.</p>
+      </div>
+
+      <div class="cluster-option">
+        <h3>9. Merged + Neon</h3>
+        <div class="cluster-demo">
+          <div class="merged-cluster">
+            <div class="cluster-merged-neon"></div>
+          </div>
+        </div>
+        <p class="cluster-note">Merged wireframe with glow. Tron-like.</p>
+      </div>
+
+      <!-- MERGED CLUSTER OPTIONS (soft effects, no hard 3D layers) -->
+      <div class="cluster-option" style="border: 2px solid #00E5FF; background: rgba(0, 229, 255, 0.05);">
+        <h3 style="color: #00E5FF;">10. Merged + Soft Shadow</h3>
+        <div class="cluster-demo">
+          <div class="merged-cluster">
+            <div class="cluster-merged-soft"></div>
+          </div>
+        </div>
+        <p class="cluster-note">Soft blurred shadow instead of hard 3D layers. Works with merged shapes.</p>
+      </div>
+
+      <div class="cluster-option" style="border: 2px solid #FF2D78; background: rgba(255, 45, 120, 0.05);">
+        <h3 style="color: #FF2D78;">11. Merged + Gradient Glow</h3>
+        <div class="cluster-demo">
+          <div class="merged-cluster">
+            <div class="cluster-merged-gradient"></div>
+          </div>
+        </div>
+        <p class="cluster-note">Rich gradient with glowing shadow. Soft depth, no hard edges.</p>
+      </div>
+
+      <div class="cluster-option" style="border: 2px solid #AAFF00; background: rgba(170, 255, 0, 0.05);">
+        <h3 style="color: #AAFF00;">12. Merged + Border Depth</h3>
+        <div class="cluster-demo">
+          <div class="merged-cluster">
+            <div class="cluster-merged-depth"></div>
+          </div>
+        </div>
+        <p class="cluster-note">Border on bottom/right creates depth. Gradient adds dimension.</p>
+      </div>
+
+      <div class="cluster-option" style="border: 2px solid #00E5FF; background: rgba(0, 229, 255, 0.05);">
+        <h3 style="color: #00E5FF;">13. Merged + Pulse Glow</h3>
+        <div class="cluster-demo">
+          <div class="merged-cluster">
+            <div class="cluster-merged-pulse"></div>
+          </div>
+        </div>
+        <p class="cluster-note">Soft shadow with pulsing glow animation. Draws attention.</p>
+      </div>
+
+      <div class="cluster-option" style="border: 2px solid #FFD700; background: rgba(255, 215, 0, 0.05);">
+        <h3 style="color: #FFD700;">14. WILD Tile (Neon 3D)</h3>
+        <div class="cluster-demo" style="gap: 20px;">
+          <div class="cluster-neon-3d"></div>
+        </div>
+        <p class="cluster-note">WILD/special tiles only. Neon wireframe + 3D depth.</p>
+      </div>
+
+      <div class="cluster-option" style="grid-column: span 2; border: 2px solid #9D4EDD;">
+        <h3 style="color: #9D4EDD;">15. Individual Tiles - 3D Extended</h3>
+        <div class="cluster-demo" style="gap: 25px;">
+          <div style="text-align: center;">
+            <div class="tile-3d-beat"></div>
+            <p class="cluster-note" style="margin-top: 8px;">BEAT</p>
+          </div>
+          <div style="text-align: center;">
+            <div class="tile-3d-melody"></div>
+            <p class="cluster-note" style="margin-top: 8px;">MELODY</p>
+          </div>
+          <div style="text-align: center;">
+            <div class="tile-3d-vibe"></div>
+            <p class="cluster-note" style="margin-top: 8px;">VIBE</p>
+          </div>
+          <div style="text-align: center;">
+            <div class="cluster-neon-3d"></div>
+            <p class="cluster-note" style="margin-top: 8px;">WILD</p>
+          </div>
+        </div>
+        <p class="cluster-note">Individual tiles with 3D extrusion. When clustered, could use styles 10-13 above.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SIGNAL ============ -->
+  <div class="palette-section bg-signal">
+    <div class="palette-header">
+      <div class="palette-name">Signal (Cyberpunk)</div>
+      <div class="color-swatches">
+        <div class="swatch" style="background: #00E5FF;"></div>
+        <div class="swatch" style="background: #FF2D78;"></div>
+        <div class="swatch" style="background: #AAFF00;"></div>
+      </div>
+    </div>
+
+    <div class="content-grid">
+      <!-- Wordmark -->
+      <div class="panel">
+        <div class="panel-label">Wordmark</div>
+        <div class="wordmark" style="
+          background: linear-gradient(90deg, #00E5FF, #FF2D78, #AAFF00);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          filter: drop-shadow(2px 2px 0 #006677) drop-shadow(2px 2px 0 #005566) drop-shadow(2px 2px 0 #004455) drop-shadow(2px 2px 0 #003344) drop-shadow(2px 2px 0 #002838) drop-shadow(2px 2px 0 #002030) drop-shadow(2px 2px 0 #001828) drop-shadow(2px 2px 0 #001020) drop-shadow(2px 2px 0 #000818) drop-shadow(2px 2px 0 #000510) drop-shadow(2px 2px 0 rgba(255,255,255,0.06));
+        ">SongSugar</div>
+      </div>
+
+      <!-- Tiles -->
+      <div class="panel">
+        <div class="panel-label">Tiles</div>
+        <div class="tiles-row">
+          <div>
+            <div class="tile" style="background: linear-gradient(180deg, #66f0ff 0%, #00E5FF 30%, #00a5bb 100%); box-shadow: 0 4px 20px rgba(0,229,255,0.4);"></div>
+            <div class="tile-label">Beat</div>
+          </div>
+          <div>
+            <div class="tile" style="background: linear-gradient(180deg, #ffb3cc 0%, #FF2D78 30%, #cc1a55 100%); box-shadow: 0 4px 20px rgba(255,45,120,0.4);"></div>
+            <div class="tile-label">Melody</div>
+          </div>
+          <div>
+            <div class="tile" style="background: linear-gradient(180deg, #d4ff80 0%, #AAFF00 30%, #77bb00 100%); box-shadow: 0 4px 20px rgba(170,255,0,0.4);"></div>
+            <div class="tile-label">Vibe</div>
+          </div>
+          <div>
+            <div class="tile" style="background: linear-gradient(180deg, #fff5b3 0%, #FFD700 30%, #cc9900 100%); box-shadow: 0 4px 20px rgba(255,215,0,0.4);"></div>
+            <div class="tile-label">Wild</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div class="panel">
+        <div class="panel-label">In-Game Messages (Retro Stack)</div>
+        <div class="message" style="color: #FFD700; text-shadow: 3px 3px 0 #FF2D78, 6px 6px 0 #00E5FF;">COMBO x5</div>
+        <div class="message" style="color: #00E5FF; text-shadow: 3px 3px 0 #FF2D78, 6px 6px 0 #AAFF00;">LEVEL UP!</div>
+        <div class="message" style="color: #FF2D78; text-shadow: 3px 3px 0 #AAFF00, 6px 6px 0 #00E5FF;">FIRE!</div>
+      </div>
+
+      <!-- UI -->
+      <div class="panel">
+        <div class="panel-label">UI (Inter)</div>
+        <div class="ui-row">
+          <div class="ui-item">
+            <div class="ui-label">Score</div>
+            <div class="ui-value" style="color: #fff;">12,450</div>
+          </div>
+          <div class="ui-item">
+            <div class="ui-label">Beat</div>
+            <div class="ui-value" style="color: #00E5FF;">45</div>
+          </div>
+          <div class="ui-item">
+            <div class="ui-label">Vibe</div>
+            <div class="ui-value" style="color: #AAFF00;">32</div>
+          </div>
+          <div class="ui-item">
+            <div class="ui-label">Melody</div>
+            <div class="ui-value" style="color: #FF2D78;">28</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ ANALOGUE ============ -->
+  <div class="palette-section bg-analogue">
+    <div class="palette-header">
+      <div class="palette-name">Analogue (Warm Vintage)</div>
+      <div class="color-swatches">
+        <div class="swatch" style="background: #D4521A;"></div>
+        <div class="swatch" style="background: #2E7D7A;"></div>
+        <div class="swatch" style="background: #E8A090;"></div>
+      </div>
+    </div>
+
+    <div class="content-grid">
+      <div class="panel">
+        <div class="panel-label">Wordmark</div>
+        <div class="wordmark" style="
+          background: linear-gradient(90deg, #D4521A, #E8A090, #2E7D7A);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          filter: drop-shadow(2px 2px 0 #7a3815) drop-shadow(2px 2px 0 #6a3012) drop-shadow(2px 2px 0 #5a280f) drop-shadow(2px 2px 0 #4a200c) drop-shadow(2px 2px 0 #3a1809) drop-shadow(2px 2px 0 #2a1206) drop-shadow(2px 2px 0 #1a0c03) drop-shadow(2px 2px 0 #100800) drop-shadow(2px 2px 0 #080400) drop-shadow(2px 2px 0 #040200) drop-shadow(2px 2px 0 rgba(255,255,255,0.06));
+        ">SongSugar</div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-label">Tiles</div>
+        <div class="tiles-row">
+          <div>
+            <div class="tile" style="background: linear-gradient(180deg, #f5b399 0%, #D4521A 30%, #9a3a12 100%); box-shadow: 0 4px 20px rgba(212,82,26,0.4);"></div>
+            <div class="tile-label">Beat</div>
+          </div>
+          <div>
+            <div class="tile" style="background: linear-gradient(180deg, #fae0d8 0%, #E8A090 30%, #c07060 100%); box-shadow: 0 4px 20px rgba(232,160,144,0.4);"></div>
+            <div class="tile-label">Melody</div>
+          </div>
+          <div>
+            <div class="tile" style="background: linear-gradient(180deg, #8ac0bd 0%, #2E7D7A 30%, #1f5755 100%); box-shadow: 0 4px 20px rgba(46,125,122,0.4);"></div>
+            <div class="tile-label">Vibe</div>
+          </div>
+          <div>
+            <div class="tile" style="background: linear-gradient(180deg, #e8d9a0 0%, #CFB53B 30%, #9a8520 100%); box-shadow: 0 4px 20px rgba(207,181,59,0.4);"></div>
+            <div class="tile-label">Wild</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-label">In-Game Messages (Retro Stack)</div>
+        <div class="message" style="color: #CFB53B; text-shadow: 3px 3px 0 #D4521A, 6px 6px 0 #2E7D7A;">COMBO x5</div>
+        <div class="message" style="color: #2E7D7A; text-shadow: 3px 3px 0 #E8A090, 6px 6px 0 #D4521A;">LEVEL UP!</div>
+        <div class="message" style="color: #D4521A; text-shadow: 3px 3px 0 #2E7D7A, 6px 6px 0 #CFB53B;">FIRE!</div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-label">UI (Inter)</div>
+        <div class="ui-row">
+          <div class="ui-item">
+            <div class="ui-label" style="color: #776655;">Score</div>
+            <div class="ui-value" style="color: #f5e6d0;">12,450</div>
+          </div>
+          <div class="ui-item">
+            <div class="ui-label" style="color: #776655;">Beat</div>
+            <div class="ui-value" style="color: #D4521A;">45</div>
+          </div>
+          <div class="ui-item">
+            <div class="ui-label" style="color: #776655;">Vibe</div>
+            <div class="ui-value" style="color: #2E7D7A;">32</div>
+          </div>
+          <div class="ui-item">
+            <div class="ui-label" style="color: #776655;">Melody</div>
+            <div class="ui-value" style="color: #E8A090;">28</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ VAPORWAVE ============ -->
+  <div class="palette-section bg-vaporwave">
+    <div class="palette-header">
+      <div class="palette-name">Vaporwave (Synthwave 80s)</div>
+      <div class="color-swatches">
+        <div class="swatch" style="background: #9D4EDD;"></div>
+        <div class="swatch" style="background: #FF6B9D;"></div>
+        <div class="swatch" style="background: #00D4FF;"></div>
+      </div>
+    </div>
+
+    <div class="content-grid">
+      <div class="panel">
+        <div class="panel-label">Wordmark</div>
+        <div class="wordmark" style="
+          background: linear-gradient(90deg, #9D4EDD, #FF6B9D, #00D4FF);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          filter: drop-shadow(2px 2px 0 #5a2878) drop-shadow(2px 2px 0 #4a2068) drop-shadow(2px 2px 0 #3a1858) drop-shadow(2px 2px 0 #301450) drop-shadow(2px 2px 0 #261048) drop-shadow(2px 2px 0 #1c0c40) drop-shadow(2px 2px 0 #140838) drop-shadow(2px 2px 0 #0c0430) drop-shadow(2px 2px 0 #080228) drop-shadow(2px 2px 0 #040120) drop-shadow(2px 2px 0 rgba(255,255,255,0.06));
+        ">SongSugar</div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-label">Tiles</div>
+        <div class="tiles-row">
+          <div>
+            <div class="tile" style="background: linear-gradient(180deg, #c9a0ee 0%, #9D4EDD 30%, #7030a0 100%); box-shadow: 0 4px 20px rgba(157,78,221,0.4);"></div>
+            <div class="tile-label">Beat</div>
+          </div>
+          <div>
+            <div class="tile" style="background: linear-gradient(180deg, #ffb3cc 0%, #FF6B9D 30%, #d94a7b 100%); box-shadow: 0 4px 20px rgba(255,107,157,0.4);"></div>
+            <div class="tile-label">Melody</div>
+          </div>
+          <div>
+            <div class="tile" style="background: linear-gradient(180deg, #80eaff 0%, #00D4FF 30%, #00a0c0 100%); box-shadow: 0 4px 20px rgba(0,212,255,0.4);"></div>
+            <div class="tile-label">Vibe</div>
+          </div>
+          <div>
+            <div class="tile" style="background: linear-gradient(180deg, #fff5b3 0%, #FFD700 30%, #cc9900 100%); box-shadow: 0 4px 20px rgba(255,215,0,0.4);"></div>
+            <div class="tile-label">Wild</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-label">In-Game Messages (Retro Stack)</div>
+        <div class="message" style="color: #FFD700; text-shadow: 3px 3px 0 #FF6B9D, 6px 6px 0 #9D4EDD;">COMBO x5</div>
+        <div class="message" style="color: #00D4FF; text-shadow: 3px 3px 0 #9D4EDD, 6px 6px 0 #FF6B9D;">LEVEL UP!</div>
+        <div class="message" style="color: #FF6B9D; text-shadow: 3px 3px 0 #00D4FF, 6px 6px 0 #9D4EDD;">FIRE!</div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-label">UI (Inter)</div>
+        <div class="ui-row">
+          <div class="ui-item">
+            <div class="ui-label" style="color: #8866aa;">Score</div>
+            <div class="ui-value" style="color: #fff;">12,450</div>
+          </div>
+          <div class="ui-item">
+            <div class="ui-label" style="color: #8866aa;">Beat</div>
+            <div class="ui-value" style="color: #9D4EDD;">45</div>
+          </div>
+          <div class="ui-item">
+            <div class="ui-label" style="color: #8866aa;">Vibe</div>
+            <div class="ui-value" style="color: #00D4FF;">32</div>
+          </div>
+          <div class="ui-item">
+            <div class="ui-label" style="color: #8866aa;">Melody</div>
+            <div class="ui-value" style="color: #FF6B9D;">28</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SUNRISE ============ -->
+  <div class="palette-section bg-sunrise">
+    <div class="palette-header">
+      <div class="palette-name">Sunrise (Warm Energy)</div>
+      <div class="color-swatches">
+        <div class="swatch" style="background: #FF6B35;"></div>
+        <div class="swatch" style="background: #E879F9;"></div>
+        <div class="swatch" style="background: #FF8066;"></div>
+      </div>
+    </div>
+
+    <div class="content-grid">
+      <div class="panel">
+        <div class="panel-label">Wordmark</div>
+        <div class="wordmark" style="
+          background: linear-gradient(90deg, #FF6B35, #E879F9, #FF8066);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          filter: drop-shadow(2px 2px 0 #9a4420) drop-shadow(2px 2px 0 #8a3a1a) drop-shadow(2px 2px 0 #7a3015) drop-shadow(2px 2px 0 #6a2610) drop-shadow(2px 2px 0 #5a1c0c) drop-shadow(2px 2px 0 #4a1408) drop-shadow(2px 2px 0 #3a0c04) drop-shadow(2px 2px 0 #2a0800) drop-shadow(2px 2px 0 #1a0400) drop-shadow(2px 2px 0 #0a0200) drop-shadow(2px 2px 0 rgba(255,255,255,0.06));
+        ">SongSugar</div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-label">Tiles</div>
+        <div class="tiles-row">
+          <div>
+            <div class="tile" style="background: linear-gradient(180deg, #ffb399 0%, #FF6B35 30%, #d94a15 100%); box-shadow: 0 4px 20px rgba(255,107,53,0.4);"></div>
+            <div class="tile-label">Beat</div>
+          </div>
+          <div>
+            <div class="tile" style="background: linear-gradient(180deg, #ffb3a3 0%, #FF8066 30%, #d95040 100%); box-shadow: 0 4px 20px rgba(255,128,102,0.4);"></div>
+            <div class="tile-label">Melody</div>
+          </div>
+          <div>
+            <div class="tile" style="background: linear-gradient(180deg, #f5d0fe 0%, #E879F9 30%, #c026d3 100%); box-shadow: 0 4px 20px rgba(232,121,249,0.4);"></div>
+            <div class="tile-label">Vibe</div>
+          </div>
+          <div>
+            <div class="tile" style="background: linear-gradient(180deg, #fef3c7 0%, #FBBF24 30%, #d99a00 100%); box-shadow: 0 4px 20px rgba(251,191,36,0.4);"></div>
+            <div class="tile-label">Wild</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-label">In-Game Messages (Retro Stack)</div>
+        <div class="message" style="color: #fff; text-shadow: 3px 3px 0 #FF6B35, 6px 6px 0 #E879F9;">COMBO x5</div>
+        <div class="message" style="color: #E879F9; text-shadow: 3px 3px 0 #FF8066, 6px 6px 0 #FF6B35;">LEVEL UP!</div>
+        <div class="message" style="color: #FF6B35; text-shadow: 3px 3px 0 #E879F9, 6px 6px 0 #FF8066;">FIRE!</div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-label">UI (Inter)</div>
+        <div class="ui-row">
+          <div class="ui-item">
+            <div class="ui-label" style="color: #aa7755;">Score</div>
+            <div class="ui-value" style="color: #fff5e0;">12,450</div>
+          </div>
+          <div class="ui-item">
+            <div class="ui-label" style="color: #aa7755;">Beat</div>
+            <div class="ui-value" style="color: #FF6B35;">45</div>
+          </div>
+          <div class="ui-item">
+            <div class="ui-label" style="color: #aa7755;">Vibe</div>
+            <div class="ui-value" style="color: #E879F9;">32</div>
+          </div>
+          <div class="ui-item">
+            <div class="ui-label" style="color: #aa7755;">Melody</div>
+            <div class="ui-value" style="color: #FF8066;">28</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

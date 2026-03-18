@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SONGSUGAR - Cluster Effect Mockups</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #080D14;
+      color: #fff;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 24px;
+      margin-bottom: 8px;
+      background: linear-gradient(90deg, #00E5FF, #FF2D78, #AAFF00);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #666;
+      font-size: 12px;
+      margin-bottom: 30px;
+    }
+
+    /* Section Headers */
+    .section-header {
+      text-align: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin: 40px 0 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #222;
+    }
+
+    .section-header:first-of-type {
+      margin-top: 20px;
+    }
+
+    /* Grid Layout */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* Card */
+    .card {
+      background: #0c1420;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #1a2535;
+    }
+
+    .card-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid #1a2535;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .card-perf {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .perf-label {
+      font-size: 9px;
+      color: #556;
+      text-transform: uppercase;
+    }
+
+    .perf-stars {
+      color: #AAFF00;
+      font-size: 9px;
+      letter-spacing: 1px;
+    }
+    .perf-stars.medium { color: #FFD700; }
+    .perf-stars.low { color: #FF6B35; }
+
+    /* Preview Area */
+    .preview {
+      position: relative;
+      height: 220px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #080D14;
+    }
+
+    /* Mini Grid */
+    .mini-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 36px);
+      grid-template-rows: repeat(4, 36px);
+      gap: 4px;
+    }
+
+    .tile {
+      width: 36px;
+      height: 36px;
+      border-radius: 6px;
+      background: #0c1420;
+      position: relative;
+    }
+
+    .tile.beat {
+      background: linear-gradient(180deg, #00E5FF 0%, #00a5bb 100%);
+      box-shadow: inset 0 2px 4px rgba(255,255,255,0.3), inset 0 -2px 4px rgba(0,0,0,0.3);
+    }
+    .tile.melody {
+      background: linear-gradient(180deg, #FF2D78 0%, #cc1a55 100%);
+      box-shadow: inset 0 2px 4px rgba(255,255,255,0.3), inset 0 -2px 4px rgba(0,0,0,0.3);
+    }
+    .tile.vibe {
+      background: linear-gradient(180deg, #AAFF00 0%, #77bb00 100%);
+      box-shadow: inset 0 2px 4px rgba(255,255,255,0.3), inset 0 -2px 4px rgba(0,0,0,0.3);
+    }
+
+    /* Card Footer */
+    .card-footer {
+      padding: 10px 14px;
+      border-top: 1px solid #1a2535;
+      font-size: 10px;
+      color: #556;
+      line-height: 1.5;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 2px 6px;
+      background: #1a2535;
+      border-radius: 4px;
+      font-size: 9px;
+      color: #889;
+      margin-right: 4px;
+    }
+
+    .recommended {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: linear-gradient(90deg, #AAFF00, #00E5FF);
+      color: #000;
+      font-size: 8px;
+      font-weight: 700;
+      padding: 3px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+
+    /* ===================== */
+    /* CLUSTER EFFECTS */
+    /* ===================== */
+
+    /* 1. Individual Tile Glow */
+    .effect-tile-glow .cluster-tile {
+      animation: tileGlow 1.5s ease-in-out infinite;
+    }
+
+    @keyframes tileGlow {
+      0%, 100% {
+        filter: drop-shadow(0 0 4px currentColor);
+      }
+      50% {
+        filter: drop-shadow(0 0 12px currentColor) drop-shadow(0 0 20px currentColor);
+      }
+    }
+
+    .effect-tile-glow .tile.beat.cluster-tile { color: #00E5FF; }
+    .effect-tile-glow .tile.melody.cluster-tile { color: #FF2D78; }
+    .effect-tile-glow .tile.vibe.cluster-tile { color: #AAFF00; }
+
+    /* 2. Tile Pulse Scale */
+    .effect-tile-pulse .cluster-tile {
+      animation: tilePulse 1s ease-in-out infinite;
+    }
+
+    @keyframes tilePulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.08); }
+    }
+
+    /* 3. Tile Border Pulse */
+    .effect-tile-border .cluster-tile {
+      animation: tileBorder 1.2s ease-in-out infinite;
+    }
+
+    .effect-tile-border .cluster-tile::after {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 8px;
+      border: 2px solid;
+      animation: borderPulse 1.2s ease-in-out infinite;
+    }
+
+    .effect-tile-border .tile.beat.cluster-tile::after { border-color: #00E5FF; }
+    .effect-tile-border .tile.melody.cluster-tile::after { border-color: #FF2D78; }
+    .effect-tile-border .tile.vibe.cluster-tile::after { border-color: #AAFF00; }
+
+    @keyframes borderPulse {
+      0%, 100% { opacity: 0.4; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.05); }
+    }
+
+    /* 4. Polygon Fill (for comparison) */
+    .effect-polygon .cluster-overlay {
+      position: absolute;
+      background: rgba(0, 229, 255, 0.15);
+      border: 2px solid rgba(0, 229, 255, 0.5);
+      border-radius: 8px;
+      animation: polygonPulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes polygonPulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+
+    /* 5. Cluster Wobble - Subtle */
+    .effect-wobble-subtle .cluster-tile {
+      animation: wobbleSubtle 0.8s ease-in-out infinite;
+    }
+
+    @keyframes wobbleSubtle {
+      0%, 100% { transform: translate(0, 0); }
+      25% { transform: translate(1px, -1px); }
+      50% { transform: translate(-1px, 1px); }
+      75% { transform: translate(1px, 0.5px); }
+    }
+
+    /* 6. Cluster Wobble - Wave */
+    .effect-wobble-wave .cluster-tile:nth-child(1) { animation: wobbleWave 1s ease-in-out infinite 0s; }
+    .effect-wobble-wave .cluster-tile:nth-child(2) { animation: wobbleWave 1s ease-in-out infinite 0.1s; }
+    .effect-wobble-wave .cluster-tile:nth-child(3) { animation: wobbleWave 1s ease-in-out infinite 0.2s; }
+    .effect-wobble-wave .cluster-tile:nth-child(4) { animation: wobbleWave 1s ease-in-out infinite 0.3s; }
+
+    @keyframes wobbleWave {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-3px); }
+    }
+
+    /* 7. Cluster Wobble - Jelly */
+    .effect-wobble-jelly .cluster-tile {
+      animation: wobbleJelly 0.6s ease-in-out infinite;
+    }
+
+    @keyframes wobbleJelly {
+      0%, 100% { transform: scale(1, 1); }
+      25% { transform: scale(1.05, 0.95); }
+      50% { transform: scale(0.95, 1.05); }
+      75% { transform: scale(1.02, 0.98); }
+    }
+
+    /* 8. Cluster Wobble + Glow Combined */
+    .effect-wobble-glow .cluster-tile {
+      animation: wobbleGlow 1s ease-in-out infinite;
+    }
+
+    @keyframes wobbleGlow {
+      0%, 100% {
+        transform: translate(0, 0);
+        filter: drop-shadow(0 0 4px currentColor);
+      }
+      25% { transform: translate(1px, -1px); }
+      50% {
+        transform: translate(-1px, 1px);
+        filter: drop-shadow(0 0 10px currentColor);
+      }
+      75% { transform: translate(1px, 0); }
+    }
+
+    .effect-wobble-glow .tile.beat.cluster-tile { color: #00E5FF; }
+    .effect-wobble-glow .tile.melody.cluster-tile { color: #FF2D78; }
+    .effect-wobble-glow .tile.vibe.cluster-tile { color: #AAFF00; }
+
+    /* 9. Shimmer Effect */
+    .effect-shimmer .cluster-tile {
+      overflow: hidden;
+    }
+
+    .effect-shimmer .cluster-tile::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 50%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      animation: shimmer 2s ease-in-out infinite;
+    }
+
+    @keyframes shimmer {
+      0% { left: -100%; }
+      50%, 100% { left: 200%; }
+    }
+
+    /* 10. Breathe (Scale + Opacity) */
+    .effect-breathe .cluster-tile {
+      animation: breathe 2s ease-in-out infinite;
+    }
+
+    @keyframes breathe {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.03); opacity: 0.85; }
+    }
+
+    /* 11. Rotate Micro */
+    .effect-rotate .cluster-tile {
+      animation: rotateMicro 2s ease-in-out infinite;
+    }
+
+    @keyframes rotateMicro {
+      0%, 100% { transform: rotate(0deg); }
+      25% { transform: rotate(1deg); }
+      75% { transform: rotate(-1deg); }
+    }
+
+    /* 12. Color Intensity Pulse */
+    .effect-intensity .cluster-tile {
+      animation: intensityPulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes intensityPulse {
+      0%, 100% { filter: brightness(1) saturate(1); }
+      50% { filter: brightness(1.3) saturate(1.2); }
+    }
+
+    /* Comparison section styling */
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      max-width: 700px;
+      margin: 0 auto 40px;
+    }
+
+    .comparison .card {
+      min-height: 280px;
+    }
+
+    .vs-badge {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      background: #222;
+      color: #666;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 20px;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+  <h1>Cluster Effect Mockups</h1>
+  <p class="subtitle">Comparing individual tile effects vs polygon fill, plus localized wobble options</p>
+
+  <!-- Comparison: Tile Effects vs Polygon -->
+  <div class="section-header">Individual Tile Effects vs Polygon Fill</div>
+
+  <div class="comparison" style="position: relative;">
+    <span class="vs-badge">VS</span>
+
+    <!-- Individual Tile Glow -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Individual Tile Glow</span>
+        <div class="card-perf">
+          <span class="perf-label">Perf</span>
+          <span class="perf-stars">★★★★☆</span>
+        </div>
+      </div>
+      <div class="preview effect-tile-glow">
+        <span class="recommended">Recommended</span>
+        <div class="mini-grid">
+          <div class="tile"></div><div class="tile beat cluster-tile"></div><div class="tile beat cluster-tile"></div><div class="tile"></div><div class="tile melody"></div>
+          <div class="tile"></div><div class="tile beat cluster-tile"></div><div class="tile"></div><div class="tile melody"></div><div class="tile melody"></div>
+          <div class="tile vibe"></div><div class="tile beat cluster-tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div>
+          <div class="tile vibe"></div><div class="tile vibe"></div><div class="tile melody"></div><div class="tile beat"></div><div class="tile beat"></div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="tag">filter: drop-shadow</span> Each tile glows independently. Works with any cluster shape. GPU accelerated.
+      </div>
+    </div>
+
+    <!-- Polygon Fill -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Polygon Fill</span>
+        <div class="card-perf">
+          <span class="perf-label">Perf</span>
+          <span class="perf-stars medium">★★★☆☆</span>
+        </div>
+      </div>
+      <div class="preview effect-polygon">
+        <div class="mini-grid" style="position: relative;">
+          <div class="tile"></div><div class="tile beat"></div><div class="tile beat"></div><div class="tile"></div><div class="tile melody"></div>
+          <div class="tile"></div><div class="tile beat"></div><div class="tile"></div><div class="tile melody"></div><div class="tile melody"></div>
+          <div class="tile vibe"></div><div class="tile beat"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div>
+          <div class="tile vibe"></div><div class="tile vibe"></div><div class="tile melody"></div><div class="tile beat"></div><div class="tile beat"></div>
+          <!-- Polygon overlay approximation -->
+          <div class="cluster-overlay" style="top: 0; left: 40px; width: 76px; height: 156px;"></div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="tag">complex path</span> Requires computing convex hull or outline. Expensive for L-shapes or gaps.
+      </div>
+    </div>
+  </div>
+
+  <!-- Tile Effect Variations -->
+  <div class="section-header">Tile Effect Variations</div>
+
+  <div class="grid">
+    <!-- Pulse Scale -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Pulse Scale</span>
+        <div class="card-perf">
+          <span class="perf-label">Perf</span>
+          <span class="perf-stars">★★★★★</span>
+        </div>
+      </div>
+      <div class="preview effect-tile-pulse">
+        <div class="mini-grid">
+          <div class="tile"></div><div class="tile beat cluster-tile"></div><div class="tile beat cluster-tile"></div><div class="tile"></div><div class="tile melody"></div>
+          <div class="tile"></div><div class="tile beat cluster-tile"></div><div class="tile"></div><div class="tile melody"></div><div class="tile"></div>
+          <div class="tile vibe"></div><div class="tile beat cluster-tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div>
+          <div class="tile vibe"></div><div class="tile vibe"></div><div class="tile"></div><div class="tile beat"></div><div class="tile beat"></div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="tag">transform: scale</span> Simple, performant. Tiles grow/shrink together.
+      </div>
+    </div>
+
+    <!-- Border Pulse -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Border Pulse</span>
+        <div class="card-perf">
+          <span class="perf-label">Perf</span>
+          <span class="perf-stars">★★★★☆</span>
+        </div>
+      </div>
+      <div class="preview effect-tile-border">
+        <div class="mini-grid">
+          <div class="tile"></div><div class="tile beat cluster-tile"></div><div class="tile beat cluster-tile"></div><div class="tile"></div><div class="tile melody"></div>
+          <div class="tile"></div><div class="tile beat cluster-tile"></div><div class="tile"></div><div class="tile melody"></div><div class="tile"></div>
+          <div class="tile vibe"></div><div class="tile beat cluster-tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div>
+          <div class="tile vibe"></div><div class="tile vibe"></div><div class="tile"></div><div class="tile beat"></div><div class="tile beat"></div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="tag">::after border</span> Pulsing outline on each tile. Good visibility without obscuring.
+      </div>
+    </div>
+
+    <!-- Shimmer -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Shimmer Sweep</span>
+        <div class="card-perf">
+          <span class="perf-label">Perf</span>
+          <span class="perf-stars">★★★★☆</span>
+        </div>
+      </div>
+      <div class="preview effect-shimmer">
+        <div class="mini-grid">
+          <div class="tile"></div><div class="tile beat cluster-tile"></div><div class="tile beat cluster-tile"></div><div class="tile"></div><div class="tile melody"></div>
+          <div class="tile"></div><div class="tile beat cluster-tile"></div><div class="tile"></div><div class="tile melody"></div><div class="tile"></div>
+          <div class="tile vibe"></div><div class="tile beat cluster-tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div>
+          <div class="tile vibe"></div><div class="tile vibe"></div><div class="tile"></div><div class="tile beat"></div><div class="tile beat"></div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="tag">pseudo-element</span> Light sweep across tiles. Elegant, game-like polish.
+      </div>
+    </div>
+
+    <!-- Intensity -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Color Intensity</span>
+        <div class="card-perf">
+          <span class="perf-label">Perf</span>
+          <span class="perf-stars">★★★★★</span>
+        </div>
+      </div>
+      <div class="preview effect-intensity">
+        <div class="mini-grid">
+          <div class="tile"></div><div class="tile beat cluster-tile"></div><div class="tile beat cluster-tile"></div><div class="tile"></div><div class="tile melody"></div>
+          <div class="tile"></div><div class="tile beat cluster-tile"></div><div class="tile"></div><div class="tile melody"></div><div class="tile"></div>
+          <div class="tile vibe"></div><div class="tile beat cluster-tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div>
+          <div class="tile vibe"></div><div class="tile vibe"></div><div class="tile"></div><div class="tile beat"></div><div class="tile beat"></div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="tag">filter: brightness</span> Subtle color boost. Minimal but noticeable.
+      </div>
+    </div>
+  </div>
+
+  <!-- Localized Wobble Section -->
+  <div class="section-header">Localized Cluster Wobble</div>
+
+  <div class="grid">
+    <!-- Subtle Wobble -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Subtle Shake</span>
+        <div class="card-perf">
+          <span class="perf-label">Perf</span>
+          <span class="perf-stars">★★★★★</span>
+        </div>
+      </div>
+      <div class="preview effect-wobble-subtle">
+        <span class="recommended">Recommended</span>
+        <div class="mini-grid">
+          <div class="tile"></div><div class="tile beat cluster-tile"></div><div class="tile beat cluster-tile"></div><div class="tile"></div><div class="tile melody"></div>
+          <div class="tile"></div><div class="tile beat cluster-tile"></div><div class="tile"></div><div class="tile melody"></div><div class="tile"></div>
+          <div class="tile vibe"></div><div class="tile beat cluster-tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div>
+          <div class="tile vibe"></div><div class="tile vibe"></div><div class="tile"></div><div class="tile beat"></div><div class="tile beat"></div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="tag">translate ±1px</span> Gentle vibration. Draws attention without distraction.
+      </div>
+    </div>
+
+    <!-- Wave Wobble -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Wave Motion</span>
+        <div class="card-perf">
+          <span class="perf-label">Perf</span>
+          <span class="perf-stars">★★★★★</span>
+        </div>
+      </div>
+      <div class="preview effect-wobble-wave">
+        <div class="mini-grid">
+          <div class="tile"></div><div class="tile beat cluster-tile"></div><div class="tile beat cluster-tile"></div><div class="tile"></div><div class="tile melody"></div>
+          <div class="tile"></div><div class="tile beat cluster-tile"></div><div class="tile"></div><div class="tile melody"></div><div class="tile"></div>
+          <div class="tile vibe"></div><div class="tile beat cluster-tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div>
+          <div class="tile vibe"></div><div class="tile vibe"></div><div class="tile"></div><div class="tile beat"></div><div class="tile beat"></div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="tag">staggered delay</span> Sequential wave through tiles. Organic, fluid feel.
+      </div>
+    </div>
+
+    <!-- Jelly Wobble -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Jelly Squish</span>
+        <div class="card-perf">
+          <span class="perf-label">Perf</span>
+          <span class="perf-stars">★★★★☆</span>
+        </div>
+      </div>
+      <div class="preview effect-wobble-jelly">
+        <div class="mini-grid">
+          <div class="tile"></div><div class="tile beat cluster-tile"></div><div class="tile beat cluster-tile"></div><div class="tile"></div><div class="tile melody"></div>
+          <div class="tile"></div><div class="tile beat cluster-tile"></div><div class="tile"></div><div class="tile melody"></div><div class="tile"></div>
+          <div class="tile vibe"></div><div class="tile beat cluster-tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div>
+          <div class="tile vibe"></div><div class="tile vibe"></div><div class="tile"></div><div class="tile beat"></div><div class="tile beat"></div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="tag">scale X/Y</span> Squash and stretch. Playful, cartoon-like.
+      </div>
+    </div>
+
+    <!-- Rotate Micro -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Micro Rotate</span>
+        <div class="card-perf">
+          <span class="perf-label">Perf</span>
+          <span class="perf-stars">★★★★★</span>
+        </div>
+      </div>
+      <div class="preview effect-rotate">
+        <div class="mini-grid">
+          <div class="tile"></div><div class="tile beat cluster-tile"></div><div class="tile beat cluster-tile"></div><div class="tile"></div><div class="tile melody"></div>
+          <div class="tile"></div><div class="tile beat cluster-tile"></div><div class="tile"></div><div class="tile melody"></div><div class="tile"></div>
+          <div class="tile vibe"></div><div class="tile beat cluster-tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div>
+          <div class="tile vibe"></div><div class="tile vibe"></div><div class="tile"></div><div class="tile beat"></div><div class="tile beat"></div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="tag">rotate ±1deg</span> Tiny rotation. Subtle unease, anticipation.
+      </div>
+    </div>
+
+    <!-- Breathe -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Breathe</span>
+        <div class="card-perf">
+          <span class="perf-label">Perf</span>
+          <span class="perf-stars">★★★★★</span>
+        </div>
+      </div>
+      <div class="preview effect-breathe">
+        <div class="mini-grid">
+          <div class="tile"></div><div class="tile beat cluster-tile"></div><div class="tile beat cluster-tile"></div><div class="tile"></div><div class="tile melody"></div>
+          <div class="tile"></div><div class="tile beat cluster-tile"></div><div class="tile"></div><div class="tile melody"></div><div class="tile"></div>
+          <div class="tile vibe"></div><div class="tile beat cluster-tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div>
+          <div class="tile vibe"></div><div class="tile vibe"></div><div class="tile"></div><div class="tile beat"></div><div class="tile beat"></div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="tag">scale + opacity</span> Slow, calming pulse. Less urgent, more ambient.
+      </div>
+    </div>
+
+    <!-- Wobble + Glow Combined -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Wobble + Glow</span>
+        <div class="card-perf">
+          <span class="perf-label">Perf</span>
+          <span class="perf-stars">★★★★☆</span>
+        </div>
+      </div>
+      <div class="preview effect-wobble-glow">
+        <span class="recommended">Best Impact</span>
+        <div class="mini-grid">
+          <div class="tile"></div><div class="tile beat cluster-tile"></div><div class="tile beat cluster-tile"></div><div class="tile"></div><div class="tile melody"></div>
+          <div class="tile"></div><div class="tile beat cluster-tile"></div><div class="tile"></div><div class="tile melody"></div><div class="tile"></div>
+          <div class="tile vibe"></div><div class="tile beat cluster-tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div>
+          <div class="tile vibe"></div><div class="tile vibe"></div><div class="tile"></div><div class="tile beat"></div><div class="tile beat"></div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="tag">combined</span> Shake + glow together. Maximum visibility, still performant.
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="section-header">Recommendations</div>
+  <div style="max-width: 700px; margin: 0 auto; padding: 20px; background: #0c1420; border-radius: 12px; border: 1px solid #1a2535;">
+    <table style="width: 100%; font-size: 12px; border-collapse: collapse;">
+      <tr style="border-bottom: 1px solid #1a2535;">
+        <th style="text-align: left; padding: 8px; color: #888;">Use Case</th>
+        <th style="text-align: left; padding: 8px; color: #888;">Effect</th>
+        <th style="text-align: left; padding: 8px; color: #888;">Why</th>
+      </tr>
+      <tr style="border-bottom: 1px solid #1a2535;">
+        <td style="padding: 8px; color: #AAFF00;">Cluster Ready to Clear</td>
+        <td style="padding: 8px;">Subtle Shake + Glow</td>
+        <td style="padding: 8px; color: #666;">Draws eye, shows it's tappable</td>
+      </tr>
+      <tr style="border-bottom: 1px solid #1a2535;">
+        <td style="padding: 8px; color: #00E5FF;">About to Clear (tapped)</td>
+        <td style="padding: 8px;">Intensity + Scale</td>
+        <td style="padding: 8px; color: #666;">Brief flash before particles</td>
+      </tr>
+      <tr style="border-bottom: 1px solid #1a2535;">
+        <td style="padding: 8px; color: #FF2D78;">Big Cluster (5+)</td>
+        <td style="padding: 8px;">Jelly + Strong Glow</td>
+        <td style="padding: 8px; color: #666;">Celebrates the achievement</td>
+      </tr>
+      <tr>
+        <td style="padding: 8px; color: #FFD700;">Danger Zone Cluster</td>
+        <td style="padding: 8px;">Fast Wobble</td>
+        <td style="padding: 8px; color: #666;">Urgency, matches danger state</td>
+      </tr>
+    </table>
+  </div>
+
+</body>
+</html>

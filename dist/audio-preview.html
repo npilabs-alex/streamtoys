@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dropcast - Audio Preview</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #0a0a0f 100%);
+      min-height: 100vh;
+      color: #fff;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding: 20px;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      background: linear-gradient(90deg, #ff6b35, #ff2d6e, #9d4edd);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      color: #888;
+      font-size: 1rem;
+    }
+
+    .start-audio-btn {
+      background: linear-gradient(135deg, #ff6b35, #ff2d6e);
+      border: none;
+      color: white;
+      padding: 15px 40px;
+      font-size: 1.2rem;
+      border-radius: 50px;
+      cursor: pointer;
+      margin: 20px auto;
+      display: block;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .start-audio-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 30px rgba(255, 45, 110, 0.5);
+    }
+
+    .start-audio-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .category {
+      margin-bottom: 40px;
+    }
+
+    .category-header {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid;
+    }
+
+    .category-header.beat { border-color: #ff6b35; }
+    .category-header.vibe { border-color: #00b4d8; }
+    .category-header.melody { border-color: #70e000; }
+
+    .category-header h2 {
+      font-size: 1.5rem;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+    }
+
+    .category-header.beat h2 { color: #ff6b35; }
+    .category-header.vibe h2 { color: #00b4d8; }
+    .category-header.melody h2 { color: #70e000; }
+
+    .loop-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 20px;
+    }
+
+    .loop-card {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      padding: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: transform 0.2s, border-color 0.3s, box-shadow 0.3s;
+    }
+
+    .loop-card:hover {
+      transform: translateY(-2px);
+    }
+
+    .loop-card.approved {
+      border-color: #70e000;
+      box-shadow: 0 0 20px rgba(112, 224, 0, 0.2);
+    }
+
+    .loop-card.rejected {
+      border-color: #ff4444;
+      box-shadow: 0 0 20px rgba(255, 68, 68, 0.2);
+    }
+
+    .loop-card.playing {
+      animation: pulse 1s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 10px rgba(255, 255, 255, 0.1); }
+      50% { box-shadow: 0 0 25px rgba(255, 107, 53, 0.4); }
+    }
+
+    .loop-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 15px;
+    }
+
+    .loop-name {
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .loop-tint {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .loop-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+
+    .play-btn {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      border: none;
+      background: linear-gradient(135deg, #333, #444);
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s, background 0.2s;
+      font-size: 1.2rem;
+    }
+
+    .play-btn:hover {
+      transform: scale(1.1);
+      background: linear-gradient(135deg, #444, #555);
+    }
+
+    .play-btn.playing {
+      background: linear-gradient(135deg, #ff6b35, #ff2d6e);
+    }
+
+    .approval-btns {
+      display: flex;
+      gap: 8px;
+    }
+
+    .approval-btn {
+      padding: 10px 20px;
+      border: 2px solid;
+      background: transparent;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .approval-btn.yes {
+      border-color: #70e000;
+      color: #70e000;
+    }
+
+    .approval-btn.yes:hover,
+    .approval-btn.yes.selected {
+      background: #70e000;
+      color: #000;
+    }
+
+    .approval-btn.no {
+      border-color: #ff4444;
+      color: #ff4444;
+    }
+
+    .approval-btn.no:hover,
+    .approval-btn.no.selected {
+      background: #ff4444;
+      color: #fff;
+    }
+
+    .comment-field {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.3);
+      color: #fff;
+      font-size: 0.9rem;
+      resize: vertical;
+      min-height: 60px;
+    }
+
+    .comment-field::placeholder {
+      color: #666;
+    }
+
+    .comment-field:focus {
+      outline: none;
+      border-color: rgba(255, 255, 255, 0.4);
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      color: #888;
+      margin-top: 10px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #444;
+    }
+
+    .status-dot.approved { background: #70e000; }
+    .status-dot.rejected { background: #ff4444; }
+
+    .submit-section {
+      text-align: center;
+      margin-top: 50px;
+      padding: 30px;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 20px;
+    }
+
+    .submit-btn {
+      background: linear-gradient(135deg, #9d4edd, #7b2cbf);
+      border: none;
+      color: white;
+      padding: 18px 50px;
+      font-size: 1.3rem;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .submit-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 40px rgba(157, 78, 221, 0.5);
+    }
+
+    .summary-stats {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: bold;
+    }
+
+    .stat-value.approved { color: #70e000; }
+    .stat-value.rejected { color: #ff4444; }
+    .stat-value.pending { color: #888; }
+
+    .stat-label {
+      font-size: 0.85rem;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .audio-status {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .audio-status.ready {
+      background: rgba(112, 224, 0, 0.2);
+      color: #70e000;
+    }
+
+    .audio-status.not-ready {
+      background: rgba(255, 68, 68, 0.2);
+      color: #ff4444;
+    }
+
+    .audio-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+
+    .audio-indicator.ready { background: #70e000; animation: blink 2s infinite; }
+    .audio-indicator.not-ready { background: #ff4444; }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    @media (max-width: 768px) {
+      body { padding: 10px; }
+      h1 { font-size: 1.8rem; }
+      .loop-grid { grid-template-columns: 1fr; }
+      .loop-controls { flex-direction: column; align-items: stretch; }
+      .play-btn { width: 100%; border-radius: 8px; height: 45px; }
+      .approval-btns { width: 100%; }
+      .approval-btn { flex: 1; }
+      .summary-stats { gap: 20px; }
+      .audio-status { position: static; margin-bottom: 20px; justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="audio-status not-ready" id="audioStatus">
+      <span class="audio-indicator not-ready"></span>
+      <span>Audio not started</span>
+    </div>
+
+    <header>
+      <h1>DROPCAST</h1>
+      <p class="subtitle">Audio Loop Preview & Feedback Tool</p>
+      <button class="start-audio-btn" id="startAudioBtn">Start Audio Engine</button>
+    </header>
+
+    <div id="categories"></div>
+
+    <div class="submit-section">
+      <div class="summary-stats">
+        <div class="stat">
+          <div class="stat-value approved" id="approvedCount">0</div>
+          <div class="stat-label">Approved</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value rejected" id="rejectedCount">0</div>
+          <div class="stat-label">Rejected</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value pending" id="pendingCount">18</div>
+          <div class="stat-label">Pending</div>
+        </div>
+      </div>
+      <button class="submit-btn" id="submitBtn">Submit Feedback</button>
+    </div>
+  </div>
+
+  <script>
+    // ═══════════════════════════════════════════════════════════════════════
+    // LOOP POOLS - All available loops organized by category
+    // ═══════════════════════════════════════════════════════════════════════
+    const LOOP_POOLS = {
+      beat: [
+        { id: 'afrobeat_drums', name: 'Afrobeat Drums', tint: '#ff6b35' },
+        { id: 'trap_808', name: 'Trap 808s', tint: '#9d4edd' },
+        { id: 'house_kick', name: 'House Kick', tint: '#ff2d6e' },
+        { id: 'latin_perc', name: 'Latin Percussion', tint: '#ff9500' },
+        { id: 'breakbeat', name: 'Breakbeat', tint: '#e83f6f' },
+        { id: 'minimal_click', name: 'Minimal Click', tint: '#ff5c8d' }
+      ],
+      vibe: [
+        { id: 'ambient_pad', name: 'Ambient Pad', tint: '#00b4d8' },
+        { id: 'lofi_texture', name: 'Lo-Fi Texture', tint: '#48cae4' },
+        { id: 'strings_swell', name: 'Strings Swell', tint: '#0096c7' },
+        { id: 'synth_wash', name: 'Synth Wash', tint: '#00e5ff' },
+        { id: 'choir_hum', name: 'Choir Hum', tint: '#90e0ef' },
+        { id: 'noise_bed', name: 'Noise Bed', tint: '#caf0f8' }
+      ],
+      melody: [
+        { id: 'piano_riff', name: 'Piano Riff', tint: '#70e000' },
+        { id: 'synth_arp', name: 'Synth Arp', tint: '#39ff14' },
+        { id: 'guitar_lick', name: 'Guitar Lick', tint: '#9ef01a' },
+        { id: 'brass_stab', name: 'Brass Stab', tint: '#ccff33' },
+        { id: 'pluck_melody', name: 'Pluck Melody', tint: '#b5e48c' },
+        { id: 'bell_chime', name: 'Bell Chime', tint: '#d9ed92' }
+      ]
+    };
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // SOUNDSCAPE ENGINE - Synthesized audio from dropcast-v3.html
+    // ═══════════════════════════════════════════════════════════════════════
+    class SoundscapeEngine {
+      constructor() {
+        this.bpm = 115;
+        this.activeLoops = { beat: null, vibe: null, melody: null };
+        this.loopGains = { beat: null, vibe: null, melody: null };
+        this.sequences = { beat: null, vibe: null, melody: null };
+        this.crossfadeDuration = 0.3;
+        this.isPlaying = false;
+        this.initialized = false;
+        this.instruments = {};
+        this.effects = {};
+      }
+
+      async init() {
+        if (this.initialized) return;
+
+        try {
+          await Tone.start();
+          Tone.Transport.bpm.value = this.bpm;
+
+          // Master chain
+          this.effects.masterLimiter = new Tone.Limiter(-1).toDestination();
+          this.effects.masterComp = new Tone.Compressor({
+            threshold: -12, ratio: 4, attack: 0.003, release: 0.15
+          }).connect(this.effects.masterLimiter);
+
+          ['beat', 'vibe', 'melody'].forEach(cat => {
+            this.loopGains[cat] = new Tone.Gain(0).connect(this.effects.masterComp);
+          });
+
+          // Drum bus
+          this.effects.drumBus = new Tone.Compressor({
+            threshold: -20, ratio: 3, attack: 0.01, release: 0.1
+          }).connect(this.loopGains.beat);
+
+          // Kick
+          this.instruments.kick = new Tone.MembraneSynth({
+            pitchDecay: 0.08, octaves: 4,
+            oscillator: { type: 'sine' },
+            envelope: { attack: 0.001, decay: 0.4, sustain: 0.01, release: 0.4 }
+          }).connect(this.effects.drumBus);
+          this.instruments.kick.volume.value = -6;
+
+          // Sub layer for 808
+          this.instruments.kickSub = new Tone.Synth({
+            oscillator: { type: 'sine' },
+            envelope: { attack: 0.001, decay: 0.5, sustain: 0, release: 0.2 }
+          }).connect(this.effects.drumBus);
+          this.instruments.kickSub.volume.value = -10;
+
+          // Snare
+          const snareFilter = new Tone.Filter({
+            type: 'bandpass', frequency: 3000, Q: 1.5
+          }).connect(this.effects.drumBus);
+
+          this.instruments.snareNoise = new Tone.NoiseSynth({
+            noise: { type: 'white' },
+            envelope: { attack: 0.001, decay: 0.15, sustain: 0, release: 0.08 }
+          }).connect(snareFilter);
+          this.instruments.snareNoise.volume.value = -8;
+
+          this.instruments.snareBody = new Tone.MembraneSynth({
+            pitchDecay: 0.02, octaves: 2,
+            envelope: { attack: 0.001, decay: 0.12, sustain: 0, release: 0.05 }
+          }).connect(this.effects.drumBus);
+          this.instruments.snareBody.volume.value = -12;
+
+          // Hi-hats
+          const hihatFilter = new Tone.Filter({
+            type: 'highpass', frequency: 7000
+          }).connect(this.effects.drumBus);
+
+          this.instruments.hihatClosed = new Tone.MetalSynth({
+            frequency: 250,
+            envelope: { attack: 0.001, decay: 0.05, release: 0.01 },
+            harmonicity: 5.1, modulationIndex: 32, resonance: 4000, octaves: 1.5
+          }).connect(hihatFilter);
+          this.instruments.hihatClosed.volume.value = -18;
+
+          this.instruments.hihatOpen = new Tone.MetalSynth({
+            frequency: 250,
+            envelope: { attack: 0.001, decay: 0.25, release: 0.1 },
+            harmonicity: 5.1, modulationIndex: 32, resonance: 4000, octaves: 1.5
+          }).connect(hihatFilter);
+          this.instruments.hihatOpen.volume.value = -20;
+
+          // Percussion
+          this.instruments.conga = new Tone.MembraneSynth({
+            pitchDecay: 0.03, octaves: 3,
+            envelope: { attack: 0.001, decay: 0.2, sustain: 0, release: 0.1 }
+          }).connect(this.effects.drumBus);
+          this.instruments.conga.volume.value = -14;
+
+          this.instruments.rimshot = new Tone.NoiseSynth({
+            noise: { type: 'pink' },
+            envelope: { attack: 0.001, decay: 0.03, sustain: 0, release: 0.01 }
+          }).connect(this.effects.drumBus);
+          this.instruments.rimshot.volume.value = -12;
+
+          // Pad/Vibe effects
+          this.effects.padReverb = new Tone.Reverb({
+            decay: 4, wet: 0.5, preDelay: 0.1
+          }).connect(this.loopGains.vibe);
+          await this.effects.padReverb.generate();
+
+          this.effects.padChorus = new Tone.Chorus({
+            frequency: 0.5, delayTime: 3.5, depth: 0.7, wet: 0.3
+          }).connect(this.effects.padReverb);
+          this.effects.padChorus.start();
+
+          // Main pad
+          this.instruments.pad = new Tone.PolySynth(Tone.FMSynth, {
+            harmonicity: 2, modulationIndex: 1.5,
+            oscillator: { type: 'sine' },
+            envelope: { attack: 0.8, decay: 0.5, sustain: 0.8, release: 2 },
+            modulation: { type: 'sine' },
+            modulationEnvelope: { attack: 0.5, decay: 0.3, sustain: 0.5, release: 1 }
+          }).connect(this.effects.padChorus);
+          this.instruments.pad.volume.value = -10;
+
+          this.instruments.texture = new Tone.PolySynth(Tone.Synth, {
+            oscillator: { type: 'sine4' },
+            envelope: { attack: 1.5, decay: 1, sustain: 0.6, release: 2.5 }
+          }).connect(this.effects.padChorus);
+          this.instruments.texture.volume.value = -16;
+
+          this.effects.lofiFilter = new Tone.Filter({
+            type: 'lowpass', frequency: 2000, Q: 1
+          }).connect(this.effects.padReverb);
+
+          this.instruments.noiseTexture = new Tone.Noise('pink').connect(this.effects.lofiFilter);
+          this.instruments.noiseTexture.volume.value = -30;
+
+          // Melody effects
+          this.effects.melodyDelay = new Tone.PingPongDelay({
+            delayTime: '8n', feedback: 0.25, wet: 0.2
+          }).connect(this.loopGains.melody);
+
+          this.effects.melodyReverb = new Tone.Reverb({
+            decay: 2, wet: 0.25
+          }).connect(this.effects.melodyDelay);
+          await this.effects.melodyReverb.generate();
+
+          // Piano
+          this.instruments.piano = new Tone.PolySynth(Tone.Synth, {
+            oscillator: { type: 'triangle8' },
+            envelope: { attack: 0.005, decay: 0.3, sustain: 0.2, release: 0.8 }
+          }).connect(this.effects.melodyReverb);
+          this.instruments.piano.volume.value = -8;
+
+          // Arp
+          this.instruments.arp = new Tone.PolySynth(Tone.Synth, {
+            oscillator: { type: 'sawtooth8' },
+            envelope: { attack: 0.003, decay: 0.15, sustain: 0.1, release: 0.3 }
+          }).connect(this.effects.melodyReverb);
+          this.instruments.arp.volume.value = -12;
+
+          // Pluck
+          this.instruments.pluck = new Tone.PluckSynth({
+            attackNoise: 1, dampening: 3000, resonance: 0.98
+          }).connect(this.effects.melodyReverb);
+          this.instruments.pluck.volume.value = -8;
+
+          // Bell
+          this.instruments.bell = new Tone.PolySynth(Tone.FMSynth, {
+            harmonicity: 8, modulationIndex: 2,
+            envelope: { attack: 0.001, decay: 1.5, sustain: 0, release: 1 }
+          }).connect(this.effects.melodyReverb);
+          this.instruments.bell.volume.value = -10;
+
+          // Brass
+          this.instruments.brass = new Tone.PolySynth(Tone.Synth, {
+            oscillator: { type: 'sawtooth' },
+            envelope: { attack: 0.1, decay: 0.2, sustain: 0.6, release: 0.4 }
+          }).connect(this.effects.melodyReverb);
+          this.instruments.brass.volume.value = -10;
+
+          this.initialized = true;
+          this.isPlaying = true;
+          Tone.Transport.start();
+
+        } catch (e) {
+          console.error('SoundscapeEngine init error:', e);
+        }
+      }
+
+      getBeatPattern(variant) {
+        const patterns = {
+          afrobeat_drums: {
+            kick:      [1,0,0,0, 0,0,1,0, 0,0,0,0, 1,0,0,0, 0,0,1,0, 0,0,0,0, 1,0,0,0, 0,0,1,0],
+            snare:     [0,0,0,0, 1,0,0,1, 0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,1, 0,0,0,0, 1,0,0,0],
+            hihat:     [1,0,1,1, 0,1,1,0, 1,1,0,1, 1,0,1,0, 1,0,1,1, 0,1,1,0, 1,1,0,1, 1,0,1,0],
+            conga:     [0,0,1,0, 0,1,0,0, 1,0,0,1, 0,0,1,0, 0,0,1,0, 0,1,0,0, 1,0,0,1, 0,0,1,0],
+            hihatOpen: [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,1, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,1]
+          },
+          trap_808: {
+            kick:      [1,0,0,0, 0,0,0,0, 0,0,1,0, 0,0,0,0, 1,0,0,0, 0,0,0,1, 0,0,1,0, 0,0,0,0],
+            snare:     [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0],
+            hihat:     [1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1],
+            hihatOpen: [0,0,0,0, 0,0,0,1, 0,0,0,0, 0,0,0,1, 0,0,0,0, 0,0,0,1, 0,0,0,0, 0,0,0,1],
+            kickSub: true
+          },
+          house_kick: {
+            kick:      [1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0],
+            snare:     [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0],
+            hihat:     [0,0,1,0, 0,0,1,0, 0,0,1,0, 0,0,1,0, 0,0,1,0, 0,0,1,0, 0,0,1,0, 0,0,1,0],
+            hihatOpen: [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,1, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,1]
+          },
+          latin_perc: {
+            kick:      [1,0,0,0, 0,0,1,0, 0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,1,0, 0,0,0,0],
+            snare:     [0,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0, 0,0,1,0, 0,0,0,0, 0,0,0,0, 1,0,0,0],
+            hihat:     [1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0, 1,0,1,0],
+            conga:     [1,0,0,1, 0,0,1,0, 0,1,0,0, 1,0,0,1, 0,0,1,0, 0,1,0,0, 1,0,0,1, 0,0,1,0],
+            rimshot:   [0,0,1,0, 0,1,0,0, 1,0,0,1, 0,0,0,0, 0,0,1,0, 0,1,0,0, 1,0,0,1, 0,0,0,0]
+          },
+          breakbeat: {
+            kick:      [1,0,0,0, 0,0,1,0, 0,1,0,0, 0,0,0,0, 1,0,0,1, 0,0,0,0, 1,0,0,0, 0,0,1,0],
+            snare:     [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,1, 0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0],
+            hihat:     [1,1,0,1, 1,0,1,1, 0,1,1,0, 1,1,0,1, 1,0,1,1, 0,1,1,0, 1,1,0,1, 1,0,1,0],
+            hihatOpen: [0,0,0,0, 0,0,0,0, 0,0,0,1, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,1]
+          },
+          minimal_click: {
+            kick:      [1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0],
+            snare:     [0,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0],
+            hihat:     [1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0],
+            rimshot:   [0,0,0,0, 0,0,1,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,1,0, 0,0,0,0, 0,0,0,0]
+          }
+        };
+        return patterns[variant] || patterns.house_kick;
+      }
+
+      startBeatSequence(loopId) {
+        const pattern = this.getBeatPattern(loopId);
+        const subdivision = '16n';
+
+        if (this.sequences.beat) {
+          this.sequences.beat.forEach(seq => { try { seq.dispose(); } catch(e){} });
+        }
+        this.sequences.beat = [];
+
+        const kickSeq = new Tone.Sequence((time, step) => {
+          if (pattern.kick[step]) {
+            this.instruments.kick.triggerAttackRelease(pattern.kickSub ? 'C0' : 'C1', '8n', time);
+            if (pattern.kickSub) this.instruments.kickSub.triggerAttackRelease('C1', '8n', time, 0.6);
+          }
+        }, [...Array(pattern.kick.length).keys()], subdivision);
+        kickSeq.loop = true; kickSeq.start(0);
+        this.sequences.beat.push(kickSeq);
+
+        const snareSeq = new Tone.Sequence((time, step) => {
+          if (pattern.snare[step]) {
+            this.instruments.snareNoise.triggerAttackRelease('8n', time);
+            this.instruments.snareBody.triggerAttackRelease('E2', '8n', time);
+          }
+        }, [...Array(pattern.snare.length).keys()], subdivision);
+        snareSeq.loop = true; snareSeq.start(0);
+        this.sequences.beat.push(snareSeq);
+
+        const hihatSeq = new Tone.Sequence((time, step) => {
+          if (pattern.hihat[step]) this.instruments.hihatClosed.triggerAttackRelease('32n', time, 0.3);
+          if (pattern.hihatOpen && pattern.hihatOpen[step]) this.instruments.hihatOpen.triggerAttackRelease('8n', time, 0.25);
+        }, [...Array(pattern.hihat.length).keys()], subdivision);
+        hihatSeq.loop = true; hihatSeq.start(0);
+        this.sequences.beat.push(hihatSeq);
+
+        if (pattern.conga) {
+          const congaSeq = new Tone.Sequence((time, step) => {
+            if (pattern.conga[step]) {
+              this.instruments.conga.triggerAttackRelease(['G3','A3','C4'][step%3], '16n', time, 0.6);
+            }
+          }, [...Array(pattern.conga.length).keys()], subdivision);
+          congaSeq.loop = true; congaSeq.start(0);
+          this.sequences.beat.push(congaSeq);
+        }
+
+        if (pattern.rimshot) {
+          const rimSeq = new Tone.Sequence((time, step) => {
+            if (pattern.rimshot[step]) this.instruments.rimshot.triggerAttackRelease('32n', time);
+          }, [...Array(pattern.rimshot.length).keys()], subdivision);
+          rimSeq.loop = true; rimSeq.start(0);
+          this.sequences.beat.push(rimSeq);
+        }
+      }
+
+      getVibePattern(variant) {
+        const patterns = {
+          ambient_pad: {
+            chords: [['C3','E3','G3','B3'],['A2','C3','E3','G3'],['F2','A2','C3','E3'],['G2','B2','D3','F3']],
+            style: 'pad', attack: 1.2
+          },
+          lofi_texture: {
+            chords: [['D3','F3','A3','C4'],['G2','B2','D3','F3'],['C3','E3','G3','B3'],['A2','C3','E3','G3']],
+            style: 'lofi', attack: 0.8
+          },
+          strings_swell: {
+            chords: [['E3','G3','B3','D4'],['C3','E3','G3','C4'],['G2','B2','D3','G3'],['D3','F#3','A3','D4']],
+            style: 'strings', attack: 1.5
+          },
+          synth_wash: {
+            chords: [['F3','A3','C4','E4'],['E3','G3','B3','D4'],['D3','F3','A3','C4'],['C3','E3','G3','B3']],
+            style: 'synth', attack: 0.6
+          },
+          choir_hum: {
+            chords: [['A2','E3','A3','C4'],['F2','C3','F3','A3'],['C3','G3','C4','E4'],['G2','D3','G3','B3']],
+            style: 'choir', attack: 1.0
+          },
+          noise_bed: {
+            chords: [['C3','G3','C4'],['D3','A3','D4'],['E3','B3','E4'],['C3','G3','C4']],
+            style: 'noise', attack: 2.0
+          }
+        };
+        return patterns[variant] || patterns.ambient_pad;
+      }
+
+      startVibeSequence(loopId) {
+        const pattern = this.getVibePattern(loopId);
+
+        if (this.sequences.vibe) {
+          this.sequences.vibe.forEach(seq => { try { seq.dispose(); } catch(e){} });
+          try { if (this.instruments.noiseTexture.state === 'started') this.instruments.noiseTexture.stop(); } catch(e){}
+        }
+        this.sequences.vibe = [];
+
+        try {
+          this.instruments.pad.set({ envelope: { attack: pattern.attack, decay: 0.5, sustain: 0.8, release: 2 } });
+        } catch(e){}
+
+        const chordSeq = new Tone.Sequence((time, step) => {
+          const chord = pattern.chords[step];
+          try { this.instruments.pad.releaseAll(time); this.instruments.texture.releaseAll(time); } catch(e){}
+
+          if (pattern.style === 'lofi') {
+            chord.forEach((note, i) => this.instruments.pad.triggerAttack(note, time + i * 0.02));
+          } else if (pattern.style === 'noise') {
+            this.instruments.texture.triggerAttack(chord.slice(0, 2), time);
+            try { if (this.instruments.noiseTexture.state !== 'started') this.instruments.noiseTexture.start(time); } catch(e){}
+          } else {
+            this.instruments.pad.triggerAttack(chord, time);
+            const textureNotes = chord.map(n => Tone.Frequency(n).transpose(12).toNote());
+            this.instruments.texture.triggerAttack(textureNotes, time + 0.1);
+          }
+        }, [0, 1, 2, 3], '1m');
+
+        chordSeq.loop = true; chordSeq.start(0);
+        this.sequences.vibe.push(chordSeq);
+      }
+
+      getMelodyPattern(variant) {
+        const scales = {
+          major: ['C4','D4','E4','F4','G4','A4','B4','C5'],
+          minor: ['A3','B3','C4','D4','E4','F4','G4','A4'],
+          pentatonic: ['C4','D4','E4','G4','A4','C5','D5','E5'],
+          dorian: ['D4','E4','F4','G4','A4','B4','C5','D5']
+        };
+
+        const patterns = {
+          piano_riff: {
+            notes: [0,2,4,5,4,2,3,1,0,2,4,7,5,4,2,0], scale: scales.major, instrument: 'piano', subdivision: '8n',
+            velocity: [0.8,0.6,0.7,0.9,0.6,0.5,0.7,0.6,0.8,0.6,0.7,0.9,0.7,0.6,0.5,0.8]
+          },
+          synth_arp: {
+            notes: [0,2,4,7,4,2,0,2,4,7,9,7,4,2,4,0], scale: scales.pentatonic, instrument: 'arp', subdivision: '16n',
+            velocity: [0.7,0.5,0.6,0.8,0.5,0.4,0.7,0.5,0.6,0.8,0.9,0.7,0.5,0.4,0.6,0.7]
+          },
+          guitar_lick: {
+            notes: [0,-1,2,4,2,0,-1,2,4,5,4,2,0,2,4,0], scale: scales.dorian, instrument: 'pluck', subdivision: '8n',
+            velocity: [0.9,0,0.7,0.8,0.6,0.8,0,0.7,0.8,0.9,0.7,0.6,0.8,0.6,0.7,0.9]
+          },
+          brass_stab: {
+            notes: [0,-1,-1,4,-1,2,-1,-1,0,-1,-1,5,4,-1,2,0], scale: scales.minor, instrument: 'brass', subdivision: '8n',
+            velocity: [0.9,0,0,0.8,0,0.7,0,0,0.9,0,0,0.8,0.7,0,0.6,0.9]
+          },
+          pluck_melody: {
+            notes: [4,2,0,2,4,5,7,5,4,2,0,-1,0,2,4,2], scale: scales.pentatonic, instrument: 'pluck', subdivision: '8n',
+            velocity: [0.6,0.5,0.7,0.5,0.6,0.7,0.8,0.6,0.6,0.5,0.7,0.4,0.6,0.5,0.6,0.5]
+          },
+          bell_chime: {
+            notes: [7,-1,4,-1,5,-1,2,-1,7,-1,5,4,-1,2,-1,0], scale: scales.major, instrument: 'bell', subdivision: '8n',
+            velocity: [0.7,0,0.5,0,0.6,0,0.4,0,0.7,0,0.5,0.6,0,0.4,0,0.5]
+          }
+        };
+        return patterns[variant] || patterns.piano_riff;
+      }
+
+      startMelodySequence(loopId) {
+        const pattern = this.getMelodyPattern(loopId);
+
+        if (this.sequences.melody) {
+          this.sequences.melody.forEach(seq => { try { seq.dispose(); } catch(e){} });
+        }
+        this.sequences.melody = [];
+
+        const instrument = this.instruments[pattern.instrument];
+        if (!instrument) return;
+
+        const melodySeq = new Tone.Sequence((time, step) => {
+          const noteIdx = pattern.notes[step];
+          const velocity = pattern.velocity[step];
+
+          if (noteIdx >= 0 && velocity > 0) {
+            const note = pattern.scale[noteIdx % pattern.scale.length];
+            try {
+              if (pattern.instrument === 'pluck') instrument.triggerAttack(note, time);
+              else instrument.triggerAttackRelease(note, pattern.subdivision, time, velocity);
+            } catch(e){}
+          }
+        }, [...Array(pattern.notes.length).keys()], pattern.subdivision);
+
+        melodySeq.loop = true; melodySeq.start(0);
+        this.sequences.melody.push(melodySeq);
+      }
+
+      playLoop(category, loopId) {
+        if (!this.initialized) return;
+
+        const now = Tone.now();
+        const categoryVolumes = { beat: 0.8, vibe: 0.6, melody: 0.7 };
+
+        // Fade in
+        this.activeLoops[category] = loopId;
+        if (category === 'beat') this.startBeatSequence(loopId);
+        else if (category === 'vibe') this.startVibeSequence(loopId);
+        else if (category === 'melody') this.startMelodySequence(loopId);
+
+        this.loopGains[category].gain.linearRampToValueAtTime(categoryVolumes[category], now + this.crossfadeDuration);
+      }
+
+      stopLoop(category) {
+        if (!this.initialized || !this.activeLoops[category]) return;
+
+        const now = Tone.now();
+        this.loopGains[category].gain.linearRampToValueAtTime(0, now + this.crossfadeDuration);
+
+        setTimeout(() => {
+          if (this.sequences[category]) {
+            this.sequences[category].forEach(seq => { try { seq.dispose(); } catch(e){} });
+            this.sequences[category] = [];
+          }
+          if (category === 'vibe') {
+            try { if (this.instruments.noiseTexture.state === 'started') this.instruments.noiseTexture.stop(); } catch(e){}
+          }
+        }, this.crossfadeDuration * 1000);
+
+        this.activeLoops[category] = null;
+      }
+
+      stopAll() {
+        ['beat', 'vibe', 'melody'].forEach(cat => this.stopLoop(cat));
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // UI STATE & LOGIC
+    // ═══════════════════════════════════════════════════════════════════════
+    let soundscape = null;
+    let currentlyPlaying = null;
+    const feedback = {};
+
+    // Initialize feedback state
+    Object.entries(LOOP_POOLS).forEach(([category, loops]) => {
+      loops.forEach(loop => {
+        feedback[loop.id] = { approval: null, comment: '' };
+      });
+    });
+
+    function updateStats() {
+      const approved = Object.values(feedback).filter(f => f.approval === 'yes').length;
+      const rejected = Object.values(feedback).filter(f => f.approval === 'no').length;
+      const pending = Object.values(feedback).filter(f => f.approval === null).length;
+
+      document.getElementById('approvedCount').textContent = approved;
+      document.getElementById('rejectedCount').textContent = rejected;
+      document.getElementById('pendingCount').textContent = pending;
+    }
+
+    function createLoopCard(category, loop) {
+      const card = document.createElement('div');
+      card.className = 'loop-card';
+      card.id = `card-${loop.id}`;
+      card.innerHTML = `
+        <div class="loop-header">
+          <span class="loop-name">${loop.name}</span>
+          <div class="loop-tint" style="background: ${loop.tint}"></div>
+        </div>
+        <div class="loop-controls">
+          <button class="play-btn" id="play-${loop.id}" onclick="togglePlay('${category}', '${loop.id}')">
+            <span class="play-icon">&#9654;</span>
+          </button>
+          <div class="approval-btns">
+            <button class="approval-btn yes" id="yes-${loop.id}" onclick="setApproval('${loop.id}', 'yes')">Yes</button>
+            <button class="approval-btn no" id="no-${loop.id}" onclick="setApproval('${loop.id}', 'no')">No</button>
+          </div>
+        </div>
+        <textarea
+          class="comment-field"
+          id="comment-${loop.id}"
+          placeholder="Add comments or feedback..."
+          onchange="setComment('${loop.id}', this.value)"
+        ></textarea>
+        <div class="status-indicator">
+          <span class="status-dot" id="status-${loop.id}"></span>
+          <span id="status-text-${loop.id}">No selection</span>
+        </div>
+      `;
+      return card;
+    }
+
+    function renderCategories() {
+      const container = document.getElementById('categories');
+      container.innerHTML = '';
+
+      Object.entries(LOOP_POOLS).forEach(([category, loops]) => {
+        const section = document.createElement('div');
+        section.className = 'category';
+
+        const header = document.createElement('div');
+        header.className = `category-header ${category}`;
+        header.innerHTML = `<h2>${category.toUpperCase()}</h2>`;
+        section.appendChild(header);
+
+        const grid = document.createElement('div');
+        grid.className = 'loop-grid';
+        loops.forEach(loop => {
+          grid.appendChild(createLoopCard(category, loop));
+        });
+        section.appendChild(grid);
+
+        container.appendChild(section);
+      });
+    }
+
+    function togglePlay(category, loopId) {
+      if (!soundscape || !soundscape.initialized) {
+        alert('Please start the audio engine first!');
+        return;
+      }
+
+      const playBtn = document.getElementById(`play-${loopId}`);
+      const card = document.getElementById(`card-${loopId}`);
+
+      if (currentlyPlaying === loopId) {
+        // Stop current
+        soundscape.stopLoop(category);
+        playBtn.classList.remove('playing');
+        playBtn.innerHTML = '<span class="play-icon">&#9654;</span>';
+        card.classList.remove('playing');
+        currentlyPlaying = null;
+      } else {
+        // Stop any previous
+        if (currentlyPlaying) {
+          const prevCategory = getLoopCategory(currentlyPlaying);
+          soundscape.stopLoop(prevCategory);
+          const prevBtn = document.getElementById(`play-${currentlyPlaying}`);
+          const prevCard = document.getElementById(`card-${currentlyPlaying}`);
+          if (prevBtn) {
+            prevBtn.classList.remove('playing');
+            prevBtn.innerHTML = '<span class="play-icon">&#9654;</span>';
+          }
+          if (prevCard) prevCard.classList.remove('playing');
+        }
+
+        // Play new
+        soundscape.playLoop(category, loopId);
+        playBtn.classList.add('playing');
+        playBtn.innerHTML = '<span class="stop-icon">&#9632;</span>';
+        card.classList.add('playing');
+        currentlyPlaying = loopId;
+      }
+    }
+
+    function getLoopCategory(loopId) {
+      for (const [category, loops] of Object.entries(LOOP_POOLS)) {
+        if (loops.some(l => l.id === loopId)) return category;
+      }
+      return null;
+    }
+
+    function setApproval(loopId, value) {
+      const current = feedback[loopId].approval;
+      const card = document.getElementById(`card-${loopId}`);
+      const yesBtn = document.getElementById(`yes-${loopId}`);
+      const noBtn = document.getElementById(`no-${loopId}`);
+      const statusDot = document.getElementById(`status-${loopId}`);
+      const statusText = document.getElementById(`status-text-${loopId}`);
+
+      // Toggle off if clicking the same
+      if (current === value) {
+        feedback[loopId].approval = null;
+        yesBtn.classList.remove('selected');
+        noBtn.classList.remove('selected');
+        card.classList.remove('approved', 'rejected');
+        statusDot.classList.remove('approved', 'rejected');
+        statusText.textContent = 'No selection';
+      } else {
+        feedback[loopId].approval = value;
+        yesBtn.classList.toggle('selected', value === 'yes');
+        noBtn.classList.toggle('selected', value === 'no');
+        card.classList.remove('approved', 'rejected');
+        card.classList.add(value === 'yes' ? 'approved' : 'rejected');
+        statusDot.classList.remove('approved', 'rejected');
+        statusDot.classList.add(value === 'yes' ? 'approved' : 'rejected');
+        statusText.textContent = value === 'yes' ? 'Approved' : 'Rejected';
+      }
+
+      updateStats();
+    }
+
+    function setComment(loopId, comment) {
+      feedback[loopId].comment = comment;
+    }
+
+    function submitFeedback() {
+      const summary = [];
+      let approvedList = [];
+      let rejectedList = [];
+      let pendingList = [];
+
+      Object.entries(LOOP_POOLS).forEach(([category, loops]) => {
+        loops.forEach(loop => {
+          const f = feedback[loop.id];
+          const loopInfo = `${loop.name} (${category})`;
+
+          if (f.approval === 'yes') {
+            approvedList.push(loopInfo + (f.comment ? ` - "${f.comment}"` : ''));
+          } else if (f.approval === 'no') {
+            rejectedList.push(loopInfo + (f.comment ? ` - "${f.comment}"` : ''));
+          } else {
+            pendingList.push(loopInfo);
+          }
+        });
+      });
+
+      let message = '=== FEEDBACK SUMMARY ===\n\n';
+
+      message += `APPROVED (${approvedList.length}):\n`;
+      message += approvedList.length ? approvedList.map(l => `  + ${l}`).join('\n') : '  (none)';
+      message += '\n\n';
+
+      message += `REJECTED (${rejectedList.length}):\n`;
+      message += rejectedList.length ? rejectedList.map(l => `  - ${l}`).join('\n') : '  (none)';
+      message += '\n\n';
+
+      message += `PENDING (${pendingList.length}):\n`;
+      message += pendingList.length ? pendingList.map(l => `  ? ${l}`).join('\n') : '  (none)';
+
+      alert(message);
+      console.log('Feedback submitted:', feedback);
+    }
+
+    async function startAudio() {
+      const btn = document.getElementById('startAudioBtn');
+      const status = document.getElementById('audioStatus');
+
+      btn.disabled = true;
+      btn.textContent = 'Starting...';
+
+      try {
+        soundscape = new SoundscapeEngine();
+        await soundscape.init();
+
+        btn.textContent = 'Audio Ready!';
+        btn.style.background = 'linear-gradient(135deg, #70e000, #38b000)';
+
+        status.className = 'audio-status ready';
+        status.innerHTML = '<span class="audio-indicator ready"></span><span>Audio ready</span>';
+
+      } catch (e) {
+        console.error('Failed to start audio:', e);
+        btn.textContent = 'Retry Audio';
+        btn.disabled = false;
+        alert('Failed to start audio. Please try again.');
+      }
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      renderCategories();
+      document.getElementById('startAudioBtn').addEventListener('click', startAudio);
+      document.getElementById('submitBtn').addEventListener('click', submitFeedback);
+    });
+  </script>
+</body>
+</html>

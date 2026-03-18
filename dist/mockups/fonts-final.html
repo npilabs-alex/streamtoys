@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SONGSUGAR - Final Font Selection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800;900&family=Permanent+Marker&family=Pacifico&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0a0a0f;
+      color: #fff;
+      padding: 40px;
+      font-family: 'Inter', sans-serif;
+    }
+
+    h1 {
+      font-size: 28px;
+      margin-bottom: 10px;
+      color: #00E5FF;
+    }
+
+    .subtitle {
+      color: #666;
+      margin-bottom: 50px;
+    }
+
+    section {
+      margin-bottom: 60px;
+      padding: 30px;
+      background: #111118;
+      border-radius: 16px;
+      border: 1px solid #222;
+    }
+
+    section h2 {
+      font-size: 16px;
+      color: #888;
+      margin-bottom: 25px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #333;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 25px;
+    }
+
+    .card {
+      background: #0a0a0f;
+      padding: 30px;
+      border-radius: 12px;
+      border: 1px solid #333;
+      text-align: center;
+    }
+
+    .card-label {
+      font-size: 11px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 15px;
+    }
+
+    /* Wordmarks */
+    .wordmark {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 900;
+      font-size: 56px;
+      letter-spacing: -1px;
+    }
+
+    /* Message treatments */
+    .message {
+      font-family: 'Permanent Marker', cursive;
+      font-size: 48px;
+      padding: 20px;
+    }
+
+    /* Treatment styles */
+    .treat-solid {
+      color: #FFD700;
+    }
+
+    .treat-outline {
+      color: transparent;
+      -webkit-text-stroke: 2px #FFD700;
+    }
+
+    .treat-outline-fill {
+      color: #FFD700;
+      -webkit-text-stroke: 3px #000;
+      paint-order: stroke fill;
+    }
+
+    .treat-glow {
+      color: #FFD700;
+      text-shadow: 0 0 10px #FFD700, 0 0 20px #FFD700, 0 0 40px #FFD700;
+    }
+
+    .treat-glow-soft {
+      color: #FFD700;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.8), 0 0 40px rgba(255, 215, 0, 0.4);
+    }
+
+    .treat-double-outline {
+      color: #FFD700;
+      text-shadow:
+        -2px -2px 0 #000,
+        2px -2px 0 #000,
+        -2px 2px 0 #000,
+        2px 2px 0 #000,
+        -3px -3px 0 #fff,
+        3px -3px 0 #fff,
+        -3px 3px 0 #fff,
+        3px 3px 0 #fff;
+    }
+
+    .treat-shadow {
+      color: #FFD700;
+      text-shadow: 4px 4px 0 rgba(0,0,0,0.5);
+    }
+
+    .treat-shadow-colored {
+      color: #FFD700;
+      text-shadow: 4px 4px 0 #FF2D78;
+    }
+
+    .treat-3d {
+      color: #FFD700;
+      text-shadow:
+        1px 1px 0 #b8960a,
+        2px 2px 0 #a6870a,
+        3px 3px 0 #947809,
+        4px 4px 0 #826909,
+        5px 5px 10px rgba(0,0,0,0.5);
+    }
+
+    .treat-neon {
+      color: #fff;
+      text-shadow:
+        0 0 5px #fff,
+        0 0 10px #fff,
+        0 0 20px #FFD700,
+        0 0 40px #FFD700,
+        0 0 80px #FFD700;
+    }
+
+    .treat-retro {
+      color: #FFD700;
+      text-shadow:
+        3px 3px 0 #FF2D78,
+        6px 6px 0 #00E5FF;
+    }
+
+    .treat-gradient-outline {
+      background: linear-gradient(135deg, #FFD700, #FF2D78);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(2px 2px 0 #000);
+    }
+
+    /* Game background simulation */
+    .game-bg {
+      background: linear-gradient(180deg, #080D14 0%, #0c1420 100%);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .game-bg::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 20% 50%, rgba(0, 229, 255, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 50%, rgba(255, 45, 120, 0.1) 0%, transparent 50%);
+    }
+
+    .game-bg-analogue {
+      background: linear-gradient(180deg, #1A1208 0%, #251a0e 100%);
+    }
+
+    .game-bg-analogue::before {
+      background:
+        radial-gradient(ellipse at 20% 50%, rgba(212, 82, 26, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 50%, rgba(232, 160, 144, 0.1) 0%, transparent 50%);
+    }
+
+    /* UI Demo */
+    .ui-demo {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      padding: 30px;
+      flex-wrap: wrap;
+    }
+
+    .ui-item {
+      text-align: center;
+    }
+
+    .ui-label {
+      font-size: 11px;
+      color: #556677;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 5px;
+    }
+
+    .ui-value {
+      font-size: 28px;
+      font-weight: 700;
+    }
+
+    /* Animation demo */
+    @keyframes popIn {
+      0% { transform: scale(0); opacity: 0; }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px) rotate(-2deg); }
+      75% { transform: translateX(5px) rotate(2deg); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    .anim-pop { animation: popIn 0.5s ease-out; }
+    .anim-shake { animation: shake 0.3s ease-in-out; }
+    .anim-pulse { animation: pulse 0.5s ease-in-out infinite; }
+
+    /* Full game preview */
+    .full-preview {
+      padding: 40px;
+      text-align: center;
+      position: relative;
+    }
+
+    .preview-wordmark {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 900;
+      font-size: 64px;
+      letter-spacing: -1px;
+      margin-bottom: 30px;
+    }
+
+    .preview-message {
+      font-family: 'Permanent Marker', cursive;
+      font-size: 52px;
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Final Font Selection</h1>
+  <p class="subtitle">Pacifico (wordmark) + Inter (UI) + Permanent Marker (messages)</p>
+
+  <!-- WORDMARK OPTIONS -->
+  <section>
+    <h2>1. Wordmark: Current (Pacifico) vs Alternatives</h2>
+    <div class="grid">
+
+      <!-- EXISTING TREATMENT -->
+      <div class="card game-bg" style="border: 2px solid #00E5FF;">
+        <div class="card-label">Current - Signal (Pacifico + Gradient + Glow)</div>
+        <div class="wordmark-pacifico" style="
+          font-family: 'Pacifico', cursive;
+          font-size: 52px;
+          background: linear-gradient(90deg, #00E5FF, #FF2D78, #AAFF00);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          filter: drop-shadow(0 0 15px rgba(0, 229, 255, 0.6)) drop-shadow(0 0 30px rgba(255, 45, 120, 0.4));
+        ">SongSugar</div>
+      </div>
+
+      <div class="card game-bg-analogue" style="border: 2px solid #D4521A;">
+        <div class="card-label">Current - Analogue (Pacifico + Gradient + Glow)</div>
+        <div class="wordmark-pacifico" style="
+          font-family: 'Pacifico', cursive;
+          font-size: 52px;
+          background: linear-gradient(90deg, #D4521A, #E8A090, #2E7D7A);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          filter: drop-shadow(0 0 15px rgba(212, 82, 26, 0.6)) drop-shadow(0 0 30px rgba(232, 160, 144, 0.4));
+        ">SongSugar</div>
+      </div>
+
+      <!-- PACIFICO VARIATIONS -->
+      <div class="card game-bg">
+        <div class="card-label">Pacifico - White + Cyan</div>
+        <div style="font-family: 'Pacifico', cursive; font-size: 52px; text-shadow: 0 0 20px rgba(0,229,255,0.5);">
+          <span style="color: #fff;">Song</span><span style="color: #00E5FF;">Sugar</span>
+        </div>
+      </div>
+
+      <div class="card game-bg">
+        <div class="card-label">Pacifico - All Cyan + Strong Glow</div>
+        <div style="
+          font-family: 'Pacifico', cursive;
+          font-size: 52px;
+          color: #00E5FF;
+          text-shadow: 0 0 10px #00E5FF, 0 0 20px #00E5FF, 0 0 40px #00E5FF;
+        ">SongSugar</div>
+      </div>
+
+      <div class="card game-bg">
+        <div class="card-label">Pacifico - Pink Glow</div>
+        <div style="
+          font-family: 'Pacifico', cursive;
+          font-size: 52px;
+          color: #FF2D78;
+          text-shadow: 0 0 10px #FF2D78, 0 0 20px #FF2D78, 0 0 40px #FF2D78;
+        ">SongSugar</div>
+      </div>
+
+      <div class="card game-bg-analogue">
+        <div class="card-label">Pacifico - Analogue White + Rust</div>
+        <div style="font-family: 'Pacifico', cursive; font-size: 52px; text-shadow: 0 0 20px rgba(212,82,26,0.5);">
+          <span style="color: #f5e6d0;">Song</span><span style="color: #D4521A;">Sugar</span>
+        </div>
+      </div>
+
+      <div class="card game-bg-analogue">
+        <div class="card-label">Pacifico - Analogue Gold Glow</div>
+        <div style="
+          font-family: 'Pacifico', cursive;
+          font-size: 52px;
+          color: #CFB53B;
+          text-shadow: 0 0 10px #CFB53B, 0 0 20px #CFB53B, 0 0 40px rgba(207,181,59,0.5);
+        ">SongSugar</div>
+      </div>
+
+      <div class="card game-bg">
+        <div class="card-label">Pacifico - Neon Outline</div>
+        <div style="
+          font-family: 'Pacifico', cursive;
+          font-size: 52px;
+          color: #000;
+          -webkit-text-stroke: 2px #00E5FF;
+          text-shadow: 0 0 10px #00E5FF, 0 0 20px #00E5FF;
+        ">SongSugar</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- MESSAGE TREATMENTS -->
+  <section>
+    <h2>2. In-Game Messages: Permanent Marker - Treatments</h2>
+    <div class="grid">
+
+      <div class="card game-bg">
+        <div class="card-label">Solid</div>
+        <div class="message treat-solid">COMBO x5</div>
+      </div>
+
+      <div class="card game-bg">
+        <div class="card-label">Outline Only</div>
+        <div class="message treat-outline">COMBO x5</div>
+      </div>
+
+      <div class="card game-bg">
+        <div class="card-label">Black Outline</div>
+        <div class="message treat-outline-fill">COMBO x5</div>
+      </div>
+
+      <div class="card game-bg">
+        <div class="card-label">Intense Glow</div>
+        <div class="message treat-glow">FIRE!</div>
+      </div>
+
+      <div class="card game-bg">
+        <div class="card-label">Soft Glow</div>
+        <div class="message treat-glow-soft">FIRE!</div>
+      </div>
+
+      <div class="card game-bg">
+        <div class="card-label">Double Outline (white + black)</div>
+        <div class="message treat-double-outline">LEVEL UP!</div>
+      </div>
+
+      <div class="card game-bg">
+        <div class="card-label">Drop Shadow</div>
+        <div class="message treat-shadow">EXCELLENT!</div>
+      </div>
+
+      <div class="card game-bg">
+        <div class="card-label">Colored Shadow</div>
+        <div class="message treat-shadow-colored">EXCELLENT!</div>
+      </div>
+
+      <div class="card game-bg">
+        <div class="card-label">3D Extrude</div>
+        <div class="message treat-3d">COMBO x5</div>
+      </div>
+
+      <div class="card game-bg">
+        <div class="card-label">Neon Sign</div>
+        <div class="message treat-neon">FIRE!</div>
+      </div>
+
+      <div class="card game-bg">
+        <div class="card-label">Retro Stack</div>
+        <div class="message treat-retro">LEVEL UP!</div>
+      </div>
+
+      <div class="card game-bg">
+        <div class="card-label">Gradient + Shadow</div>
+        <div class="message treat-gradient-outline">LOOP UNLOCKED</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- COLOR VARIATIONS -->
+  <section>
+    <h2>3. Message Color Variations (with recommended Black Outline treatment)</h2>
+    <div class="grid">
+
+      <div class="card game-bg">
+        <div class="card-label">Combo - Gold</div>
+        <div class="message treat-outline-fill" style="color: #FFD700;">COMBO x5</div>
+      </div>
+
+      <div class="card game-bg">
+        <div class="card-label">Level Up - Cyan</div>
+        <div class="message treat-outline-fill" style="color: #00E5FF;">LEVEL UP!</div>
+      </div>
+
+      <div class="card game-bg">
+        <div class="card-label">Fire - Pink</div>
+        <div class="message treat-outline-fill" style="color: #FF2D78;">FIRE!</div>
+      </div>
+
+      <div class="card game-bg">
+        <div class="card-label">Excellent - Lime</div>
+        <div class="message treat-outline-fill" style="color: #AAFF00;">EXCELLENT!</div>
+      </div>
+
+      <div class="card game-bg">
+        <div class="card-label">Loop Unlocked - White</div>
+        <div class="message treat-outline-fill" style="color: #fff;">LOOP UNLOCKED</div>
+      </div>
+
+      <div class="card game-bg">
+        <div class="card-label">Perfect - Gradient</div>
+        <div class="message" style="background: linear-gradient(90deg, #FF2D78, #FFD700, #AAFF00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; -webkit-text-stroke: 2px #000; paint-order: stroke fill;">PERFECT!</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ANALOGUE PALETTE -->
+  <section>
+    <h2>4. Analogue Palette Messages</h2>
+    <div class="grid">
+
+      <div class="card game-bg-analogue">
+        <div class="card-label">Combo - Gold</div>
+        <div class="message treat-outline-fill" style="color: #CFB53B;">COMBO x5</div>
+      </div>
+
+      <div class="card game-bg-analogue">
+        <div class="card-label">Level Up - Teal</div>
+        <div class="message treat-outline-fill" style="color: #2E7D7A;">LEVEL UP!</div>
+      </div>
+
+      <div class="card game-bg-analogue">
+        <div class="card-label">Fire - Rust</div>
+        <div class="message treat-outline-fill" style="color: #D4521A;">FIRE!</div>
+      </div>
+
+      <div class="card game-bg-analogue">
+        <div class="card-label">Excellent - Salmon</div>
+        <div class="message treat-outline-fill" style="color: #E8A090;">EXCELLENT!</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- UI DEMO -->
+  <section>
+    <h2>5. UI: Inter</h2>
+    <div class="grid">
+
+      <div class="card game-bg">
+        <div class="card-label">Signal Palette</div>
+        <div class="ui-demo">
+          <div class="ui-item">
+            <div class="ui-label">Score</div>
+            <div class="ui-value" style="color: #fff;">12,450</div>
+          </div>
+          <div class="ui-item">
+            <div class="ui-label">Beat</div>
+            <div class="ui-value" style="color: #00E5FF;">45</div>
+          </div>
+          <div class="ui-item">
+            <div class="ui-label">Vibe</div>
+            <div class="ui-value" style="color: #AAFF00;">32</div>
+          </div>
+          <div class="ui-item">
+            <div class="ui-label">Melody</div>
+            <div class="ui-value" style="color: #FF2D78;">28</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card game-bg-analogue">
+        <div class="card-label">Analogue Palette</div>
+        <div class="ui-demo">
+          <div class="ui-item">
+            <div class="ui-label" style="color: #776655;">Score</div>
+            <div class="ui-value" style="color: #f5e6d0;">12,450</div>
+          </div>
+          <div class="ui-item">
+            <div class="ui-label" style="color: #776655;">Beat</div>
+            <div class="ui-value" style="color: #D4521A;">45</div>
+          </div>
+          <div class="ui-item">
+            <div class="ui-label" style="color: #776655;">Vibe</div>
+            <div class="ui-value" style="color: #2E7D7A;">32</div>
+          </div>
+          <div class="ui-item">
+            <div class="ui-label" style="color: #776655;">Melody</div>
+            <div class="ui-value" style="color: #E8A090;">28</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 3D EXTREME TREATMENTS -->
+  <section>
+    <h2>6. 3D Extreme Treatment - Message Showcase</h2>
+    <div class="grid">
+
+      <!-- Signal Palette -->
+      <div class="card game-bg">
+        <div class="card-label">3D Gold - Signal</div>
+        <div class="message treat-3d" style="color: #FFD700; text-shadow: 1px 1px 0 #b8960a, 2px 2px 0 #a6870a, 3px 3px 0 #947809, 4px 4px 0 #826909, 5px 5px 0 #705a08, 6px 6px 15px rgba(0,0,0,0.6);">COMBO x5</div>
+      </div>
+
+      <div class="card game-bg">
+        <div class="card-label">3D Cyan - Signal</div>
+        <div class="message" style="color: #00E5FF; text-shadow: 1px 1px 0 #00b8cc, 2px 2px 0 #009bb0, 3px 3px 0 #007e94, 4px 4px 0 #006178, 5px 5px 0 #00445c, 6px 6px 15px rgba(0,0,0,0.6);">LEVEL UP!</div>
+      </div>
+
+      <div class="card game-bg">
+        <div class="card-label">3D Pink - Signal</div>
+        <div class="message" style="color: #FF2D78; text-shadow: 1px 1px 0 #d91f60, 2px 2px 0 #b31850, 3px 3px 0 #8d1140, 4px 4px 0 #670a30, 5px 5px 0 #410320, 6px 6px 15px rgba(0,0,0,0.6);">FIRE!</div>
+      </div>
+
+      <div class="card game-bg">
+        <div class="card-label">3D Lime - Signal</div>
+        <div class="message" style="color: #AAFF00; text-shadow: 1px 1px 0 #88cc00, 2px 2px 0 #77b300, 3px 3px 0 #669900, 4px 4px 0 #558000, 5px 5px 0 #446600, 6px 6px 15px rgba(0,0,0,0.6);">EXCELLENT!</div>
+      </div>
+
+      <div class="card game-bg">
+        <div class="card-label">3D White - Signal</div>
+        <div class="message" style="color: #fff; text-shadow: 1px 1px 0 #ccc, 2px 2px 0 #aaa, 3px 3px 0 #888, 4px 4px 0 #666, 5px 5px 0 #444, 6px 6px 15px rgba(0,0,0,0.6);">PERFECT!</div>
+      </div>
+
+      <div class="card game-bg">
+        <div class="card-label">3D Deep - Extra Layers</div>
+        <div class="message" style="color: #FFD700; text-shadow: 1px 1px 0 #e6c200, 2px 2px 0 #cca800, 3px 3px 0 #b38f00, 4px 4px 0 #997700, 5px 5px 0 #805f00, 6px 6px 0 #664700, 7px 7px 0 #4d3000, 8px 8px 20px rgba(0,0,0,0.7);">MASSIVE!</div>
+      </div>
+
+      <!-- Analogue Palette -->
+      <div class="card game-bg-analogue">
+        <div class="card-label">3D Rust - Analogue</div>
+        <div class="message" style="color: #D4521A; text-shadow: 1px 1px 0 #b34515, 2px 2px 0 #933910, 3px 3px 0 #732c0c, 4px 4px 0 #532008, 5px 5px 0 #331404, 6px 6px 15px rgba(0,0,0,0.6);">FIRE!</div>
+      </div>
+
+      <div class="card game-bg-analogue">
+        <div class="card-label">3D Teal - Analogue</div>
+        <div class="message" style="color: #2E7D7A; text-shadow: 1px 1px 0 #266866, 2px 2px 0 #1e5352, 3px 3px 0 #163e3e, 4px 4px 0 #0e2929, 5px 5px 0 #061515, 6px 6px 15px rgba(0,0,0,0.6);">LEVEL UP!</div>
+      </div>
+
+      <div class="card game-bg-analogue">
+        <div class="card-label">3D Gold - Analogue</div>
+        <div class="message" style="color: #CFB53B; text-shadow: 1px 1px 0 #a99530, 2px 2px 0 #837525, 3px 3px 0 #5d551a, 4px 4px 0 #37350f, 5px 5px 0 #111504, 6px 6px 15px rgba(0,0,0,0.6);">COMBO x5</div>
+      </div>
+
+      <div class="card game-bg-analogue">
+        <div class="card-label">3D Salmon - Analogue</div>
+        <div class="message" style="color: #E8A090; text-shadow: 1px 1px 0 #c88878, 2px 2px 0 #a87060, 3px 3px 0 #885848, 4px 4px 0 #684030, 5px 5px 0 #482818, 6px 6px 15px rgba(0,0,0,0.6);">EXCELLENT!</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- RETRO STACK TREATMENTS -->
+  <section>
+    <h2>7. Retro Stack Treatment - Message Showcase</h2>
+    <div class="grid">
+
+      <!-- Signal Palette -->
+      <div class="card game-bg">
+        <div class="card-label">Retro Cyan-Pink - Signal</div>
+        <div class="message" style="color: #00E5FF; text-shadow: 3px 3px 0 #FF2D78, 6px 6px 0 #AAFF00;">COMBO x5</div>
+      </div>
+
+      <div class="card game-bg">
+        <div class="card-label">Retro Pink-Lime - Signal</div>
+        <div class="message" style="color: #FF2D78; text-shadow: 3px 3px 0 #AAFF00, 6px 6px 0 #00E5FF;">FIRE!</div>
+      </div>
+
+      <div class="card game-bg">
+        <div class="card-label">Retro Gold-Cyan - Signal</div>
+        <div class="message" style="color: #FFD700; text-shadow: 3px 3px 0 #00E5FF, 6px 6px 0 #FF2D78;">LEVEL UP!</div>
+      </div>
+
+      <div class="card game-bg">
+        <div class="card-label">Retro White-Spectrum - Signal</div>
+        <div class="message" style="color: #fff; text-shadow: 3px 3px 0 #FF2D78, 6px 6px 0 #00E5FF, 9px 9px 0 #AAFF00;">EXCELLENT!</div>
+      </div>
+
+      <div class="card game-bg">
+        <div class="card-label">Retro Lime-Hot - Signal</div>
+        <div class="message" style="color: #AAFF00; text-shadow: 3px 3px 0 #FF2D78, 6px 6px 0 #FFD700;">PERFECT!</div>
+      </div>
+
+      <div class="card game-bg">
+        <div class="card-label">Retro Deep Stack - Signal</div>
+        <div class="message" style="color: #FFD700; text-shadow: 2px 2px 0 #FF2D78, 4px 4px 0 #00E5FF, 6px 6px 0 #AAFF00, 8px 8px 0 rgba(0,0,0,0.5);">MASSIVE!</div>
+      </div>
+
+      <!-- Analogue Palette -->
+      <div class="card game-bg-analogue">
+        <div class="card-label">Retro Rust-Teal - Analogue</div>
+        <div class="message" style="color: #D4521A; text-shadow: 3px 3px 0 #2E7D7A, 6px 6px 0 #E8A090;">FIRE!</div>
+      </div>
+
+      <div class="card game-bg-analogue">
+        <div class="card-label">Retro Teal-Salmon - Analogue</div>
+        <div class="message" style="color: #2E7D7A; text-shadow: 3px 3px 0 #E8A090, 6px 6px 0 #D4521A;">LEVEL UP!</div>
+      </div>
+
+      <div class="card game-bg-analogue">
+        <div class="card-label">Retro Gold-Rust - Analogue</div>
+        <div class="message" style="color: #CFB53B; text-shadow: 3px 3px 0 #D4521A, 6px 6px 0 #2E7D7A;">COMBO x5</div>
+      </div>
+
+      <div class="card game-bg-analogue">
+        <div class="card-label">Retro Salmon-Warm - Analogue</div>
+        <div class="message" style="color: #E8A090; text-shadow: 3px 3px 0 #D4521A, 6px 6px 0 #CFB53B;">EXCELLENT!</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- FULL PREVIEW -->
+  <section>
+    <h2>8. Full Game Preview</h2>
+    <div class="card game-bg full-preview">
+      <!-- Pacifico wordmark with gradient -->
+      <div style="
+        font-family: 'Pacifico', cursive;
+        font-size: 64px;
+        background: linear-gradient(90deg, #00E5FF, #FF2D78, #AAFF00);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        filter: drop-shadow(0 0 15px rgba(0, 229, 255, 0.6)) drop-shadow(0 0 30px rgba(255, 45, 120, 0.4));
+        margin-bottom: 30px;
+      ">SongSugar</div>
+
+      <div class="ui-demo" style="margin-bottom: 30px;">
+        <div class="ui-item">
+          <div class="ui-label">Score</div>
+          <div class="ui-value" style="color: #fff;">12,450</div>
+        </div>
+        <div class="ui-item">
+          <div class="ui-label">Beat</div>
+          <div class="ui-value" style="color: #00E5FF;">45</div>
+        </div>
+        <div class="ui-item">
+          <div class="ui-label">Vibe</div>
+          <div class="ui-value" style="color: #AAFF00;">32</div>
+        </div>
+        <div class="ui-item">
+          <div class="ui-label">Melody</div>
+          <div class="ui-value" style="color: #FF2D78;">28</div>
+        </div>
+      </div>
+
+      <div class="preview-message treat-outline-fill" style="color: #FFD700;">COMBO x5</div>
+      <div class="preview-message treat-outline-fill" style="color: #FF2D78;">FIRE!</div>
+      <div class="preview-message treat-outline-fill" style="color: #00E5FF;">LEVEL UP!</div>
+    </div>
+
+    <div class="card game-bg-analogue full-preview" style="margin-top: 25px;">
+      <!-- Pacifico wordmark with analogue gradient -->
+      <div style="
+        font-family: 'Pacifico', cursive;
+        font-size: 64px;
+        background: linear-gradient(90deg, #D4521A, #E8A090, #2E7D7A);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        filter: drop-shadow(0 0 15px rgba(212, 82, 26, 0.6)) drop-shadow(0 0 30px rgba(232, 160, 144, 0.4));
+        margin-bottom: 30px;
+      ">SongSugar</div>
+
+      <div class="ui-demo" style="margin-bottom: 30px;">
+        <div class="ui-item">
+          <div class="ui-label" style="color: #776655;">Score</div>
+          <div class="ui-value" style="color: #f5e6d0;">12,450</div>
+        </div>
+        <div class="ui-item">
+          <div class="ui-label" style="color: #776655;">Beat</div>
+          <div class="ui-value" style="color: #D4521A;">45</div>
+        </div>
+        <div class="ui-item">
+          <div class="ui-label" style="color: #776655;">Vibe</div>
+          <div class="ui-value" style="color: #2E7D7A;">32</div>
+        </div>
+        <div class="ui-item">
+          <div class="ui-label" style="color: #776655;">Melody</div>
+          <div class="ui-value" style="color: #E8A090;">28</div>
+        </div>
+      </div>
+
+      <div class="preview-message treat-outline-fill" style="color: #CFB53B;">COMBO x5</div>
+      <div class="preview-message treat-outline-fill" style="color: #D4521A;">FIRE!</div>
+      <div class="preview-message treat-outline-fill" style="color: #2E7D7A;">LEVEL UP!</div>
+    </div>
+  </section>
+
+</body>
+</html>

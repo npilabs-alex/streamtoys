@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SONGSUGAR - Font Mockups</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&family=Sora:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Lexend:wght@400;500;600;700;800;900&family=Rubik:wght@400;500;600;700;800;900&family=DM+Sans:wght@400;500;600;700&family=Poppins:wght@400;500;600;700;800;900&family=Montserrat:wght@400;500;600;700;800;900&family=Bebas+Neue&family=Teko:wght@400;500;600;700&family=Righteous&family=Bungee&family=Russo+One&family=Orbitron:wght@400;500;600;700;800;900&family=Audiowide&family=Press+Start+2P&family=Silkscreen&family=Black+Ops+One&family=Staatliches&family=Anton&family=Bowlby+One+SC&family=Fugaz+One&family=Lilita+One&family=Pacifico&family=Lobster&family=Dancing+Script:wght@400;500;600;700&family=Satisfy&family=Great+Vibes&family=Kaushan+Script&family=Permanent+Marker&family=Caveat:wght@400;500;600;700&family=Sacramento&family=Yellowtail&family=Allura&family=Alex+Brush&family=Italianno&family=Tangerine:wght@400;700&family=Courgette&family=Cookie&family=Damion&family=Niconne&family=Playball&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0a0a0f;
+      color: #fff;
+      padding: 40px;
+      line-height: 1.4;
+    }
+
+    h1 {
+      font-family: 'Inter', sans-serif;
+      font-size: 32px;
+      margin-bottom: 10px;
+      color: #00E5FF;
+    }
+
+    .subtitle {
+      color: #666;
+      margin-bottom: 50px;
+      font-family: system-ui;
+    }
+
+    section {
+      margin-bottom: 60px;
+      padding: 30px;
+      background: #111118;
+      border-radius: 16px;
+      border: 1px solid #222;
+    }
+
+    section h2 {
+      font-family: 'Inter', sans-serif;
+      font-size: 18px;
+      color: #888;
+      margin-bottom: 25px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #333;
+    }
+
+    .font-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 25px;
+    }
+
+    .font-card {
+      background: #0a0a0f;
+      padding: 25px;
+      border-radius: 12px;
+      border: 1px solid #333;
+      transition: border-color 0.2s;
+    }
+
+    .font-card:hover {
+      border-color: #00E5FF;
+    }
+
+    .font-name {
+      font-family: system-ui;
+      font-size: 11px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+
+    .font-sample {
+      margin-bottom: 8px;
+    }
+
+    .font-note {
+      font-family: system-ui;
+      font-size: 11px;
+      color: #555;
+      margin-top: 10px;
+    }
+
+    /* UI Font samples */
+    .ui-sample {
+      display: flex;
+      gap: 20px;
+      align-items: baseline;
+      flex-wrap: wrap;
+    }
+
+    .ui-sample .score { font-size: 28px; }
+    .ui-sample .label { font-size: 12px; color: #888; }
+    .ui-sample .value { font-size: 18px; color: #00E5FF; }
+
+    /* Message samples */
+    .msg-sample {
+      font-size: 36px;
+      text-align: center;
+      padding: 15px;
+    }
+
+    .msg-combo { color: #FFD700; }
+    .msg-level { color: #00E5FF; }
+    .msg-fire { color: #FF2D78; }
+
+    /* Wordmark samples */
+    .wordmark {
+      font-size: 48px;
+      text-align: center;
+      padding: 20px;
+      letter-spacing: 2px;
+    }
+
+    .wordmark.gradient {
+      background: linear-gradient(135deg, #FF2D78, #00E5FF, #AAFF00);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .wordmark.glow {
+      text-shadow: 0 0 20px currentColor, 0 0 40px currentColor;
+    }
+
+    /* Palette variants */
+    .palette-analogue {
+      background: #1A1208;
+      border-color: #3a2a18;
+    }
+
+    .palette-analogue .msg-combo { color: #CFB53B; }
+    .palette-analogue .msg-level { color: #2E7D7A; }
+    .palette-analogue .msg-fire { color: #D4521A; }
+
+    /* Recommended badge */
+    .recommended {
+      position: relative;
+    }
+
+    .recommended::after {
+      content: 'RECOMMENDED';
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-family: system-ui;
+      font-size: 9px;
+      background: #00E5FF;
+      color: #000;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    /* In-game message showcase */
+    .message-showcase {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .message-row {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .message-item {
+      padding: 10px 25px;
+      border-radius: 8px;
+      background: rgba(255,255,255,0.05);
+    }
+  </style>
+</head>
+<body>
+  <h1>Font Mockups</h1>
+  <p class="subtitle">UI fonts, in-game messages, and wordmark options</p>
+
+  <!-- SECTION 1: UI FONTS -->
+  <section>
+    <h2>1. UI Fonts (Score, Labels, HUD)</h2>
+    <div class="font-grid">
+
+      <div class="font-card recommended">
+        <div class="font-name">Space Grotesk</div>
+        <div class="ui-sample" style="font-family: 'Space Grotesk', sans-serif;">
+          <span class="score">12,450</span>
+          <span class="label">SCORE</span>
+          <span class="value">Level 7</span>
+        </div>
+        <div class="font-note">Modern, geometric, excellent number rendering</div>
+      </div>
+
+      <div class="font-card recommended">
+        <div class="font-name">Inter</div>
+        <div class="ui-sample" style="font-family: 'Inter', sans-serif;">
+          <span class="score" style="font-weight: 700;">12,450</span>
+          <span class="label">SCORE</span>
+          <span class="value" style="font-weight: 600;">Level 7</span>
+        </div>
+        <div class="font-note">Industry standard, super crisp at all sizes</div>
+      </div>
+
+      <div class="font-card">
+        <div class="font-name">Outfit</div>
+        <div class="ui-sample" style="font-family: 'Outfit', sans-serif;">
+          <span class="score" style="font-weight: 700;">12,450</span>
+          <span class="label">SCORE</span>
+          <span class="value" style="font-weight: 600;">Level 7</span>
+        </div>
+        <div class="font-note">Friendly, rounded, modern</div>
+      </div>
+
+      <div class="font-card">
+        <div class="font-name">Lexend</div>
+        <div class="ui-sample" style="font-family: 'Lexend', sans-serif;">
+          <span class="score" style="font-weight: 700;">12,450</span>
+          <span class="label">SCORE</span>
+          <span class="value" style="font-weight: 600;">Level 7</span>
+        </div>
+        <div class="font-note">Designed for readability, wide spacing</div>
+      </div>
+
+      <div class="font-card">
+        <div class="font-name">DM Sans</div>
+        <div class="ui-sample" style="font-family: 'DM Sans', sans-serif;">
+          <span class="score" style="font-weight: 700;">12,450</span>
+          <span class="label">SCORE</span>
+          <span class="value" style="font-weight: 600;">Level 7</span>
+        </div>
+        <div class="font-note">Clean geometric, Google's go-to</div>
+      </div>
+
+      <div class="font-card">
+        <div class="font-name">Sora</div>
+        <div class="ui-sample" style="font-family: 'Sora', sans-serif;">
+          <span class="score" style="font-weight: 700;">12,450</span>
+          <span class="label">SCORE</span>
+          <span class="value" style="font-weight: 600;">Level 7</span>
+        </div>
+        <div class="font-note">Futuristic, techy feel</div>
+      </div>
+
+      <div class="font-card">
+        <div class="font-name">Manrope</div>
+        <div class="ui-sample" style="font-family: 'Manrope', sans-serif;">
+          <span class="score" style="font-weight: 700;">12,450</span>
+          <span class="label">SCORE</span>
+          <span class="value" style="font-weight: 600;">Level 7</span>
+        </div>
+        <div class="font-note">Semi-condensed, fits more info</div>
+      </div>
+
+      <div class="font-card">
+        <div class="font-name">Rubik</div>
+        <div class="ui-sample" style="font-family: 'Rubik', sans-serif;">
+          <span class="score" style="font-weight: 700;">12,450</span>
+          <span class="label">SCORE</span>
+          <span class="value" style="font-weight: 600;">Level 7</span>
+        </div>
+        <div class="font-note">Slightly rounded, friendly but professional</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- SECTION 2: IN-GAME MESSAGES -->
+  <section>
+    <h2>2. In-Game Messages (Combo, Level Up, Fire, Excellent)</h2>
+    <div class="font-grid">
+
+      <div class="font-card recommended">
+        <div class="font-name">Bebas Neue</div>
+        <div class="message-showcase">
+          <div class="msg-sample msg-combo" style="font-family: 'Bebas Neue', sans-serif;">COMBO x5</div>
+          <div class="msg-sample msg-fire" style="font-family: 'Bebas Neue', sans-serif;">FIRE!</div>
+        </div>
+        <div class="font-note">Bold, impactful, classic game feel</div>
+      </div>
+
+      <div class="font-card recommended">
+        <div class="font-name">Teko</div>
+        <div class="message-showcase">
+          <div class="msg-sample msg-combo" style="font-family: 'Teko', sans-serif; font-weight: 600;">COMBO x5</div>
+          <div class="msg-sample msg-level" style="font-family: 'Teko', sans-serif; font-weight: 600;">LEVEL UP!</div>
+        </div>
+        <div class="font-note">Condensed, energetic, modern esports</div>
+      </div>
+
+      <div class="font-card">
+        <div class="font-name">Russo One</div>
+        <div class="message-showcase">
+          <div class="msg-sample msg-fire" style="font-family: 'Russo One', sans-serif;">EXCELLENT!</div>
+          <div class="msg-sample msg-level" style="font-family: 'Russo One', sans-serif;">LOOP UNLOCKED</div>
+        </div>
+        <div class="font-note">Bold, geometric, arcade vibes</div>
+      </div>
+
+      <div class="font-card">
+        <div class="font-name">Righteous</div>
+        <div class="message-showcase">
+          <div class="msg-sample msg-combo" style="font-family: 'Righteous', sans-serif;">COMBO x5</div>
+          <div class="msg-sample msg-fire" style="font-family: 'Righteous', sans-serif;">FIRE!</div>
+        </div>
+        <div class="font-note">Retro-futuristic, smooth curves</div>
+      </div>
+
+      <div class="font-card">
+        <div class="font-name">Black Ops One</div>
+        <div class="message-showcase">
+          <div class="msg-sample msg-level" style="font-family: 'Black Ops One', sans-serif;">LEVEL UP!</div>
+          <div class="msg-sample msg-combo" style="font-family: 'Black Ops One', sans-serif;">COMBO x5</div>
+        </div>
+        <div class="font-note">Military/tactical, aggressive</div>
+      </div>
+
+      <div class="font-card">
+        <div class="font-name">Staatliches</div>
+        <div class="message-showcase">
+          <div class="msg-sample msg-fire" style="font-family: 'Staatliches', sans-serif;">EXCELLENT!</div>
+          <div class="msg-sample msg-level" style="font-family: 'Staatliches', sans-serif;">LOOP UNLOCKED</div>
+        </div>
+        <div class="font-note">Condensed display, newspaper headline</div>
+      </div>
+
+      <div class="font-card">
+        <div class="font-name">Anton</div>
+        <div class="message-showcase">
+          <div class="msg-sample msg-combo" style="font-family: 'Anton', sans-serif;">COMBO x5</div>
+          <div class="msg-sample msg-fire" style="font-family: 'Anton', sans-serif;">FIRE!</div>
+        </div>
+        <div class="font-note">Ultra bold, high impact</div>
+      </div>
+
+      <div class="font-card">
+        <div class="font-name">Orbitron</div>
+        <div class="message-showcase">
+          <div class="msg-sample msg-level" style="font-family: 'Orbitron', sans-serif; font-weight: 700;">LEVEL UP!</div>
+          <div class="msg-sample msg-combo" style="font-family: 'Orbitron', sans-serif; font-weight: 700;">COMBO x5</div>
+        </div>
+        <div class="font-note">Sci-fi, techy, futuristic</div>
+      </div>
+
+      <div class="font-card">
+        <div class="font-name">Audiowide</div>
+        <div class="message-showcase">
+          <div class="msg-sample msg-fire" style="font-family: 'Audiowide', sans-serif;">EXCELLENT!</div>
+          <div class="msg-sample msg-level" style="font-family: 'Audiowide', sans-serif;">LOOP UNLOCKED</div>
+        </div>
+        <div class="font-note">Wide, tech, perfect for audio/music theme</div>
+      </div>
+
+      <div class="font-card">
+        <div class="font-name">Bungee</div>
+        <div class="message-showcase">
+          <div class="msg-sample msg-combo" style="font-family: 'Bungee', sans-serif;">COMBO x5</div>
+          <div class="msg-sample msg-fire" style="font-family: 'Bungee', sans-serif;">FIRE!</div>
+        </div>
+        <div class="font-note">Chunky, playful, cartoon game</div>
+      </div>
+
+      <div class="font-card">
+        <div class="font-name">Lilita One</div>
+        <div class="message-showcase">
+          <div class="msg-sample msg-level" style="font-family: 'Lilita One', sans-serif;">LEVEL UP!</div>
+          <div class="msg-sample msg-combo" style="font-family: 'Lilita One', sans-serif;">COMBO x5</div>
+        </div>
+        <div class="font-note">Fun, bouncy, casual game feel</div>
+      </div>
+
+      <div class="font-card">
+        <div class="font-name">Fugaz One</div>
+        <div class="message-showcase">
+          <div class="msg-sample msg-fire" style="font-family: 'Fugaz One', sans-serif;">EXCELLENT!</div>
+          <div class="msg-sample msg-combo" style="font-family: 'Fugaz One', sans-serif;">FIRE!</div>
+        </div>
+        <div class="font-note">Italic, speed, dynamic energy</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- SECTION 3: WORDMARKS -->
+  <section>
+    <h2>3. SONGSUGAR Wordmark Options</h2>
+    <div class="font-grid">
+
+      <div class="font-card recommended">
+        <div class="font-name">Bebas Neue + Gradient</div>
+        <div class="wordmark gradient" style="font-family: 'Bebas Neue', sans-serif; letter-spacing: 4px;">SONGSUGAR</div>
+      </div>
+
+      <div class="font-card recommended">
+        <div class="font-name">Space Grotesk Bold</div>
+        <div class="wordmark" style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; color: #fff;">SONG<span style="color: #00E5FF;">SUGAR</span></div>
+      </div>
+
+      <div class="font-card">
+        <div class="font-name">Righteous + Glow</div>
+        <div class="wordmark glow" style="font-family: 'Righteous', sans-serif; color: #FF2D78;">SONGSUGAR</div>
+      </div>
+
+      <div class="font-card">
+        <div class="font-name">Outfit Black</div>
+        <div class="wordmark" style="font-family: 'Outfit', sans-serif; font-weight: 900; letter-spacing: -1px;">song<span style="color: #AAFF00;">sugar</span></div>
+      </div>
+
+      <div class="font-card">
+        <div class="font-name">Russo One</div>
+        <div class="wordmark gradient" style="font-family: 'Russo One', sans-serif;">SONGSUGAR</div>
+      </div>
+
+      <div class="font-card">
+        <div class="font-name">Audiowide</div>
+        <div class="wordmark" style="font-family: 'Audiowide', sans-serif; font-size: 36px; color: #00E5FF;">SONGSUGAR</div>
+      </div>
+
+      <div class="font-card">
+        <div class="font-name">Teko Bold</div>
+        <div class="wordmark" style="font-family: 'Teko', sans-serif; font-weight: 700; font-size: 56px; letter-spacing: 6px;">SONG<span style="color: #FFD700;">SUGAR</span></div>
+      </div>
+
+      <div class="font-card">
+        <div class="font-name">Orbitron + Glow</div>
+        <div class="wordmark glow" style="font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 36px; color: #00E5FF;">SONGSUGAR</div>
+      </div>
+
+      <div class="font-card">
+        <div class="font-name">Montserrat Black</div>
+        <div class="wordmark" style="font-family: 'Montserrat', sans-serif; font-weight: 900; letter-spacing: -2px;">Song<span style="color: #FF2D78;">Sugar</span></div>
+      </div>
+
+      <div class="font-card">
+        <div class="font-name">Poppins Bold Italic</div>
+        <div class="wordmark" style="font-family: 'Poppins', sans-serif; font-weight: 700; font-style: italic;">SONG<span style="color: #AAFF00;">SUGAR</span></div>
+      </div>
+
+      <div class="font-card">
+        <div class="font-name">Bungee Stacked</div>
+        <div class="wordmark" style="font-family: 'Bungee', sans-serif; font-size: 40px; line-height: 1;"><span style="color: #FF2D78;">SONG</span><br><span style="color: #00E5FF;">SUGAR</span></div>
+      </div>
+
+      <div class="font-card">
+        <div class="font-name">Inter Black + Split</div>
+        <div class="wordmark" style="font-family: 'Inter', sans-serif; font-weight: 900; font-size: 42px;">SONG<span style="background: linear-gradient(90deg, #FF2D78, #FFD700); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">SUGAR</span></div>
+      </div>
+
+      <div class="font-card palette-analogue">
+        <div class="font-name">Bebas Neue (Analogue)</div>
+        <div class="wordmark" style="font-family: 'Bebas Neue', sans-serif; letter-spacing: 4px;"><span style="color: #D4521A;">SONG</span><span style="color: #CFB53B;">SUGAR</span></div>
+      </div>
+
+      <div class="font-card palette-analogue">
+        <div class="font-name">Righteous (Analogue)</div>
+        <div class="wordmark" style="font-family: 'Righteous', sans-serif; color: #E8A090; text-shadow: 0 0 30px #D4521A;">SONGSUGAR</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- SECTION 4: CURSIVE / SCRIPT FONTS -->
+  <section>
+    <h2>4. Cursive / Script Fonts</h2>
+    <div class="font-grid">
+
+      <div class="font-card recommended">
+        <div class="font-name">Pacifico</div>
+        <div class="wordmark" style="font-family: 'Pacifico', cursive; font-size: 52px; color: #FF2D78;">SongSugar</div>
+        <div class="font-note">Fun, retro, beach vibes</div>
+      </div>
+
+      <div class="font-card recommended">
+        <div class="font-name">Lobster</div>
+        <div class="wordmark" style="font-family: 'Lobster', cursive; font-size: 52px; background: linear-gradient(135deg, #FF2D78, #00E5FF); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">SongSugar</div>
+        <div class="font-note">Bold script, very readable</div>
+      </div>
+
+      <div class="font-card">
+        <div class="font-name">Dancing Script</div>
+        <div class="wordmark" style="font-family: 'Dancing Script', cursive; font-size: 52px; font-weight: 700; color: #AAFF00;">SongSugar</div>
+        <div class="font-note">Elegant, flowing, energetic</div>
+      </div>
+
+      <div class="font-card">
+        <div class="font-name">Satisfy</div>
+        <div class="wordmark" style="font-family: 'Satisfy', cursive; font-size: 52px; color: #00E5FF; text-shadow: 0 0 20px rgba(0,229,255,0.5);">SongSugar</div>
+        <div class="font-note">Smooth, modern script</div>
+      </div>
+
+      <div class="font-card">
+        <div class="font-name">Kaushan Script</div>
+        <div class="wordmark" style="font-family: 'Kaushan Script', cursive; font-size: 48px; color: #FFD700;">SongSugar</div>
+        <div class="font-note">Brush-style, handwritten feel</div>
+      </div>
+
+      <div class="font-card">
+        <div class="font-name">Permanent Marker</div>
+        <div class="wordmark" style="font-family: 'Permanent Marker', cursive; font-size: 44px; color: #FF2D78;">SONGSUGAR</div>
+        <div class="font-note">Marker pen, graffiti style</div>
+      </div>
+
+      <div class="font-card">
+        <div class="font-name">Caveat</div>
+        <div class="wordmark" style="font-family: 'Caveat', cursive; font-size: 56px; font-weight: 700; color: #fff;">SongSugar</div>
+        <div class="font-note">Casual handwriting, approachable</div>
+      </div>
+
+      <div class="font-card">
+        <div class="font-name">Great Vibes</div>
+        <div class="wordmark" style="font-family: 'Great Vibes', cursive; font-size: 52px; color: #E8A090;">SongSugar</div>
+        <div class="font-note">Elegant calligraphy</div>
+      </div>
+
+      <div class="font-card">
+        <div class="font-name">Sacramento</div>
+        <div class="wordmark" style="font-family: 'Sacramento', cursive; font-size: 56px; color: #00E5FF;">SongSugar</div>
+        <div class="font-note">Monoline script, clean</div>
+      </div>
+
+      <div class="font-card">
+        <div class="font-name">Yellowtail</div>
+        <div class="wordmark" style="font-family: 'Yellowtail', cursive; font-size: 52px; background: linear-gradient(90deg, #FFD700, #FF2D78); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">SongSugar</div>
+        <div class="font-note">Vintage script, 50s feel</div>
+      </div>
+
+      <div class="font-card">
+        <div class="font-name">Courgette</div>
+        <div class="wordmark" style="font-family: 'Courgette', cursive; font-size: 48px; color: #AAFF00;">SongSugar</div>
+        <div class="font-note">Medium weight, very legible</div>
+      </div>
+
+      <div class="font-card">
+        <div class="font-name">Playball</div>
+        <div class="wordmark" style="font-family: 'Playball', cursive; font-size: 52px; color: #D4521A;">SongSugar</div>
+        <div class="font-note">Baseball card style, retro</div>
+      </div>
+
+      <div class="font-card">
+        <div class="font-name">Cookie</div>
+        <div class="wordmark" style="font-family: 'Cookie', cursive; font-size: 56px; color: #FF2D78; text-shadow: 2px 2px 0 #000;">SongSugar</div>
+        <div class="font-note">Sweet, playful, rounded</div>
+      </div>
+
+      <div class="font-card">
+        <div class="font-name">Allura</div>
+        <div class="wordmark" style="font-family: 'Allura', cursive; font-size: 56px; color: #CFB53B;">SongSugar</div>
+        <div class="font-note">Formal calligraphy, premium</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- SECTION 5: CURSIVE MESSAGES -->
+  <section>
+    <h2>5. Cursive In-Game Messages</h2>
+    <div class="font-grid">
+
+      <div class="font-card">
+        <div class="font-name">Pacifico Messages</div>
+        <div class="message-showcase">
+          <div class="msg-sample msg-combo" style="font-family: 'Pacifico', cursive; font-size: 38px;">Combo x5</div>
+          <div class="msg-sample msg-fire" style="font-family: 'Pacifico', cursive; font-size: 38px;">Fire!</div>
+        </div>
+      </div>
+
+      <div class="font-card">
+        <div class="font-name">Lobster Messages</div>
+        <div class="message-showcase">
+          <div class="msg-sample msg-level" style="font-family: 'Lobster', cursive; font-size: 38px;">Level Up!</div>
+          <div class="msg-sample msg-combo" style="font-family: 'Lobster', cursive; font-size: 38px;">Excellent!</div>
+        </div>
+      </div>
+
+      <div class="font-card">
+        <div class="font-name">Permanent Marker Messages</div>
+        <div class="message-showcase">
+          <div class="msg-sample msg-fire" style="font-family: 'Permanent Marker', cursive; font-size: 36px;">FIRE!</div>
+          <div class="msg-sample msg-level" style="font-family: 'Permanent Marker', cursive; font-size: 36px;">LOOP UNLOCKED</div>
+        </div>
+      </div>
+
+      <div class="font-card">
+        <div class="font-name">Kaushan Script Messages</div>
+        <div class="message-showcase">
+          <div class="msg-sample msg-combo" style="font-family: 'Kaushan Script', cursive; font-size: 38px;">Combo x5</div>
+          <div class="msg-sample msg-fire" style="font-family: 'Kaushan Script', cursive; font-size: 38px;">Excellent!</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- SECTION 6: COMBINED EXAMPLES -->
+  <section>
+    <h2>6. Combined Example (Recommended Pairing)</h2>
+    <div style="background: #080D14; padding: 40px; border-radius: 12px; text-align: center;">
+
+      <!-- Wordmark -->
+      <div style="font-family: 'Bebas Neue', sans-serif; font-size: 56px; letter-spacing: 6px; background: linear-gradient(135deg, #FF2D78, #00E5FF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 40px;">SONGSUGAR</div>
+
+      <!-- UI Elements -->
+      <div style="display: flex; justify-content: center; gap: 40px; margin-bottom: 40px; font-family: 'Space Grotesk', sans-serif;">
+        <div>
+          <div style="font-size: 12px; color: #556677; text-transform: uppercase; letter-spacing: 1px;">Score</div>
+          <div style="font-size: 32px; font-weight: 700; color: #fff;">12,450</div>
+        </div>
+        <div>
+          <div style="font-size: 12px; color: #556677; text-transform: uppercase; letter-spacing: 1px;">Beat</div>
+          <div style="font-size: 32px; font-weight: 700; color: #00E5FF;">45</div>
+        </div>
+        <div>
+          <div style="font-size: 12px; color: #556677; text-transform: uppercase; letter-spacing: 1px;">Vibe</div>
+          <div style="font-size: 32px; font-weight: 700; color: #AAFF00;">32</div>
+        </div>
+        <div>
+          <div style="font-size: 12px; color: #556677; text-transform: uppercase; letter-spacing: 1px;">Melody</div>
+          <div style="font-size: 32px; font-weight: 700; color: #FF2D78;">28</div>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div style="display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; font-family: 'Teko', sans-serif; font-weight: 600;">
+        <div style="font-size: 42px; color: #FFD700; text-shadow: 0 0 20px rgba(255,215,0,0.5);">COMBO x5</div>
+        <div style="font-size: 42px; color: #00E5FF; text-shadow: 0 0 20px rgba(0,229,255,0.5);">LEVEL UP!</div>
+        <div style="font-size: 42px; color: #FF2D78; text-shadow: 0 0 20px rgba(255,45,120,0.5);">FIRE!</div>
+      </div>
+
+    </div>
+    <div class="font-note" style="text-align: center; margin-top: 15px;">
+      Wordmark: Bebas Neue | UI: Space Grotesk | Messages: Teko
+    </div>
+  </section>
+
+</body>
+</html>

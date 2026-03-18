@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SONGSUGAR - Integrated Game Preview</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #1A1208; overflow: hidden; }
+
+    /* CSS Background - lightweight, GPU accelerated */
+    .bg-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .bg-base {
+      background: radial-gradient(ellipse at 50% 100%, #2a1a0a 0%, #1A1208 40%, #0d0904 100%);
+    }
+
+    .bg-glow {
+      opacity: 0.35;
+      transition: opacity 0.3s;
+    }
+
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.25;
+      transition: transform 0.15s ease-out, opacity 0.15s ease-out;
+    }
+
+    .orb-beat {
+      width: 350px; height: 350px;
+      background: #D4521A;
+      left: 0%; top: 20%;
+    }
+
+    .orb-vibe {
+      width: 450px; height: 450px;
+      background: #2E7D7A;
+      left: 30%; top: 10%;
+    }
+
+    .orb-melody {
+      width: 320px; height: 320px;
+      background: #E8A090;
+      right: 0%; top: 25%;
+    }
+
+    .bg-vignette {
+      background: radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.7) 100%);
+    }
+
+    /* Game canvas container */
+    #game-wrapper {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    #game-canvas {
+      border-radius: 8px;
+      box-shadow: 0 0 60px rgba(0,0,0,0.5);
+    }
+
+    /* HUD overlay */
+    .hud {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 30px;
+      z-index: 20;
+      font-family: system-ui;
+      font-weight: bold;
+    }
+
+    .hud-item {
+      text-align: center;
+      padding: 10px 20px;
+      background: rgba(26, 18, 8, 0.8);
+      border-radius: 8px;
+      border: 1px solid #3a2a18;
+    }
+
+    .hud-item .label {
+      font-size: 11px;
+      color: #776655;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .hud-item .value {
+      font-size: 24px;
+      margin-top: 4px;
+    }
+
+    .hud-item.beat .value { color: #D4521A; }
+    .hud-item.vibe .value { color: #2E7D7A; }
+    .hud-item.melody .value { color: #E8A090; }
+    .hud-item.score .value { color: #CFB53B; }
+
+    /* Info */
+    .info {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      color: #776655;
+      font-family: system-ui;
+      font-size: 12px;
+      z-index: 100;
+    }
+  </style>
+</head>
+<body>
+  <!-- Lightweight CSS background -->
+  <div class="bg-layer bg-base"></div>
+  <div class="bg-layer bg-glow">
+    <div class="orb orb-beat" id="orb-beat"></div>
+    <div class="orb orb-vibe" id="orb-vibe"></div>
+    <div class="orb orb-melody" id="orb-melody"></div>
+  </div>
+  <div class="bg-layer bg-vignette"></div>
+
+  <!-- HUD -->
+  <div class="hud">
+    <div class="hud-item beat">
+      <div class="label">Beat</div>
+      <div class="value" id="beat-val">0</div>
+    </div>
+    <div class="hud-item vibe">
+      <div class="label">Vibe</div>
+      <div class="value" id="vibe-val">0</div>
+    </div>
+    <div class="hud-item melody">
+      <div class="label">Melody</div>
+      <div class="value" id="melody-val">0</div>
+    </div>
+    <div class="hud-item score">
+      <div class="label">Score</div>
+      <div class="value" id="score-val">0</div>
+    </div>
+  </div>
+
+  <!-- Game canvas -->
+  <div id="game-wrapper">
+    <canvas id="game-canvas"></canvas>
+  </div>
+
+  <!-- Palette switcher -->
+  <div style="position: fixed; top: 20px; right: 20px; z-index: 100; display: flex; gap: 10px;">
+    <a href="viz-7-integrated.html" style="padding: 10px 20px; background: rgba(212,82,26,0.3); border: 1px solid #D4521A; border-radius: 8px; color: #D4521A; text-decoration: none; font-family: system-ui; font-size: 13px;">Analogue</a>
+    <a href="viz-8-signal.html" style="padding: 10px 20px; background: rgba(26,18,8,0.9); border: 1px solid #3a2a18; border-radius: 8px; color: #f5e6d0; text-decoration: none; font-family: system-ui; font-size: 13px;">Signal</a>
+  </div>
+
+  <div class="info">Analogue Palette | CSS Background | Mobile-safe</div>
+
+  <script>
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Responsive sizing
+    const COLS = 8, ROWS = 12;
+    const TILE_SIZE = Math.min(
+      Math.floor((window.innerHeight * 0.8) / ROWS),
+      Math.floor((window.innerWidth * 0.9) / COLS),
+      50
+    );
+    canvas.width = COLS * TILE_SIZE;
+    canvas.height = ROWS * TILE_SIZE;
+
+    // Analogue palette
+    const COLORS = {
+      bg: '#1A1208',
+      grid: '#251a0e',
+      BEAT: { mid: '#D4521A', shine: '#f5b399', bot: '#9a3a12' },
+      VIBE: { mid: '#2E7D7A', shine: '#8ac0bd', bot: '#1f5755' },
+      MELODY: { mid: '#E8A090', shine: '#fae0d8', bot: '#c07060' }
+    };
+
+    // Simulated game state
+    const grid = [];
+    const cats = ['BEAT', 'VIBE', 'MELODY'];
+
+    for (let r = 0; r < ROWS; r++) {
+      grid[r] = [];
+      for (let c = 0; c < COLS; c++) {
+        grid[r][c] = Math.random() > 0.3 ? cats[Math.floor(Math.random() * 3)] : null;
+      }
+    }
+
+    // Simulated resources & score
+    let resources = { BEAT: 45, VIBE: 32, MELODY: 28 };
+    let score = 12450;
+
+    // Background orbs
+    const orbBeat = document.getElementById('orb-beat');
+    const orbVibe = document.getElementById('orb-vibe');
+    const orbMelody = document.getElementById('orb-melody');
+
+    // Draw tile with candy/jewel style
+    function drawTile(x, y, cat, pulse = 0) {
+      const colors = COLORS[cat];
+      const padding = 2;
+      const radius = 8;
+      const px = x * TILE_SIZE + padding;
+      const py = y * TILE_SIZE + padding;
+      const size = TILE_SIZE - padding * 2;
+
+      // Shadow
+      ctx.fillStyle = 'rgba(0,0,0,0.3)';
+      ctx.beginPath();
+      ctx.roundRect(px + 2, py + 2, size, size, radius);
+      ctx.fill();
+
+      // Main gradient
+      const grad = ctx.createLinearGradient(px, py, px, py + size);
+      grad.addColorStop(0, colors.shine);
+      grad.addColorStop(0.3, colors.mid);
+      grad.addColorStop(1, colors.bot);
+
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.roundRect(px, py, size, size, radius);
+      ctx.fill();
+
+      // Highlight
+      ctx.fillStyle = 'rgba(255,255,255,0.25)';
+      ctx.beginPath();
+      ctx.ellipse(px + size/2, py + size * 0.25, size * 0.3, size * 0.15, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Pulse glow on beat
+      if (pulse > 0) {
+        ctx.shadowColor = colors.mid;
+        ctx.shadowBlur = 20 * pulse;
+        ctx.beginPath();
+        ctx.roundRect(px, py, size, size, radius);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+    }
+
+    // Animation loop
+    function render() {
+      const time = Date.now() * 0.001;
+
+      // Simulated audio
+      const beat = 0.5 + Math.pow(Math.sin(time * 3.5), 4) * 0.5;
+      const vibe = 0.4 + Math.sin(time * 0.7) * 0.3;
+      const melody = 0.5 + Math.sin(time * 2.2) * 0.4;
+
+      // Update CSS background orbs
+      orbBeat.style.opacity = 0.15 + beat * 0.25;
+      orbBeat.style.transform = `scale(${1 + beat * 0.15})`;
+
+      orbVibe.style.opacity = 0.15 + vibe * 0.2;
+      orbVibe.style.transform = `scale(${1 + vibe * 0.1})`;
+
+      orbMelody.style.opacity = 0.15 + melody * 0.25;
+      orbMelody.style.transform = `scale(${1 + melody * 0.15})`;
+
+      // Clear canvas
+      ctx.fillStyle = COLORS.bg;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw grid lines
+      ctx.strokeStyle = COLORS.grid;
+      ctx.lineWidth = 1;
+      for (let r = 0; r <= ROWS; r++) {
+        ctx.beginPath();
+        ctx.moveTo(0, r * TILE_SIZE);
+        ctx.lineTo(canvas.width, r * TILE_SIZE);
+        ctx.stroke();
+      }
+      for (let c = 0; c <= COLS; c++) {
+        ctx.beginPath();
+        ctx.moveTo(c * TILE_SIZE, 0);
+        ctx.lineTo(c * TILE_SIZE, canvas.height);
+        ctx.stroke();
+      }
+
+      // Draw tiles
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          const cat = grid[r][c];
+          if (cat) {
+            let pulse = 0;
+            if (cat === 'BEAT') pulse = beat * 0.5;
+            else if (cat === 'VIBE') pulse = vibe * 0.3;
+            else if (cat === 'MELODY') pulse = melody * 0.4;
+            drawTile(c, r, cat, pulse);
+          }
+        }
+      }
+
+      // Update HUD
+      document.getElementById('beat-val').textContent = resources.BEAT;
+      document.getElementById('vibe-val').textContent = resources.VIBE;
+      document.getElementById('melody-val').textContent = resources.MELODY;
+      document.getElementById('score-val').textContent = score.toLocaleString();
+
+      // Simulate score increase
+      if (Math.random() > 0.95) {
+        score += Math.floor(Math.random() * 100);
+        resources[cats[Math.floor(Math.random() * 3)]] += Math.floor(Math.random() * 5);
+      }
+
+      requestAnimationFrame(render);
+    }
+
+    render();
+
+    // Handle resize
+    window.addEventListener('resize', () => {
+      const newSize = Math.min(
+        Math.floor((window.innerHeight * 0.8) / ROWS),
+        Math.floor((window.innerWidth * 0.9) / COLS),
+        50
+      );
+      canvas.width = COLS * newSize;
+      canvas.height = ROWS * newSize;
+    });
+  </script>
+</body>
+</html>

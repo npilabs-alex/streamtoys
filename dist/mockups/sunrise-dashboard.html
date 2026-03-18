@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SONGSUGAR - Sunrise Theme Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      /* SUNRISE PALETTE - Current */
+      --bg: #1a0f0a;
+      --grid: #2a1a10;
+      --beat: #FF6B35;
+      --beat-shine: #ffb399;
+      --beat-bot: #d94a15;
+      --melody: #aa7755;
+      --melody-shine: #d4a888;
+      --melody-bot: #775533;
+      --vibe: #E879F9;
+      --vibe-shine: #f5d0fe;
+      --vibe-bot: #c026d3;
+      --social: #FBBF24;
+      --social-shine: #fef3c7;
+      --social-bot: #d99a00;
+      --text: #fff5e0;
+      --dim: #FF8066;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    h1 {
+      text-align: center;
+      font-family: 'Luckiest Guy', cursive;
+      font-size: 48px;
+      margin-bottom: 10px;
+      color: white;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: var(--dim);
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+
+    .section {
+      background: var(--grid);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-title::before {
+      content: '';
+      width: 4px;
+      height: 20px;
+      background: linear-gradient(180deg, var(--beat), var(--vibe));
+      border-radius: 2px;
+    }
+
+    /* ========== COLOR SWATCHES ========== */
+    .swatch-row {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .swatch {
+      text-align: center;
+    }
+
+    .swatch-color {
+      width: 70px;
+      height: 50px;
+      border-radius: 8px;
+      margin-bottom: 6px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .swatch-name {
+      font-size: 11px;
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .swatch-hex {
+      font-size: 9px;
+      color: var(--dim);
+      font-family: monospace;
+    }
+
+    /* ========== TILE STYLES ========== */
+    .tile-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 20px;
+    }
+
+    .tile-demo {
+      text-align: center;
+    }
+
+    .tile {
+      width: 56px;
+      height: 56px;
+      border-radius: 8px;
+      margin: 0 auto 10px;
+    }
+
+    .tile-label {
+      font-size: 11px;
+      color: var(--dim);
+    }
+
+    /* Frosted Glass - Regular Tiles */
+    .tile-frosted-beat {
+      background: rgba(255, 107, 53, 0.65);
+      border: 1px solid rgba(255, 179, 153, 0.4);
+    }
+    .tile-frosted-melody {
+      background: rgba(170, 119, 85, 0.65);
+      border: 1px solid rgba(212, 168, 136, 0.4);
+    }
+    .tile-frosted-vibe {
+      background: rgba(232, 121, 249, 0.65);
+      border: 1px solid rgba(245, 208, 254, 0.4);
+    }
+    .tile-frosted-social {
+      background: rgba(251, 191, 36, 0.65);
+      border: 1px solid rgba(254, 243, 199, 0.4);
+    }
+
+    /* Cluster Tiles - Solid with Inner Glow */
+    .tile-cluster {
+      position: relative;
+      overflow: hidden;
+    }
+    .tile-cluster-beat {
+      background: var(--beat);
+    }
+    .tile-cluster-beat::after {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 24px; height: 24px;
+      background: radial-gradient(circle, var(--beat-shine) 0%, transparent 70%);
+      border-radius: 50%;
+      animation: inner-pulse 1s ease-in-out infinite;
+    }
+    .tile-cluster-vibe {
+      background: var(--vibe);
+    }
+    .tile-cluster-vibe::after {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 24px; height: 24px;
+      background: radial-gradient(circle, var(--vibe-shine) 0%, transparent 70%);
+      border-radius: 50%;
+      animation: inner-pulse 1s ease-in-out infinite;
+    }
+
+    @keyframes inner-pulse {
+      0%, 100% { opacity: 0.4; transform: translate(-50%, -50%) scale(1); }
+      50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.2); }
+    }
+
+    @keyframes wave-bob {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-3px); }
+    }
+
+    .tile-wave {
+      animation: wave-bob 0.8s ease-in-out infinite;
+    }
+
+    /* Special Tiles - Neon Outline with Dashed Border */
+    .tile-special {
+      background: var(--bg);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text);
+      font-size: 18px;
+    }
+    .tile-special::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 8px;
+      background: rgba(255, 245, 224, 0.1);
+    }
+    .tile-special::after {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border: 2px dashed var(--text);
+      border-radius: 10px;
+      animation: dash-rotate 2s linear infinite;
+    }
+    @keyframes dash-rotate {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* ========== AUDIO EFFECTS ========== */
+    .audio-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 12px;
+    }
+
+    .sfx-btn {
+      background: var(--bg);
+      border: 2px solid var(--dim);
+      border-radius: 8px;
+      padding: 14px 10px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-align: center;
+    }
+
+    .sfx-btn:hover {
+      border-color: var(--beat);
+      transform: scale(1.02);
+    }
+
+    .sfx-btn:active {
+      transform: scale(0.98);
+      background: var(--grid);
+    }
+
+    .sfx-btn.playing {
+      border-color: var(--vibe);
+      box-shadow: 0 0 20px var(--vibe);
+    }
+
+    .sfx-name {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .sfx-desc {
+      font-size: 9px;
+      color: var(--dim);
+    }
+
+    /* ========== COMBO TEXT ========== */
+    .text-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 16px;
+    }
+
+    .text-effect {
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .text-label {
+      font-size: 10px;
+      color: var(--dim);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .combo-text {
+      font-family: 'Inter', sans-serif;
+      font-weight: 900;
+      font-size: 28px;
+      text-shadow: 0 0 20px currentColor;
+    }
+
+    .combo-2 { color: var(--vibe); }
+    .combo-3 { color: var(--melody); }
+    .combo-4 { color: var(--beat); }
+    .combo-5 { color: var(--social); }
+
+    /* ========== WORDMARK ========== */
+    .wordmark-section {
+      text-align: center;
+      padding: 40px;
+    }
+
+    .wordmark {
+      font-family: 'Luckiest Guy', cursive;
+      font-size: 64px;
+      color: white;
+      margin-bottom: 10px;
+    }
+
+    .wordmark-note {
+      font-size: 12px;
+      color: var(--dim);
+    }
+
+    /* ========== BUTTONS ========== */
+    .button-row {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .btn {
+      padding: 14px 28px;
+      border-radius: 8px;
+      font-family: 'Inter', sans-serif;
+      font-weight: 700;
+      font-size: 14px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-beat { background: var(--beat); color: var(--bg); }
+    .btn-vibe { background: var(--vibe); color: var(--bg); }
+    .btn-outline { background: transparent; border: 2px solid var(--dim); color: var(--text); }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    /* ========== CLUSTER EFFECT DEMO ========== */
+    .cluster-demo-container {
+      display: flex;
+      justify-content: center;
+      gap: 4px;
+      padding: 20px;
+      background: var(--bg);
+      border-radius: 8px;
+    }
+
+    .cluster-tile {
+      width: 48px;
+      height: 48px;
+      border-radius: 6px;
+      position: relative;
+      animation: wave-bob 0.8s ease-in-out infinite;
+    }
+    .cluster-tile:nth-child(2) { animation-delay: 0.1s; }
+    .cluster-tile:nth-child(3) { animation-delay: 0.2s; }
+    .cluster-tile:nth-child(4) { animation-delay: 0.15s; }
+
+    .cluster-tile-vibe {
+      background: var(--vibe);
+    }
+    .cluster-tile-vibe::after {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 20px; height: 20px;
+      background: radial-gradient(circle, var(--vibe-shine) 0%, transparent 70%);
+      border-radius: 50%;
+      animation: inner-pulse 1s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body>
+  <h1>SongSugar</h1>
+  <p class="subtitle">Sunrise Theme - Current Implementation</p>
+
+  <!-- Wordmark -->
+  <div class="section wordmark-section">
+    <div class="wordmark">SongSugar</div>
+    <div class="wordmark-note">Luckiest Guy / White / No glow</div>
+  </div>
+
+  <!-- Color Palette -->
+  <div class="section">
+    <div class="section-title">Color Palette</div>
+    <div class="swatch-row">
+      <div class="swatch">
+        <div class="swatch-color" style="background: var(--bg)"></div>
+        <div class="swatch-name">Background</div>
+        <div class="swatch-hex">#1a0f0a</div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: var(--beat)"></div>
+        <div class="swatch-name">Beat</div>
+        <div class="swatch-hex">#FF6B35</div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: var(--melody)"></div>
+        <div class="swatch-name">Melody</div>
+        <div class="swatch-hex">#aa7755</div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: var(--vibe)"></div>
+        <div class="swatch-name">Vibe</div>
+        <div class="swatch-hex">#E879F9</div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: var(--social)"></div>
+        <div class="swatch-name">Social</div>
+        <div class="swatch-hex">#FBBF24</div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: var(--text)"></div>
+        <div class="swatch-name">Text</div>
+        <div class="swatch-hex">#fff5e0</div>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: var(--dim)"></div>
+        <div class="swatch-name">Dim</div>
+        <div class="swatch-hex">#FF8066</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tile Styles -->
+  <div class="section">
+    <div class="section-title">Tile Styles</div>
+
+    <h4 style="color: var(--dim); margin: 0 0 16px; font-size: 12px;">REGULAR TILES (Frosted Glass)</h4>
+    <div class="tile-grid">
+      <div class="tile-demo">
+        <div class="tile tile-frosted-beat"></div>
+        <div class="tile-label">Beat</div>
+      </div>
+      <div class="tile-demo">
+        <div class="tile tile-frosted-melody"></div>
+        <div class="tile-label">Melody</div>
+      </div>
+      <div class="tile-demo">
+        <div class="tile tile-frosted-vibe"></div>
+        <div class="tile-label">Vibe</div>
+      </div>
+      <div class="tile-demo">
+        <div class="tile tile-frosted-social"></div>
+        <div class="tile-label">Social</div>
+      </div>
+    </div>
+
+    <h4 style="color: var(--dim); margin: 30px 0 16px; font-size: 12px;">CLUSTER TILES (Solid + Inner Glow + Wave)</h4>
+    <div class="cluster-demo-container">
+      <div class="cluster-tile cluster-tile-vibe"></div>
+      <div class="cluster-tile cluster-tile-vibe"></div>
+      <div class="cluster-tile cluster-tile-vibe"></div>
+      <div class="cluster-tile cluster-tile-vibe"></div>
+    </div>
+
+    <h4 style="color: var(--dim); margin: 30px 0 16px; font-size: 12px;">SPECIAL TILES (Neon + Dashed Border)</h4>
+    <div class="tile-grid">
+      <div class="tile-demo">
+        <div class="tile tile-special">&#9733;</div>
+        <div class="tile-label">Wild</div>
+      </div>
+      <div class="tile-demo">
+        <div class="tile tile-special">&#128163;</div>
+        <div class="tile-label">Bomb</div>
+      </div>
+      <div class="tile-demo">
+        <div class="tile tile-special">&#10052;</div>
+        <div class="tile-label">Freeze</div>
+      </div>
+      <div class="tile-demo">
+        <div class="tile tile-special">&#8644;</div>
+        <div class="tile-label">Shuffle</div>
+      </div>
+      <div class="tile-demo">
+        <div class="tile tile-special">2x</div>
+        <div class="tile-label">Double</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Combo Text Effects -->
+  <div class="section">
+    <div class="section-title">Combo Text Effects</div>
+    <div class="text-grid">
+      <div class="text-effect">
+        <div class="text-label">Combo x2</div>
+        <div class="combo-text combo-2">NICE!</div>
+      </div>
+      <div class="text-effect">
+        <div class="text-label">Combo x3</div>
+        <div class="combo-text combo-3">AWESOME!</div>
+      </div>
+      <div class="text-effect">
+        <div class="text-label">Combo x4</div>
+        <div class="combo-text combo-4">FIRE!</div>
+      </div>
+      <div class="text-effect">
+        <div class="text-label">Combo x5+</div>
+        <div class="combo-text combo-5">LEGENDARY!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audio Effects -->
+  <div class="section">
+    <div class="section-title">In-Game Sounds (Click to Play)</div>
+    <div class="audio-grid">
+      <button class="sfx-btn" data-sfx="collapse_beat">
+        <div class="sfx-name">Collapse Beat</div>
+        <div class="sfx-desc">Membrane drum</div>
+      </button>
+      <button class="sfx-btn" data-sfx="collapse_vibe">
+        <div class="sfx-name">Collapse Vibe</div>
+        <div class="sfx-desc">Bell chime</div>
+      </button>
+      <button class="sfx-btn" data-sfx="collapse_melody">
+        <div class="sfx-name">Collapse Melody</div>
+        <div class="sfx-desc">Bell chord</div>
+      </button>
+      <button class="sfx-btn" data-sfx="combo">
+        <div class="sfx-name">Combo</div>
+        <div class="sfx-desc">Rising arpeggio</div>
+      </button>
+      <button class="sfx-btn" data-sfx="land">
+        <div class="sfx-name">Land</div>
+        <div class="sfx-desc">Soft thud</div>
+      </button>
+      <button class="sfx-btn" data-sfx="rotate">
+        <div class="sfx-name">Rotate</div>
+        <div class="sfx-desc">Quick whoosh</div>
+      </button>
+      <button class="sfx-btn" data-sfx="drop">
+        <div class="sfx-name">Hard Drop</div>
+        <div class="sfx-desc">Heavy impact</div>
+      </button>
+      <button class="sfx-btn" data-sfx="move">
+        <div class="sfx-name">Move</div>
+        <div class="sfx-desc">Subtle click</div>
+      </button>
+      <button class="sfx-btn" data-sfx="big_cluster">
+        <div class="sfx-name">Big Cluster</div>
+        <div class="sfx-desc">Power chord</div>
+      </button>
+      <button class="sfx-btn" data-sfx="massive">
+        <div class="sfx-name">Massive</div>
+        <div class="sfx-desc">Epic shimmer</div>
+      </button>
+      <button class="sfx-btn" data-sfx="wild">
+        <div class="sfx-name">Wild</div>
+        <div class="sfx-desc">Magic sparkle</div>
+      </button>
+      <button class="sfx-btn" data-sfx="bomb">
+        <div class="sfx-name">Bomb</div>
+        <div class="sfx-desc">Explosion</div>
+      </button>
+      <button class="sfx-btn" data-sfx="freeze">
+        <div class="sfx-name">Freeze</div>
+        <div class="sfx-desc">Ice crystal</div>
+      </button>
+      <button class="sfx-btn" data-sfx="shuffle">
+        <div class="sfx-name">Shuffle</div>
+        <div class="sfx-desc">Scatter noise</div>
+      </button>
+      <button class="sfx-btn" data-sfx="double">
+        <div class="sfx-name">Double</div>
+        <div class="sfx-desc">Twin chime</div>
+      </button>
+      <button class="sfx-btn" data-sfx="social">
+        <div class="sfx-name">Social</div>
+        <div class="sfx-desc">Happy chord</div>
+      </button>
+      <button class="sfx-btn" data-sfx="danger">
+        <div class="sfx-name">Danger</div>
+        <div class="sfx-desc">Warning pulse</div>
+      </button>
+      <button class="sfx-btn" data-sfx="game_over">
+        <div class="sfx-name">Game Over</div>
+        <div class="sfx-desc">Sad descent</div>
+      </button>
+      <button class="sfx-btn" data-sfx="intro_pad">
+        <div class="sfx-name">Intro Pad</div>
+        <div class="sfx-desc">Gentle backing</div>
+      </button>
+    </div>
+  </div>
+
+  <!-- Buttons -->
+  <div class="section">
+    <div class="section-title">Button Styles</div>
+    <div class="button-row">
+      <button class="btn btn-beat">START SESSION</button>
+      <button class="btn btn-vibe">MIX</button>
+      <button class="btn btn-outline">PAUSE</button>
+    </div>
+  </div>
+
+  <script>
+    let audioReady = false;
+    let sfx = {};
+    let introSynth = null;
+
+    async function initAudio() {
+      if (audioReady) return;
+      await Tone.start();
+      Tone.context.lookAhead = 0.01;
+
+      sfx = {
+        membrane: new Tone.MembraneSynth({
+          pitchDecay: 0.02, octaves: 4,
+          envelope: { attack: 0.001, decay: 0.15, sustain: 0, release: 0.08 }
+        }).toDestination(),
+
+        bell: new Tone.PolySynth(Tone.Synth, {
+          maxPolyphony: 8,
+          oscillator: { type: 'sine' },
+          envelope: { attack: 0.001, decay: 0.4, sustain: 0, release: 0.3 }
+        }).toDestination(),
+
+        pluck: new Tone.PluckSynth({
+          attackNoise: 2, dampening: 4000, resonance: 0.9
+        }).toDestination(),
+
+        noise: new Tone.NoiseSynth({
+          noise: { type: 'white' },
+          envelope: { attack: 0.005, decay: 0.08, sustain: 0, release: 0.05 }
+        }).toDestination(),
+
+        metal: new Tone.MetalSynth({
+          frequency: 300,
+          envelope: { attack: 0.001, decay: 0.6, sustain: 0.1, release: 0.2 }
+        }).toDestination(),
+
+        poly: new Tone.PolySynth(Tone.Synth, {
+          maxPolyphony: 6,
+          oscillator: { type: 'triangle' },
+          envelope: { attack: 0.005, decay: 0.2, sustain: 0.1, release: 0.3 }
+        }).toDestination(),
+
+        click: new Tone.Synth({
+          oscillator: { type: 'sine' },
+          envelope: { attack: 0.001, decay: 0.01, sustain: 0, release: 0.005 }
+        }).toDestination()
+      };
+
+      introSynth = new Tone.PolySynth(Tone.Synth, {
+        maxPolyphony: 2,
+        oscillator: { type: 'sine' },
+        envelope: { attack: 0.3, decay: 0.4, sustain: 0.6, release: 0.8 }
+      }).toDestination();
+      introSynth.volume.value = -10;
+
+      sfx.membrane.volume.value = -4;
+      sfx.bell.volume.value = -6;
+      sfx.pluck.volume.value = -4;
+      sfx.noise.volume.value = -10;
+      sfx.metal.volume.value = -2;
+      sfx.poly.volume.value = -4;
+      sfx.click.volume.value = -18;
+
+      audioReady = true;
+    }
+
+    // Sound functions - exact match to game (index.html Audio object)
+    const sfxFunctions = {
+      // Collapse - different sound per type
+      collapse_beat: () => sfx.membrane.triggerAttackRelease('C2', '16n', Tone.now(), 0.7),
+      collapse_vibe: () => sfx.bell.triggerAttackRelease(['Eb4', 'G4', 'Bb4'], '4n', Tone.now(), 0.4),
+      collapse_melody: () => sfx.bell.triggerAttackRelease(['B4', 'D#5', 'F#5'], '4n', Tone.now(), 0.45),
+
+      // Combo - Chime scale climb
+      combo: () => {
+        const scale = ['C5', 'Eb5', 'G5', 'Bb5', 'C6'];
+        const now = Tone.now();
+        scale.forEach((note, i) => {
+          sfx.bell.triggerAttackRelease(note, '16n', now + i * 0.06, 0.4);
+        });
+      },
+
+      // Land - Soft kick
+      land: () => sfx.membrane.triggerAttackRelease('C1', '16n', Tone.now(), 0.4),
+
+      // Rotate - Whoosh
+      rotate: () => sfx.noise.triggerAttackRelease('32n', Tone.now(), 0.3),
+
+      // Drop - Punchy kick
+      drop: () => sfx.membrane.triggerAttackRelease('C1', '8n', Tone.now(), 0.8),
+
+      // Move - Silent tick
+      move: () => sfx.click.triggerAttackRelease('G5', '64n', Tone.now(), 0.15),
+
+      // Big Cluster 5+ - Orchestral stab
+      big_cluster: () => sfx.poly.triggerAttackRelease(['C3', 'Eb3', 'G3', 'C4'], '8n', Tone.now(), 0.6),
+
+      // Massive 7+ - Crash + roll
+      massive: () => {
+        const now = Tone.now();
+        sfx.metal.triggerAttackRelease('2n', now, 0.5);
+        [0.05, 0.1, 0.15, 0.18].forEach(t => {
+          sfx.membrane.triggerAttackRelease('G2', '32n', now + t, 0.5);
+        });
+      },
+
+      // Wild - Magic sparkle
+      wild: () => {
+        const now = Tone.now();
+        ['C6', 'G6', 'C7'].forEach((n, i) => {
+          sfx.bell.triggerAttackRelease(n, '8n', now + i * 0.05, 0.3 - i * 0.08);
+        });
+      },
+
+      // Bomb - Explosion + debris
+      bomb: () => {
+        const now = Tone.now();
+        sfx.noise.triggerAttackRelease('4n', now, 0.7);
+        sfx.membrane.triggerAttackRelease('C1', '2n', now, 0.8);
+      },
+
+      // Freeze - Crystal shatter
+      freeze: () => {
+        const now = Tone.now();
+        sfx.metal.triggerAttackRelease('8n', now, 0.4);
+        ['C6', 'Eb6', 'G6'].forEach((n, i) => {
+          sfx.bell.triggerAttackRelease(n, '16n', now + 0.03 + i * 0.03, 0.25);
+        });
+      },
+
+      // Shuffle - Card shuffle
+      shuffle: () => {
+        const now = Tone.now();
+        [0, 0.04, 0.08, 0.12, 0.16, 0.2].forEach(t => {
+          sfx.noise.triggerAttackRelease('64n', now + t, 0.15);
+        });
+      },
+
+      // Double 2x - Power ding
+      double: () => {
+        const now = Tone.now();
+        sfx.bell.triggerAttackRelease('G5', '8n', now, 0.5);
+        sfx.bell.triggerAttackRelease('C6', '8n', now + 0.1, 0.4);
+      },
+
+      // Social - Triumphant fanfare
+      social: () => {
+        const now = Tone.now();
+        sfx.poly.triggerAttackRelease(['C4', 'G4', 'C5'], '4n', now, 0.5);
+        sfx.bell.triggerAttackRelease(['Eb5', 'G5', 'C6'], '4n', now + 0.2, 0.4);
+      },
+
+      // Danger - Heartbeat pulse
+      danger: () => {
+        const now = Tone.now();
+        sfx.membrane.triggerAttackRelease('C1', '16n', now, 0.6);
+        sfx.membrane.triggerAttackRelease('C1', '16n', now + 0.15, 0.4);
+      },
+
+      // Game Over - Descending drums
+      game_over: () => {
+        const now = Tone.now();
+        ['C3', 'Bb2', 'G2', 'Eb2', 'C2'].forEach((n, i) => {
+          sfx.membrane.triggerAttackRelease(n, '8n', now + i * 0.15, 0.5 - i * 0.08);
+        });
+      },
+
+      // Intro pad
+      intro_pad: () => {
+        introSynth.triggerAttackRelease(['C2', 'G2'], '2n', Tone.now(), 0.3);
+      }
+    };
+
+    document.querySelectorAll('.sfx-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        await initAudio();
+        const sfxName = btn.dataset.sfx;
+        if (sfxFunctions[sfxName]) {
+          btn.classList.add('playing');
+          sfxFunctions[sfxName]();
+          setTimeout(() => btn.classList.remove('playing'), 300);
+        }
+      });
+    });
+  </script>
+</body>
+</html>

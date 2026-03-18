@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SONGSUGAR - Sound Palette Options</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #0a0a12 0%, #1a1a2e 100%);
+      color: #fff;
+      min-height: 100vh;
+      padding: 30px;
+    }
+    h1 {
+      text-align: center;
+      font-size: 2em;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #ff2d6e, #00e5ff, #39ff14);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .subtitle {
+      text-align: center;
+      color: #888;
+      margin-bottom: 30px;
+    }
+    .init-btn {
+      display: block;
+      margin: 0 auto 30px;
+      padding: 15px 40px;
+      font-size: 18px;
+      background: linear-gradient(135deg, #ff2d6e, #ff6b9d);
+      border: none;
+      border-radius: 30px;
+      color: #fff;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .init-btn:hover { transform: scale(1.05); }
+    .init-btn:disabled { opacity: 0.5; cursor: default; transform: none; }
+
+    .stress-test {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+    .stress-btn {
+      padding: 10px 20px;
+      border: 2px solid #FFD700;
+      background: rgba(255, 215, 0, 0.1);
+      border-radius: 20px;
+      color: #FFD700;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .stress-btn:hover { background: rgba(255, 215, 0, 0.2); }
+    .stress-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    table {
+      width: 100%;
+      max-width: 1400px;
+      margin: 0 auto;
+      border-collapse: collapse;
+      background: rgba(255,255,255,0.03);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    th, td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    th {
+      background: rgba(255,255,255,0.08);
+      font-weight: 600;
+      color: #00e5ff;
+      font-size: 13px;
+    }
+    th:first-child { border-radius: 12px 0 0 0; }
+    th:last-child { border-radius: 0 12px 0 0; }
+    th.perf-header { color: #FFD700; background: rgba(255, 215, 0, 0.15); }
+
+    .sound-name { color: #fff; font-weight: 500; }
+    .current { color: #888; font-style: italic; font-size: 12px; }
+
+    .play-btn {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 15px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.2s;
+      margin: 2px;
+    }
+    .play-btn:hover { transform: scale(1.08); }
+    .play-btn:active { transform: scale(0.95); }
+    .play-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .opt-a { background: linear-gradient(135deg, #ff2d6e, #cc1a4a); color: #fff; }
+    .opt-b { background: linear-gradient(135deg, #00e5ff, #0099cc); color: #fff; }
+    .opt-c { background: linear-gradient(135deg, #39ff14, #2acc10); color: #000; }
+    .opt-p { background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; }
+
+    .desc {
+      font-size: 10px;
+      color: #666;
+      display: block;
+      margin-top: 3px;
+    }
+    .voices {
+      font-size: 9px;
+      color: #ff2d6e;
+      display: block;
+    }
+    .voices.good { color: #39ff14; }
+
+    .section-header {
+      background: rgba(255,255,255,0.05) !important;
+      color: #39ff14 !important;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .note {
+      max-width: 900px;
+      margin: 30px auto;
+      padding: 20px;
+      background: rgba(255,255,255,0.03);
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.08);
+      color: #888;
+      font-size: 14px;
+    }
+    .note h3 { color: #00e5ff; margin-bottom: 10px; }
+    .note code { color: #39ff14; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; }
+    .note.perf { border-color: rgba(255, 215, 0, 0.3); }
+    .note.perf h3 { color: #FFD700; }
+
+    .back-link {
+      display: block;
+      text-align: center;
+      margin-top: 30px;
+      color: #00e5ff;
+      text-decoration: none;
+    }
+    .back-link:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <h1>Sound Palette Options</h1>
+  <p class="subtitle">Click to preview - Performance column optimized for rapid triggering</p>
+
+  <button class="init-btn" id="initBtn">Click to Enable Audio</button>
+
+  <div class="stress-test">
+    <button class="stress-btn" id="stressA" disabled>Stress Test A (10 rapid)</button>
+    <button class="stress-btn" id="stressB" disabled>Stress Test B (10 rapid)</button>
+    <button class="stress-btn" id="stressC" disabled>Stress Test C (10 rapid)</button>
+    <button class="stress-btn" id="stressP" disabled>Stress Test PERF (10 rapid)</button>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Sound</th>
+        <th>Current</th>
+        <th>A: Percussive</th>
+        <th>B: Melodic</th>
+        <th>C: Hybrid</th>
+        <th class="perf-header">PERF: Optimized</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Core Game Sounds -->
+      <tr><td colspan="6" class="section-header">Core Sounds (Frequent)</td></tr>
+
+      <tr>
+        <td class="sound-name">Collapse BEAT</td>
+        <td class="current">Sine beep</td>
+        <td>
+          <button class="play-btn opt-a" onclick="play('collapse_beat_a')">Play</button>
+          <span class="desc">Tuned tom</span>
+          <span class="voices">1 voice</span>
+        </td>
+        <td>
+          <button class="play-btn opt-b" onclick="play('collapse_beat_b')">Play</button>
+          <span class="desc">Marimba chord</span>
+          <span class="voices">3 voices</span>
+        </td>
+        <td>
+          <button class="play-btn opt-c" onclick="play('collapse_beat_c')">Play</button>
+          <span class="desc">Pop + bass</span>
+          <span class="voices">2 voices</span>
+        </td>
+        <td>
+          <button class="play-btn opt-p" onclick="play('collapse_beat_p')">Play</button>
+          <span class="desc">Tight punch</span>
+          <span class="voices good">1 voice, 50ms</span>
+        </td>
+      </tr>
+
+      <tr>
+        <td class="sound-name">Collapse VIBE</td>
+        <td class="current">Sine beep</td>
+        <td>
+          <button class="play-btn opt-a" onclick="play('collapse_vibe_a')">Play</button>
+          <span class="desc">Shaker</span>
+          <span class="voices">1 voice</span>
+        </td>
+        <td>
+          <button class="play-btn opt-b" onclick="play('collapse_vibe_b')">Play</button>
+          <span class="desc">Glass bells</span>
+          <span class="voices">3 voices</span>
+        </td>
+        <td>
+          <button class="play-btn opt-c" onclick="play('collapse_vibe_c')">Play</button>
+          <span class="desc">Whoosh + chime</span>
+          <span class="voices">2 voices</span>
+        </td>
+        <td>
+          <button class="play-btn opt-p" onclick="play('collapse_vibe_p')">Play</button>
+          <span class="desc">Bright tick</span>
+          <span class="voices good">1 voice, 40ms</span>
+        </td>
+      </tr>
+
+      <tr>
+        <td class="sound-name">Collapse MELODY</td>
+        <td class="current">Sine beep</td>
+        <td>
+          <button class="play-btn opt-a" onclick="play('collapse_melody_a')">Play</button>
+          <span class="desc">Wood block</span>
+          <span class="voices">1 voice</span>
+        </td>
+        <td>
+          <button class="play-btn opt-b" onclick="play('collapse_melody_b')">Play</button>
+          <span class="desc">Harp chord</span>
+          <span class="voices">4 voices</span>
+        </td>
+        <td>
+          <button class="play-btn opt-c" onclick="play('collapse_melody_c')">Play</button>
+          <span class="desc">Pluck + sparkle</span>
+          <span class="voices">2 voices</span>
+        </td>
+        <td>
+          <button class="play-btn opt-p" onclick="play('collapse_melody_p')">Play</button>
+          <span class="desc">Clean pluck</span>
+          <span class="voices good">1 voice, 60ms</span>
+        </td>
+      </tr>
+
+      <tr>
+        <td class="sound-name">Combo (2x-5x)</td>
+        <td class="current">Arpeggio</td>
+        <td>
+          <button class="play-btn opt-a" onclick="play('combo_a')">Play</button>
+          <span class="desc">Drum fill</span>
+          <span class="voices">5 voices</span>
+        </td>
+        <td>
+          <button class="play-btn opt-b" onclick="play('combo_b')">Play</button>
+          <span class="desc">Chime scale</span>
+          <span class="voices">5 voices</span>
+        </td>
+        <td>
+          <button class="play-btn opt-c" onclick="play('combo_c')">Play</button>
+          <span class="desc">Impact + sparkle</span>
+          <span class="voices">5 voices</span>
+        </td>
+        <td>
+          <button class="play-btn opt-p" onclick="play('combo_p')">Play</button>
+          <span class="desc">Rising blip</span>
+          <span class="voices good">3 voices, staggered</span>
+        </td>
+      </tr>
+
+      <tr>
+        <td class="sound-name">Land</td>
+        <td class="current">Membrane</td>
+        <td>
+          <button class="play-btn opt-a" onclick="play('land_a')">Play</button>
+          <span class="desc">Soft kick</span>
+          <span class="voices">1 voice</span>
+        </td>
+        <td>
+          <button class="play-btn opt-b" onclick="play('land_b')">Play</button>
+          <span class="desc">Bass pluck</span>
+          <span class="voices">1 voice</span>
+        </td>
+        <td>
+          <button class="play-btn opt-c" onclick="play('land_c')">Play</button>
+          <span class="desc">Thump + click</span>
+          <span class="voices">2 voices</span>
+        </td>
+        <td>
+          <button class="play-btn opt-p" onclick="play('land_p')">Play</button>
+          <span class="desc">Sub thud</span>
+          <span class="voices good">1 voice, 30ms</span>
+        </td>
+      </tr>
+
+      <tr>
+        <td class="sound-name">Rotate</td>
+        <td class="current">High beep</td>
+        <td>
+          <button class="play-btn opt-a" onclick="play('rotate_a')">Play</button>
+          <span class="desc">Click</span>
+          <span class="voices">1 voice</span>
+        </td>
+        <td>
+          <button class="play-btn opt-b" onclick="play('rotate_b')">Play</button>
+          <span class="desc">Grace note</span>
+          <span class="voices">1 voice</span>
+        </td>
+        <td>
+          <button class="play-btn opt-c" onclick="play('rotate_c')">Play</button>
+          <span class="desc">Whoosh</span>
+          <span class="voices">1 voice</span>
+        </td>
+        <td>
+          <button class="play-btn opt-p" onclick="play('rotate_p')">Play</button>
+          <span class="desc">Micro tick</span>
+          <span class="voices good">1 voice, 15ms</span>
+        </td>
+      </tr>
+
+      <tr>
+        <td class="sound-name">Move L/R</td>
+        <td class="current">Quiet beep</td>
+        <td>
+          <button class="play-btn opt-a" onclick="play('move_a')">Play</button>
+          <span class="desc">Tap</span>
+          <span class="voices">1 voice</span>
+        </td>
+        <td>
+          <button class="play-btn opt-b" onclick="play('move_b')">Play</button>
+          <span class="desc">Blip</span>
+          <span class="voices">1 voice</span>
+        </td>
+        <td>
+          <button class="play-btn opt-c" onclick="play('move_c')">Play</button>
+          <span class="desc">Slide</span>
+          <span class="voices">1 voice</span>
+        </td>
+        <td>
+          <button class="play-btn opt-p" onclick="play('move_p')">Play</button>
+          <span class="desc">Silent tick</span>
+          <span class="voices good">1 voice, 10ms</span>
+        </td>
+      </tr>
+
+      <tr>
+        <td class="sound-name">Drop</td>
+        <td class="current">Bass thump</td>
+        <td>
+          <button class="play-btn opt-a" onclick="play('drop_a')">Play</button>
+          <span class="desc">Punchy kick</span>
+          <span class="voices">1 voice</span>
+        </td>
+        <td>
+          <button class="play-btn opt-b" onclick="play('drop_b')">Play</button>
+          <span class="desc">Deep bass</span>
+          <span class="voices">2 voices</span>
+        </td>
+        <td>
+          <button class="play-btn opt-c" onclick="play('drop_c')">Play</button>
+          <span class="desc">Impact + rumble</span>
+          <span class="voices">2 voices</span>
+        </td>
+        <td>
+          <button class="play-btn opt-p" onclick="play('drop_p')">Play</button>
+          <span class="desc">Quick slam</span>
+          <span class="voices good">1 voice, 80ms</span>
+        </td>
+      </tr>
+
+      <!-- Big Events -->
+      <tr><td colspan="6" class="section-header">Big Events (Less Frequent)</td></tr>
+
+      <tr>
+        <td class="sound-name">Big Cluster 5+</td>
+        <td class="current">Same</td>
+        <td>
+          <button class="play-btn opt-a" onclick="play('bigcluster_a')">Play</button>
+          <span class="desc">Cymbal swell</span>
+          <span class="voices">1 voice</span>
+        </td>
+        <td>
+          <button class="play-btn opt-b" onclick="play('bigcluster_b')">Play</button>
+          <span class="desc">Orchestral stab</span>
+          <span class="voices">4 voices</span>
+        </td>
+        <td>
+          <button class="play-btn opt-c" onclick="play('bigcluster_c')">Play</button>
+          <span class="desc">Reverse burst</span>
+          <span class="voices">3 voices</span>
+        </td>
+        <td>
+          <button class="play-btn opt-p" onclick="play('bigcluster_p')">Play</button>
+          <span class="desc">Power hit</span>
+          <span class="voices good">2 voices, 100ms</span>
+        </td>
+      </tr>
+
+      <tr>
+        <td class="sound-name">Massive 7+</td>
+        <td class="current">Same</td>
+        <td>
+          <button class="play-btn opt-a" onclick="play('massive_a')">Play</button>
+          <span class="desc">Crash + roll</span>
+          <span class="voices">5 voices</span>
+        </td>
+        <td>
+          <button class="play-btn opt-b" onclick="play('massive_b')">Play</button>
+          <span class="desc">Choir + bells</span>
+          <span class="voices">5 voices</span>
+        </td>
+        <td>
+          <button class="play-btn opt-c" onclick="play('massive_c')">Play</button>
+          <span class="desc">Epic shimmer</span>
+          <span class="voices">6 voices</span>
+        </td>
+        <td>
+          <button class="play-btn opt-p" onclick="play('massive_p')">Play</button>
+          <span class="desc">Big impact</span>
+          <span class="voices good">2 voices, 150ms</span>
+        </td>
+      </tr>
+
+      <!-- Special Tiles -->
+      <tr><td colspan="6" class="section-header">Special Tiles (Rare)</td></tr>
+
+      <tr>
+        <td class="sound-name">WILD</td>
+        <td class="current">None</td>
+        <td>
+          <button class="play-btn opt-a" onclick="play('wild_a')">Play</button>
+          <span class="desc">Metal shimmer</span>
+        </td>
+        <td>
+          <button class="play-btn opt-b" onclick="play('wild_b')">Play</button>
+          <span class="desc">Magic sparkle</span>
+        </td>
+        <td>
+          <button class="play-btn opt-c" onclick="play('wild_c')">Play</button>
+          <span class="desc">Glitch stutter</span>
+        </td>
+        <td>
+          <button class="play-btn opt-p" onclick="play('wild_p')">Play</button>
+          <span class="desc">Quick shimmer</span>
+          <span class="voices good">1 voice</span>
+        </td>
+      </tr>
+
+      <tr>
+        <td class="sound-name">BOMB</td>
+        <td class="current">None</td>
+        <td>
+          <button class="play-btn opt-a" onclick="play('bomb_a')">Play</button>
+          <span class="desc">Explosion</span>
+        </td>
+        <td>
+          <button class="play-btn opt-b" onclick="play('bomb_b')">Play</button>
+          <span class="desc">Synth boom</span>
+        </td>
+        <td>
+          <button class="play-btn opt-c" onclick="play('bomb_c')">Play</button>
+          <span class="desc">Distorted hit</span>
+        </td>
+        <td>
+          <button class="play-btn opt-p" onclick="play('bomb_p')">Play</button>
+          <span class="desc">Tight boom</span>
+          <span class="voices good">2 voices</span>
+        </td>
+      </tr>
+
+      <tr>
+        <td class="sound-name">FREEZE</td>
+        <td class="current">None</td>
+        <td>
+          <button class="play-btn opt-a" onclick="play('freeze_a')">Play</button>
+          <span class="desc">Ice crack</span>
+        </td>
+        <td>
+          <button class="play-btn opt-b" onclick="play('freeze_b')">Play</button>
+          <span class="desc">Frozen chime</span>
+        </td>
+        <td>
+          <button class="play-btn opt-c" onclick="play('freeze_c')">Play</button>
+          <span class="desc">Crystal shatter</span>
+        </td>
+        <td>
+          <button class="play-btn opt-p" onclick="play('freeze_p')">Play</button>
+          <span class="desc">Quick ice</span>
+          <span class="voices good">1 voice</span>
+        </td>
+      </tr>
+
+      <tr>
+        <td class="sound-name">SHUFFLE</td>
+        <td class="current">None</td>
+        <td>
+          <button class="play-btn opt-a" onclick="play('shuffle_a')">Play</button>
+          <span class="desc">Card shuffle</span>
+        </td>
+        <td>
+          <button class="play-btn opt-b" onclick="play('shuffle_b')">Play</button>
+          <span class="desc">Whoosh swirl</span>
+        </td>
+        <td>
+          <button class="play-btn opt-c" onclick="play('shuffle_c')">Play</button>
+          <span class="desc">Glitch scramble</span>
+        </td>
+        <td>
+          <button class="play-btn opt-p" onclick="play('shuffle_p')">Play</button>
+          <span class="desc">Quick swipe</span>
+          <span class="voices good">1 voice</span>
+        </td>
+      </tr>
+
+      <tr>
+        <td class="sound-name">DOUBLE 2x</td>
+        <td class="current">None</td>
+        <td>
+          <button class="play-btn opt-a" onclick="play('double_a')">Play</button>
+          <span class="desc">Power ding</span>
+        </td>
+        <td>
+          <button class="play-btn opt-b" onclick="play('double_b')">Play</button>
+          <span class="desc">Coin collect</span>
+        </td>
+        <td>
+          <button class="play-btn opt-c" onclick="play('double_c')">Play</button>
+          <span class="desc">Level-up</span>
+        </td>
+        <td>
+          <button class="play-btn opt-p" onclick="play('double_p')">Play</button>
+          <span class="desc">Quick ding</span>
+          <span class="voices good">1 voice</span>
+        </td>
+      </tr>
+
+      <tr>
+        <td class="sound-name">SOCIAL</td>
+        <td class="current">None</td>
+        <td>
+          <button class="play-btn opt-a" onclick="play('social_a')">Play</button>
+          <span class="desc">Jackpot bells</span>
+        </td>
+        <td>
+          <button class="play-btn opt-b" onclick="play('social_b')">Play</button>
+          <span class="desc">Fanfare</span>
+        </td>
+        <td>
+          <button class="play-btn opt-c" onclick="play('social_c')">Play</button>
+          <span class="desc">Gold shower</span>
+        </td>
+        <td>
+          <button class="play-btn opt-p" onclick="play('social_p')">Play</button>
+          <span class="desc">Reward chime</span>
+          <span class="voices good">2 voices</span>
+        </td>
+      </tr>
+
+      <!-- Danger -->
+      <tr><td colspan="6" class="section-header">Danger & Game State</td></tr>
+
+      <tr>
+        <td class="sound-name">Danger</td>
+        <td class="current">None</td>
+        <td>
+          <button class="play-btn opt-a" onclick="play('danger_a')">Play</button>
+          <span class="desc">Heartbeat</span>
+        </td>
+        <td>
+          <button class="play-btn opt-b" onclick="play('danger_b')">Play</button>
+          <span class="desc">Low drone</span>
+        </td>
+        <td>
+          <button class="play-btn opt-c" onclick="play('danger_c')">Play</button>
+          <span class="desc">Alarm pulse</span>
+        </td>
+        <td>
+          <button class="play-btn opt-p" onclick="play('danger_p')">Play</button>
+          <span class="desc">Warning pulse</span>
+          <span class="voices good">1 voice</span>
+        </td>
+      </tr>
+
+      <tr>
+        <td class="sound-name">Game Over</td>
+        <td class="current">None</td>
+        <td>
+          <button class="play-btn opt-a" onclick="play('gameover_a')">Play</button>
+          <span class="desc">Descending</span>
+        </td>
+        <td>
+          <button class="play-btn opt-b" onclick="play('gameover_b')">Play</button>
+          <span class="desc">Sad phrase</span>
+        </td>
+        <td>
+          <button class="play-btn opt-c" onclick="play('gameover_c')">Play</button>
+          <span class="desc">Glitch fade</span>
+        </td>
+        <td>
+          <button class="play-btn opt-p" onclick="play('gameover_p')">Play</button>
+          <span class="desc">Quick end</span>
+          <span class="voices good">2 voices</span>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="note perf">
+    <h3>Performance Column Features</h3>
+    <ul style="list-style: none;">
+      <li style="padding: 5px 0;"><code>Single voice</code> - One oscillator per sound, no chords</li>
+      <li style="padding: 5px 0;"><code>Fast release</code> - 10-80ms decay, no voice overlap on rapid triggers</li>
+      <li style="padding: 5px 0;"><code>Voice limiting</code> - Auto-cuts previous sound when retriggered</li>
+      <li style="padding: 5px 0;"><code>Distinct per type</code> - BEAT/VIBE/MELODY still sound different</li>
+      <li style="padding: 5px 0;"><code>C minor tuned</code> - Still harmonizes with loops</li>
+    </ul>
+  </div>
+
+  <div class="note">
+    <h3>Recommendation</h3>
+    <p>Use <strong>PERF column</strong> for all frequent sounds (collapse, move, rotate, land).
+    Use <strong>A/B/C</strong> for rare events (BOMB, SOCIAL, game over) where richness matters more than performance.</p>
+  </div>
+
+  <a href="index.html" class="back-link">&larr; Back to Mockups</a>
+
+  <script>
+    let audioReady = false;
+    const synths = {};
+
+    document.getElementById('initBtn').addEventListener('click', async () => {
+      await Tone.start();
+      initSynths();
+      audioReady = true;
+      document.getElementById('initBtn').textContent = 'Audio Ready!';
+      document.getElementById('initBtn').disabled = true;
+      document.querySelectorAll('.play-btn, .stress-btn').forEach(btn => btn.disabled = false);
+    });
+
+    document.querySelectorAll('.play-btn, .stress-btn').forEach(btn => btn.disabled = true);
+
+    // Stress test buttons
+    document.getElementById('stressA').addEventListener('click', () => stressTest('a'));
+    document.getElementById('stressB').addEventListener('click', () => stressTest('b'));
+    document.getElementById('stressC').addEventListener('click', () => stressTest('c'));
+    document.getElementById('stressP').addEventListener('click', () => stressTest('p'));
+
+    function stressTest(variant) {
+      const types = ['beat', 'vibe', 'melody'];
+      for (let i = 0; i < 10; i++) {
+        setTimeout(() => {
+          play(`collapse_${types[i % 3]}_${variant}`);
+        }, i * 80); // 80ms apart = rapid succession
+      }
+    }
+
+    function initSynths() {
+      // Standard synths
+      synths.membrane = new Tone.MembraneSynth({ pitchDecay: 0.02, octaves: 4 }).toDestination();
+      synths.metal = new Tone.MetalSynth({ frequency: 300, envelope: { attack: 0.001, decay: 0.8, sustain: 0.1, release: 0.3 } }).toDestination();
+      synths.metal.volume.value = 0; // Boost volume
+      synths.pluck = new Tone.PluckSynth({ attackNoise: 2, dampening: 4000, resonance: 0.9 }).toDestination();
+      synths.fm = new Tone.FMSynth({ modulationIndex: 12, envelope: { attack: 0.001, decay: 0.2, sustain: 0, release: 0.1 } }).toDestination();
+      synths.poly = new Tone.PolySynth(Tone.Synth, { oscillator: { type: 'triangle' }, envelope: { attack: 0.005, decay: 0.2, sustain: 0.1, release: 0.3 } }).toDestination();
+      synths.noise = new Tone.NoiseSynth({ noise: { type: 'white' }, envelope: { attack: 0.005, decay: 0.1, sustain: 0, release: 0.1 } }).toDestination();
+      synths.duo = new Tone.DuoSynth({ vibratoAmount: 0.5, vibratoRate: 5, voice0: { oscillator: { type: 'sine' } }, voice1: { oscillator: { type: 'triangle' } } }).toDestination();
+
+      // Bell synth
+      synths.bell = new Tone.PolySynth(Tone.Synth, {
+        oscillator: { type: 'sine' },
+        envelope: { attack: 0.001, decay: 0.5, sustain: 0, release: 0.5 }
+      }).toDestination();
+      synths.bell.volume.value = -6;
+
+      // === PERFORMANCE SYNTHS ===
+      // Single-voice, fast-release, voice-limited
+      synths.perf = {
+        // BEAT - punchy low
+        beat: new Tone.MembraneSynth({
+          pitchDecay: 0.01,
+          octaves: 2,
+          envelope: { attack: 0.001, decay: 0.05, sustain: 0, release: 0.02 }
+        }).toDestination(),
+
+        // VIBE - bright click
+        vibe: new Tone.Synth({
+          oscillator: { type: 'sine' },
+          envelope: { attack: 0.001, decay: 0.04, sustain: 0, release: 0.01 }
+        }).toDestination(),
+
+        // MELODY - clean pluck
+        melody: new Tone.Synth({
+          oscillator: { type: 'triangle' },
+          envelope: { attack: 0.001, decay: 0.06, sustain: 0, release: 0.02 }
+        }).toDestination(),
+
+        // Generic click
+        click: new Tone.Synth({
+          oscillator: { type: 'sine' },
+          envelope: { attack: 0.001, decay: 0.015, sustain: 0, release: 0.005 }
+        }).toDestination(),
+
+        // Sub bass
+        sub: new Tone.MembraneSynth({
+          pitchDecay: 0.005,
+          octaves: 1,
+          envelope: { attack: 0.001, decay: 0.03, sustain: 0, release: 0.01 }
+        }).toDestination(),
+
+        // Impact
+        impact: new Tone.MembraneSynth({
+          pitchDecay: 0.02,
+          octaves: 3,
+          envelope: { attack: 0.001, decay: 0.08, sustain: 0, release: 0.05 }
+        }).toDestination(),
+
+        // High ping
+        ping: new Tone.Synth({
+          oscillator: { type: 'sine' },
+          envelope: { attack: 0.001, decay: 0.1, sustain: 0, release: 0.05 }
+        }).toDestination()
+      };
+
+      synths.perf.beat.volume.value = -4;
+      synths.perf.vibe.volume.value = -8;
+      synths.perf.melody.volume.value = -6;
+      synths.perf.click.volume.value = -12;
+      synths.perf.sub.volume.value = -6;
+      synths.perf.impact.volume.value = -4;
+      synths.perf.ping.volume.value = -8;
+    }
+
+    const sounds = {
+      // ========== COLLAPSE BEAT ==========
+      collapse_beat_a: () => {
+        synths.membrane.triggerAttackRelease('C2', '16n', Tone.now(), 0.7);
+      },
+      collapse_beat_b: () => {
+        synths.fm.triggerAttackRelease('C4', '8n', Tone.now(), 0.5);
+        synths.fm.triggerAttackRelease('G4', '8n', Tone.now() + 0.02, 0.4);
+        synths.fm.triggerAttackRelease('C5', '8n', Tone.now() + 0.04, 0.3);
+      },
+      collapse_beat_c: () => {
+        synths.noise.triggerAttackRelease('32n', Tone.now(), 0.3);
+        synths.membrane.triggerAttackRelease('C2', '8n', Tone.now(), 0.5);
+      },
+      collapse_beat_p: () => {
+        synths.perf.beat.triggerAttackRelease('C2', '32n', Tone.now(), 0.8);
+      },
+
+      // ========== COLLAPSE VIBE ==========
+      collapse_vibe_a: () => {
+        synths.noise.triggerAttackRelease('16n', Tone.now(), 0.25);
+      },
+      collapse_vibe_b: () => {
+        synths.bell.triggerAttackRelease(['Eb4', 'G4', 'Bb4'], '4n', Tone.now(), 0.4);
+      },
+      collapse_vibe_c: () => {
+        synths.noise.triggerAttackRelease('8n', Tone.now(), 0.15);
+        synths.bell.triggerAttackRelease('Eb5', '4n', Tone.now() + 0.05, 0.3);
+      },
+      collapse_vibe_p: () => {
+        synths.perf.vibe.triggerAttackRelease('Eb5', '64n', Tone.now(), 0.5);
+      },
+
+      // ========== COLLAPSE MELODY ==========
+      collapse_melody_a: () => {
+        synths.pluck.triggerAttack('G5', Tone.now());
+      },
+      collapse_melody_b: () => {
+        ['G4', 'Bb4', 'C5', 'Eb5'].forEach((note, i) => {
+          synths.pluck.triggerAttack(note, Tone.now() + i * 0.03);
+        });
+      },
+      collapse_melody_c: () => {
+        synths.pluck.triggerAttack('G4', Tone.now());
+        synths.bell.triggerAttackRelease('G6', '8n', Tone.now() + 0.05, 0.2);
+      },
+      collapse_melody_p: () => {
+        synths.perf.melody.triggerAttackRelease('G4', '32n', Tone.now(), 0.6);
+      },
+
+      // ========== COMBO ==========
+      combo_a: () => {
+        [0, 0.08, 0.16, 0.22, 0.26].forEach((t, i) => {
+          synths.membrane.triggerAttackRelease('C2', '32n', Tone.now() + t, 0.3 + i * 0.1);
+        });
+      },
+      combo_b: () => {
+        ['C5', 'Eb5', 'G5', 'Bb5', 'C6'].forEach((note, i) => {
+          synths.bell.triggerAttackRelease(note, '16n', Tone.now() + i * 0.06, 0.4);
+        });
+      },
+      combo_c: () => {
+        synths.membrane.triggerAttackRelease('C1', '8n', Tone.now(), 0.6);
+        ['G5', 'Bb5', 'C6', 'Eb6'].forEach((note, i) => {
+          synths.bell.triggerAttackRelease(note, '16n', Tone.now() + 0.1 + i * 0.05, 0.25);
+        });
+      },
+      combo_p: () => {
+        synths.perf.impact.triggerAttackRelease('C2', '16n', Tone.now(), 0.5);
+        synths.perf.ping.triggerAttackRelease('G5', '32n', Tone.now() + 0.05, 0.4);
+        synths.perf.ping.triggerAttackRelease('C6', '32n', Tone.now() + 0.1, 0.3);
+      },
+
+      // ========== LAND ==========
+      land_a: () => {
+        synths.membrane.triggerAttackRelease('C1', '16n', Tone.now(), 0.4);
+      },
+      land_b: () => {
+        synths.pluck.triggerAttack('C2', Tone.now());
+      },
+      land_c: () => {
+        synths.membrane.triggerAttackRelease('C1', '32n', Tone.now(), 0.3);
+        synths.metal.triggerAttackRelease('32n', Tone.now(), 0.1);
+      },
+      land_p: () => {
+        synths.perf.sub.triggerAttackRelease('C1', '64n', Tone.now(), 0.4);
+      },
+
+      // ========== ROTATE ==========
+      rotate_a: () => {
+        synths.metal.triggerAttackRelease('64n', Tone.now(), 0.15);
+      },
+      rotate_b: () => {
+        synths.poly.triggerAttackRelease('G5', '64n', Tone.now(), 0.3);
+      },
+      rotate_c: () => {
+        synths.noise.triggerAttackRelease('32n', Tone.now(), 0.08);
+      },
+      rotate_p: () => {
+        synths.perf.click.triggerAttackRelease('C6', '64n', Tone.now(), 0.25);
+      },
+
+      // ========== MOVE ==========
+      move_a: () => {
+        synths.metal.triggerAttackRelease('64n', Tone.now(), 0.05);
+      },
+      move_b: () => {
+        synths.poly.triggerAttackRelease('C6', '64n', Tone.now(), 0.15);
+      },
+      move_c: () => {
+        synths.noise.triggerAttackRelease('64n', Tone.now(), 0.03);
+      },
+      move_p: () => {
+        synths.perf.click.triggerAttackRelease('G5', '64n', Tone.now(), 0.1);
+      },
+
+      // ========== DROP ==========
+      drop_a: () => {
+        synths.membrane.triggerAttackRelease('C1', '8n', Tone.now(), 0.8);
+      },
+      drop_b: () => {
+        synths.duo.triggerAttackRelease('C1', '8n', Tone.now(), 0.6);
+      },
+      drop_c: () => {
+        synths.membrane.triggerAttackRelease('C0', '4n', Tone.now(), 0.7);
+        synths.noise.triggerAttackRelease('16n', Tone.now(), 0.2);
+      },
+      drop_p: () => {
+        synths.perf.impact.triggerAttackRelease('C1', '16n', Tone.now(), 0.7);
+      },
+
+      // ========== BIG CLUSTER ==========
+      bigcluster_a: () => {
+        synths.metal.triggerAttackRelease('2n', Tone.now(), 0.8);
+      },
+      bigcluster_b: () => {
+        synths.poly.triggerAttackRelease(['C3', 'Eb3', 'G3', 'C4'], '8n', Tone.now(), 0.6);
+      },
+      bigcluster_c: () => {
+        synths.noise.triggerAttackRelease('8n', Tone.now(), 0.3);
+        synths.bell.triggerAttackRelease(['C5', 'G5'], '4n', Tone.now() + 0.05, 0.4);
+      },
+      bigcluster_p: () => {
+        synths.perf.impact.triggerAttackRelease('C2', '8n', Tone.now(), 0.8);
+        synths.perf.ping.triggerAttackRelease('C5', '16n', Tone.now() + 0.02, 0.5);
+      },
+
+      // ========== MASSIVE ==========
+      massive_a: () => {
+        synths.metal.triggerAttackRelease('2n', Tone.now(), 0.5);
+        [0.05, 0.1, 0.15, 0.18].forEach(t => {
+          synths.membrane.triggerAttackRelease('G2', '32n', Tone.now() + t, 0.5);
+        });
+      },
+      massive_b: () => {
+        synths.duo.triggerAttackRelease('C3', '2n', Tone.now(), 0.5);
+        synths.bell.triggerAttackRelease(['C5', 'Eb5', 'G5', 'C6'], '2n', Tone.now() + 0.05, 0.4);
+      },
+      massive_c: () => {
+        synths.membrane.triggerAttackRelease('C1', '4n', Tone.now(), 0.8);
+        synths.metal.triggerAttackRelease('1n', Tone.now() + 0.02, 0.3);
+        ['G5', 'C6', 'Eb6', 'G6'].forEach((n, i) => {
+          synths.bell.triggerAttackRelease(n, '4n', Tone.now() + 0.1 + i * 0.04, 0.25);
+        });
+      },
+      massive_p: () => {
+        synths.perf.impact.triggerAttackRelease('C1', '8n', Tone.now(), 1);
+        synths.perf.ping.triggerAttackRelease('G5', '8n', Tone.now() + 0.03, 0.6);
+      },
+
+      // ========== WILD ==========
+      wild_a: () => {
+        synths.metal.triggerAttackRelease('2n', Tone.now(), 0.7);
+      },
+      wild_b: () => {
+        ['C6', 'G6', 'C7'].forEach((n, i) => {
+          synths.bell.triggerAttackRelease(n, '8n', Tone.now() + i * 0.05, 0.3 - i * 0.08);
+        });
+      },
+      wild_c: () => {
+        [0, 0.04, 0.08, 0.1].forEach(t => {
+          synths.poly.triggerAttackRelease('G5', '64n', Tone.now() + t, 0.35);
+        });
+      },
+      wild_p: () => {
+        synths.perf.ping.triggerAttackRelease('C6', '16n', Tone.now(), 0.5);
+      },
+
+      // ========== BOMB ==========
+      bomb_a: () => {
+        synths.noise.triggerAttackRelease('4n', Tone.now(), 0.7);
+        synths.membrane.triggerAttackRelease('C1', '2n', Tone.now(), 0.8);
+      },
+      bomb_b: () => {
+        synths.fm.modulationIndex.value = 30;
+        synths.fm.triggerAttackRelease('C1', '4n', Tone.now(), 0.8);
+        synths.fm.modulationIndex.value = 12;
+      },
+      bomb_c: () => {
+        synths.membrane.triggerAttackRelease('C1', '4n', Tone.now(), 0.9);
+        synths.metal.triggerAttackRelease('8n', Tone.now() + 0.02, 0.5);
+      },
+      bomb_p: () => {
+        synths.perf.impact.triggerAttackRelease('C1', '8n', Tone.now(), 1);
+        synths.noise.triggerAttackRelease('16n', Tone.now(), 0.4);
+      },
+
+      // ========== FREEZE ==========
+      freeze_a: () => {
+        synths.noise.triggerAttackRelease('16n', Tone.now(), 0.4);
+        synths.pluck.triggerAttack('C6', Tone.now() + 0.02);
+      },
+      freeze_b: () => {
+        synths.bell.triggerAttackRelease(['G5', 'Bb5', 'Eb6'], '1n', Tone.now(), 0.4);
+      },
+      freeze_c: () => {
+        synths.metal.triggerAttackRelease('8n', Tone.now(), 0.4);
+        ['C6', 'Eb6', 'G6'].forEach((n, i) => {
+          synths.bell.triggerAttackRelease(n, '16n', Tone.now() + 0.03 + i * 0.03, 0.25);
+        });
+      },
+      freeze_p: () => {
+        synths.perf.ping.triggerAttackRelease('Eb6', '16n', Tone.now(), 0.5);
+      },
+
+      // ========== SHUFFLE ==========
+      shuffle_a: () => {
+        [0, 0.04, 0.08, 0.12, 0.16, 0.2].forEach(t => {
+          synths.noise.triggerAttackRelease('64n', Tone.now() + t, 0.15);
+        });
+      },
+      shuffle_b: () => {
+        synths.noise.triggerAttackRelease('4n', Tone.now(), 0.25);
+      },
+      shuffle_c: () => {
+        [0, 0.03, 0.07, 0.09, 0.13, 0.15].forEach((t, i) => {
+          synths.poly.triggerAttackRelease(['C5', 'Eb5', 'G5', 'Bb5'][i % 4], '64n', Tone.now() + t, 0.3);
+        });
+      },
+      shuffle_p: () => {
+        synths.noise.triggerAttackRelease('8n', Tone.now(), 0.2);
+      },
+
+      // ========== DOUBLE ==========
+      double_a: () => {
+        synths.bell.triggerAttackRelease('G5', '8n', Tone.now(), 0.5);
+        synths.bell.triggerAttackRelease('C6', '8n', Tone.now() + 0.1, 0.4);
+      },
+      double_b: () => {
+        synths.poly.triggerAttackRelease('Eb6', '16n', Tone.now(), 0.4);
+        synths.poly.triggerAttackRelease('G6', '16n', Tone.now() + 0.06, 0.35);
+      },
+      double_c: () => {
+        ['C5', 'Eb5', 'G5', 'C6'].forEach((n, i) => {
+          synths.bell.triggerAttackRelease(n, '16n', Tone.now() + i * 0.08, 0.4 - i * 0.05);
+        });
+      },
+      double_p: () => {
+        synths.perf.ping.triggerAttackRelease('G5', '16n', Tone.now(), 0.5);
+      },
+
+      // ========== SOCIAL ==========
+      social_a: () => {
+        [0, 0.08, 0.16, 0.24, 0.32, 0.4].forEach((t, i) => {
+          synths.bell.triggerAttackRelease('C6', '8n', Tone.now() + t, 0.4);
+        });
+      },
+      social_b: () => {
+        synths.poly.triggerAttackRelease(['C4', 'G4', 'C5'], '4n', Tone.now(), 0.5);
+        synths.bell.triggerAttackRelease(['Eb5', 'G5', 'C6'], '4n', Tone.now() + 0.2, 0.4);
+      },
+      social_c: () => {
+        synths.metal.triggerAttackRelease('2n', Tone.now(), 0.25);
+        [0.05, 0.12, 0.2, 0.28, 0.38].forEach((t, i) => {
+          synths.bell.triggerAttackRelease(['C6', 'Eb6', 'G6', 'C7'][i % 4], '16n', Tone.now() + t, 0.3);
+        });
+      },
+      social_p: () => {
+        synths.perf.ping.triggerAttackRelease('C6', '8n', Tone.now(), 0.6);
+        synths.perf.ping.triggerAttackRelease('G6', '8n', Tone.now() + 0.1, 0.4);
+      },
+
+      // ========== DANGER ==========
+      danger_a: () => {
+        synths.membrane.triggerAttackRelease('C1', '16n', Tone.now(), 0.6);
+        synths.membrane.triggerAttackRelease('C1', '16n', Tone.now() + 0.15, 0.4);
+      },
+      danger_b: () => {
+        synths.duo.triggerAttackRelease('C1', '1n', Tone.now(), 0.4);
+      },
+      danger_c: () => {
+        synths.poly.triggerAttackRelease('Eb4', '16n', Tone.now(), 0.4);
+        synths.poly.triggerAttackRelease('Eb4', '16n', Tone.now() + 0.2, 0.4);
+        synths.membrane.triggerAttackRelease('C1', '2n', Tone.now(), 0.3);
+      },
+      danger_p: () => {
+        synths.perf.sub.triggerAttackRelease('C1', '8n', Tone.now(), 0.6);
+      },
+
+      // ========== GAME OVER ==========
+      gameover_a: () => {
+        ['C3', 'Bb2', 'G2', 'Eb2', 'C2'].forEach((n, i) => {
+          synths.membrane.triggerAttackRelease(n, '8n', Tone.now() + i * 0.15, 0.5 - i * 0.08);
+        });
+      },
+      gameover_b: () => {
+        synths.poly.triggerAttackRelease('Eb4', '8n', Tone.now(), 0.5);
+        synths.poly.triggerAttackRelease('C4', '8n', Tone.now() + 0.3, 0.45);
+        synths.poly.triggerAttackRelease('G3', '4n', Tone.now() + 0.6, 0.4);
+      },
+      gameover_c: () => {
+        [0, 0.1, 0.22, 0.38, 0.58].forEach((t, i) => {
+          synths.poly.triggerAttackRelease('C4', '32n', Tone.now() + t, 0.4 - i * 0.07);
+        });
+        synths.noise.triggerAttackRelease('2n', Tone.now(), 0.15);
+      },
+      gameover_p: () => {
+        synths.perf.impact.triggerAttackRelease('C2', '8n', Tone.now(), 0.5);
+        synths.perf.melody.triggerAttackRelease('Eb4', '4n', Tone.now() + 0.1, 0.4);
+      }
+    };
+
+    function play(soundId) {
+      if (!audioReady) return;
+      if (sounds[soundId]) {
+        sounds[soundId]();
+      }
+    }
+  </script>
+</body>
+</html>

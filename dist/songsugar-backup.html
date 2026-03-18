@@ -44,33 +44,8 @@ const PALETTES = {
       VIBE: { mid: 0x2E7D7A, shine: 0x8ac0bd, bot: 0x1f5755 },
       SOCIAL: { mid: 0xCFB53B, shine: 0xf5ecc5, bot: 0x8B6914 }
     }
-  },
-  vaporwave: {
-    name: 'VAPORWAVE', bg: 0x1a0a2e, grid: 0x2d1b4e,
-    beat: 0x9D4EDD, melody: 0xFF6B9D, vibe: 0x00D4FF,
-    social: [0xFFE566, 0xFFD700, 0xFFA500, 0xFF8C00],
-    text: 0xffffff, dim: 0x8866aa,
-    gradients: {
-      BEAT: { mid: 0x9D4EDD, shine: 0xc9a0ee, bot: 0x7030a0 },
-      MELODY: { mid: 0xFF6B9D, shine: 0xffb3cc, bot: 0xd94a7b },
-      VIBE: { mid: 0x00D4FF, shine: 0x80eaff, bot: 0x00a0c0 },
-      SOCIAL: { mid: 0xFFD700, shine: 0xfff5cc, bot: 0xFF8C00 }
-    }
-  },
-  sunrise: {
-    name: 'SUNRISE', bg: 0x1a0f0a, grid: 0x2a1a10,
-    beat: 0xFF6B35, melody: 0xFF8066, vibe: 0xE879F9,
-    social: [0xFEF3C7, 0xFBBF24, 0xD99A00, 0xCC8800],
-    text: 0xfff5e0, dim: 0xaa7755,
-    gradients: {
-      BEAT: { mid: 0xFF6B35, shine: 0xffb399, bot: 0xd94a15 },
-      MELODY: { mid: 0xFF8066, shine: 0xffb3a3, bot: 0xd95040 },
-      VIBE: { mid: 0xE879F9, shine: 0xf5d0fe, bot: 0xc026d3 },
-      SOCIAL: { mid: 0xFBBF24, shine: 0xfef3c7, bot: 0xd99a00 }
-    }
   }
 };
-const PALETTE_ORDER = ['signal', 'analogue', 'vaporwave', 'sunrise'];
 
 let currentPalette = 'analogue';
 const P = () => PALETTES[currentPalette];
@@ -176,21 +151,10 @@ function resize() {
 }
 
 function togglePalette() {
-  const idx = PALETTE_ORDER.indexOf(currentPalette);
-  currentPalette = PALETTE_ORDER[(idx + 1) % PALETTE_ORDER.length];
+  currentPalette = currentPalette === 'signal' ? 'analogue' : 'signal';
   app.renderer.background.color = P().bg;
   G.dirty = true; render();
 }
-
-function setPalette(name) {
-  if (PALETTES[name]) {
-    currentPalette = name;
-    app.renderer.background.color = P().bg;
-    G.dirty = true; render();
-  }
-}
-
-let palettePickerOpen = false;
 
 function getColor(cat) {
   const p = P();
@@ -1268,9 +1232,34 @@ function renderHome() {
   g.beginFill(p.bg); g.drawRect(0, 0, W, H); g.endFill();
   layers.overlay.addChild(g);
 
+  // Initialize and update game engine for background tiles
+  if (!homeInitialized) initHomeGame();
+  updateHomeGame();
+
+  // Render falling game tiles FIRST (behind everything)
+  const tilesG = new PIXI.Graphics();
+  renderHomeGameTiles(tilesG);
+  layers.overlay.addChild(tilesG);
+
+  // OPAQUE OVERLAY - gradient that makes tiles appear to fall from behind
+  const overlay = new PIXI.Graphics();
+  // Top solid section (fully opaque) - covers logo/scores area
+  overlay.beginFill(p.bg, 0.97);
+  overlay.drawRect(0, 0, W, H * 0.48);
+  overlay.endFill();
+  // Gradient fade section
+  for (let i = 0; i < 20; i++) {
+    const y = H * 0.48 + i * (H * 0.08 / 20);
+    const alpha = 0.97 - (i / 20) * 0.97;
+    overlay.beginFill(p.bg, alpha);
+    overlay.drawRect(0, y, W, H * 0.08 / 20 + 1);
+    overlay.endFill();
+  }
+  layers.overlay.addChild(overlay);
+
   // Logo with animation (shimmer effect)
   const logoSize = isMobile ? Math.min(52, W * 0.15) : Math.min(75, W * 0.1);
-  const logoY = isMobile ? H * 0.22 : H * 0.25;
+  const logoY = isMobile ? 70 : 95;
   const shimmer = 0.85 + Math.sin(Date.now() * 0.003) * 0.15; // Gentle pulse
 
   const title = new PIXI.Text('SongSugar', {
@@ -1303,19 +1292,69 @@ function renderHome() {
   tag.anchor.set(0.5); tag.x = W/2; tag.y = tagY;
   layers.overlay.addChild(tag);
 
-  // Button area - centered vertically
+  // High score table - sized to fit
+  const scores = [
+    { name: 'MENG', score: 847520 },
+    { name: 'ALEX', score: 723100 },
+    { name: 'MAX', score: 698450 },
+    { name: 'JETH', score: 654200 },
+    { name: 'LUKE', score: 612800 },
+    { name: 'HAN', score: 589300 },
+    { name: 'CHEWIE', score: 534100 },
+    { name: 'BEN', score: 478900 },
+    { name: 'LIA', score: 445200 },
+    { name: 'YOU?', score: 0 }
+  ];
+
+  const tableY = tagY + tagSize + (isMobile ? 18 : 28);
+  // Calculate row height to fit available space
+  const availableH = H * 0.42 - tableY; // Reserve bottom 42% for buttons/tiles
+  const rowH = Math.min(isMobile ? 22 : 28, Math.floor(availableH / 11));
+  const tableW = isMobile ? W - pad * 2 : Math.min(380, W * 0.5);
+  const scoreSize = Math.min(isMobile ? 10 : 14, rowH - 6);
+  const labelSize = isMobile ? 9 : 12;
+
+  const tableLabel = new PIXI.Text('TOP PLAYERS', {
+    fontFamily: FONT_GAME, fontSize: labelSize, fill: p.dim
+  });
+  tableLabel.anchor.set(0.5); tableLabel.x = W/2; tableLabel.y = tableY;
+  layers.overlay.addChild(tableLabel);
+
+  scores.forEach((entry, i) => {
+    const y = tableY + labelSize + 8 + i * rowH;
+    const isLast = i === scores.length - 1;
+    const color = i < 3 ? [p.social[1], p.beat, p.vibe][i] : isLast ? p.melody : p.dim;
+
+    const rank = new PIXI.Text(`${i + 1}.`, { fontFamily: FONT_GAME, fontSize: scoreSize, fill: color });
+    rank.x = W/2 - tableW/2; rank.y = y;
+    layers.overlay.addChild(rank);
+
+    const name = new PIXI.Text(entry.name, { fontFamily: FONT_GAME, fontSize: scoreSize, fill: color });
+    name.x = W/2 - tableW/2 + (isMobile ? 28 : 40); name.y = y;
+    layers.overlay.addChild(name);
+
+    const sc = new PIXI.Text(isLast ? '------' : entry.score.toLocaleString(), {
+      fontFamily: FONT_GAME, fontSize: scoreSize, fill: color
+    });
+    sc.anchor.set(1, 0); sc.x = W/2 + tableW/2; sc.y = y;
+    layers.overlay.addChild(sc);
+  });
+
+  // Button area - position from bottom for consistent padding
   const btnW = isMobile ? W - pad * 2 : Math.min(280, W * 0.5);
   const btnH = isMobile ? 46 : 52;
   const btnGap = isMobile ? 10 : 14;
+  const bottomPad = isMobile ? 55 : 70;
 
-  // Center buttons in middle area
-  const startY = H * 0.52;
-  const loadY = startY + btnH + btnGap;
+  // Position buttons from bottom
+  const toggleY = H - (isMobile ? 22 : 32);
+  const loadY = toggleY - (isMobile ? 35 : 45);
+  const startY = loadY - btnH - btnGap;
   const phoneY = startY - (isMobile ? 28 : 36);
 
   // Headphones text
   const phoneSize = isMobile ? 10 : 14;
-  const phones = new PIXI.Text('plug in your headphones', {
+  const phones = new PIXI.Text('🎧 plug in your headphones', {
     fontFamily: FONT_GAME, fontSize: phoneSize, fill: p.dim
   });
   phones.anchor.set(0.5); phones.x = W/2; phones.y = phoneY;
@@ -1336,14 +1375,8 @@ function renderHome() {
   soon.anchor.set(0.5); soon.x = W/2; soon.y = loadY + btnH/2 + (isMobile ? 10 : 12);
   layers.overlay.addChild(soon);
 
-  // Paint brush icon for palette picker - bottom right
-  const brushSize = isMobile ? 32 : 40;
-  layers.overlay.addChild(makePaletteBrush(W - pad - brushSize/2, H - pad - brushSize/2, brushSize));
-
-  // Palette picker overlay if open
-  if (palettePickerOpen) {
-    renderPalettePicker();
-  }
+  // Palette toggle at bottom
+  layers.overlay.addChild(makePaletteToggle(W/2, toggleY, isMobile ? 0.9 : 1.2));
 
   // Keep animating home screen
   if (G.screen === 'HOME') {
@@ -1658,136 +1691,6 @@ function makePaletteToggle(x, y, scale) {
   c.addChild(g); c.x = x; c.y = y; c.interactive = true; c.cursor = 'pointer';
   c.on('pointerdown', togglePalette);
   return c;
-}
-
-function makePaletteBrush(x, y, size) {
-  const p = P(), c = new PIXI.Container(), g = new PIXI.Graphics();
-
-  // Background circle
-  g.beginFill(p.grid, 0.9);
-  g.lineStyle(2, p.vibe, 0.6);
-  g.drawCircle(0, 0, size/2);
-  g.endFill();
-
-  // Paint brush icon using palette colors
-  const s = size * 0.2;
-  // Brush handle
-  g.lineStyle(0);
-  g.beginFill(p.dim);
-  g.drawRoundedRect(-s*0.3, -s*1.2, s*0.6, s*2, 2);
-  g.endFill();
-  // Brush tip with gradient colors
-  g.beginFill(p.beat);
-  g.drawEllipse(-s*0.4, s*1.1, s*0.5, s*0.4);
-  g.endFill();
-  g.beginFill(p.melody);
-  g.drawEllipse(0, s*1.2, s*0.5, s*0.4);
-  g.endFill();
-  g.beginFill(p.vibe);
-  g.drawEllipse(s*0.4, s*1.0, s*0.5, s*0.4);
-  g.endFill();
-
-  c.addChild(g);
-  c.x = x; c.y = y;
-  c.interactive = true; c.cursor = 'pointer';
-  c.on('pointerdown', () => {
-    palettePickerOpen = !palettePickerOpen;
-    G.dirty = true; render();
-  });
-  return c;
-}
-
-function renderPalettePicker() {
-  const p = P();
-  const isMobile = W < 500;
-
-  // Semi-transparent backdrop
-  const backdrop = new PIXI.Graphics();
-  backdrop.beginFill(0x000000, 0.7);
-  backdrop.drawRect(0, 0, W, H);
-  backdrop.endFill();
-  backdrop.interactive = true;
-  backdrop.on('pointerdown', () => {
-    palettePickerOpen = false;
-    G.dirty = true; render();
-  });
-  layers.overlay.addChild(backdrop);
-
-  // Picker panel
-  const panelW = isMobile ? W - 40 : Math.min(400, W * 0.6);
-  const panelH = isMobile ? 280 : 320;
-  const panelX = (W - panelW) / 2;
-  const panelY = (H - panelH) / 2;
-
-  const panel = new PIXI.Graphics();
-  panel.beginFill(p.bg, 0.98);
-  panel.lineStyle(2, p.vibe, 0.5);
-  panel.drawRoundedRect(panelX, panelY, panelW, panelH, 16);
-  panel.endFill();
-  panel.interactive = true; // Prevent clicks going through
-  layers.overlay.addChild(panel);
-
-  // Title
-  const title = new PIXI.Text('CHOOSE PALETTE', {
-    fontFamily: FONT_GAME, fontSize: isMobile ? 12 : 14, fill: p.text
-  });
-  title.anchor.set(0.5);
-  title.x = W/2; title.y = panelY + 30;
-  layers.overlay.addChild(title);
-
-  // Palette options
-  const optionH = isMobile ? 50 : 56;
-  const optionW = panelW - 40;
-  const startY = panelY + 60;
-
-  PALETTE_ORDER.forEach((palName, i) => {
-    const pal = PALETTES[palName];
-    const y = startY + i * (optionH + 8);
-    const isActive = currentPalette === palName;
-
-    const opt = new PIXI.Graphics();
-    opt.beginFill(isActive ? pal.grid : p.grid, isActive ? 1 : 0.6);
-    if (isActive) opt.lineStyle(2, pal.beat);
-    opt.drawRoundedRect(panelX + 20, y, optionW, optionH, 8);
-    opt.endFill();
-    opt.interactive = true; opt.cursor = 'pointer';
-    opt.on('pointerdown', () => {
-      setPalette(palName);
-      palettePickerOpen = false;
-    });
-    layers.overlay.addChild(opt);
-
-    // Palette name
-    const name = new PIXI.Text(pal.name, {
-      fontFamily: FONT_GAME, fontSize: isMobile ? 10 : 12, fill: isActive ? 0xffffff : p.dim
-    });
-    name.x = panelX + 35; name.y = y + optionH/2 - 6;
-    layers.overlay.addChild(name);
-
-    // Color swatches
-    const swatchSize = isMobile ? 14 : 18;
-    const swatchX = panelX + optionW - 10;
-    [pal.beat, pal.melody, pal.vibe].forEach((col, j) => {
-      const swatch = new PIXI.Graphics();
-      swatch.beginFill(col);
-      swatch.drawCircle(swatchX - j * (swatchSize + 6), y + optionH/2, swatchSize/2);
-      swatch.endFill();
-      layers.overlay.addChild(swatch);
-    });
-  });
-
-  // Close button
-  const closeBtn = new PIXI.Text('X', {
-    fontFamily: FONT_GAME, fontSize: 16, fill: p.dim
-  });
-  closeBtn.anchor.set(0.5);
-  closeBtn.x = panelX + panelW - 20; closeBtn.y = panelY + 20;
-  closeBtn.interactive = true; closeBtn.cursor = 'pointer';
-  closeBtn.on('pointerdown', () => {
-    palettePickerOpen = false;
-    G.dirty = true; render();
-  });
-  layers.overlay.addChild(closeBtn);
 }
 
 function renderPause() {

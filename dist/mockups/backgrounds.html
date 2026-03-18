@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SONGSUGAR - Animated Background Mockups</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0a0a0a;
+      color: #fff;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 24px;
+      margin-bottom: 8px;
+      background: linear-gradient(90deg, #00E5FF, #FF2D78, #AAFF00);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #666;
+      font-size: 12px;
+      margin-bottom: 30px;
+    }
+
+    /* Palette Selector */
+    .palette-selector {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+
+    .palette-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      background: #1a1a1a;
+      border: 2px solid #333;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .palette-btn:hover {
+      border-color: #555;
+    }
+
+    .palette-btn.active {
+      border-color: #fff;
+      background: #222;
+    }
+
+    .palette-dots {
+      display: flex;
+      gap: 4px;
+    }
+
+    .palette-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .palette-name {
+      font-size: 11px;
+      font-weight: 600;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Grid Layout */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* Card */
+    .card {
+      background: #111;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid #222;
+    }
+
+    .card-header {
+      padding: 16px;
+      border-bottom: 1px solid #222;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .card-perf {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .perf-label {
+      font-size: 10px;
+      color: #666;
+      text-transform: uppercase;
+    }
+
+    .perf-stars {
+      color: #AAFF00;
+      font-size: 10px;
+      letter-spacing: 1px;
+    }
+
+    .perf-stars.medium { color: #FFD700; }
+    .perf-stars.low { color: #FF6B35; }
+
+    /* Preview Area */
+    .preview {
+      position: relative;
+      height: 280px;
+      overflow: hidden;
+    }
+
+    /* Mock Game Grid */
+    .game-grid {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 120px;
+      height: 180px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-template-rows: repeat(6, 1fr);
+      gap: 3px;
+      z-index: 10;
+    }
+
+    .grid-cell {
+      border-radius: 4px;
+      background: var(--grid-color);
+    }
+
+    .grid-cell.beat { background: var(--beat); }
+    .grid-cell.melody { background: var(--melody); }
+    .grid-cell.vibe { background: var(--vibe); }
+
+    /* Card Footer */
+    .card-footer {
+      padding: 12px 16px;
+      border-top: 1px solid #222;
+      font-size: 11px;
+      color: #666;
+      line-height: 1.5;
+    }
+
+    .palette-tag {
+      display: inline-block;
+      padding: 2px 6px;
+      background: #222;
+      border-radius: 4px;
+      font-size: 9px;
+      color: #888;
+      margin-right: 4px;
+    }
+
+    /* ===================== */
+    /* BACKGROUND ANIMATIONS */
+    /* ===================== */
+
+    /* 1. Breathing Gradient */
+    .bg-breathing {
+      position: absolute;
+      inset: 0;
+      background: var(--bg);
+      animation: breathe 4s ease-in-out infinite;
+    }
+
+    @keyframes breathe {
+      0%, 100% { background: var(--bg); }
+      50% { background: var(--bg-light); }
+    }
+
+    /* 2. Vignette Pulse */
+    .bg-vignette {
+      position: absolute;
+      inset: 0;
+      background: var(--bg);
+    }
+
+    .bg-vignette::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 30%, var(--bg-dark) 100%);
+      animation: vignettePulse 3s ease-in-out infinite;
+    }
+
+    @keyframes vignettePulse {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 0.8; }
+    }
+
+    /* 3. Scan Lines */
+    .bg-scanlines {
+      position: absolute;
+      inset: 0;
+      background: var(--bg);
+    }
+
+    .bg-scanlines::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        var(--dim) 2px,
+        var(--dim) 4px
+      );
+      opacity: 0.06;
+      animation: scanScroll 8s linear infinite;
+    }
+
+    @keyframes scanScroll {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(4px); }
+    }
+
+    /* 4. Floating Dust */
+    .bg-dust {
+      position: absolute;
+      inset: 0;
+      background: var(--bg);
+    }
+
+    .dust-particle {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      opacity: 0.3;
+      animation: dustFloat 12s ease-in-out infinite;
+    }
+
+    @keyframes dustFloat {
+      0%, 100% { transform: translate(0, 0); opacity: 0.1; }
+      25% { transform: translate(20px, -30px); opacity: 0.3; }
+      50% { transform: translate(-10px, -60px); opacity: 0.2; }
+      75% { transform: translate(15px, -40px); opacity: 0.35; }
+    }
+
+    /* 5. Corner Glows */
+    .bg-corners {
+      position: absolute;
+      inset: 0;
+      background: var(--bg);
+    }
+
+    .corner-glow {
+      position: absolute;
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      filter: blur(60px);
+      opacity: 0.3;
+    }
+
+    .corner-glow.tl { top: -50px; left: -50px; background: var(--beat); animation: cornerPulse 4s ease-in-out infinite; }
+    .corner-glow.tr { top: -50px; right: -50px; background: var(--melody); animation: cornerPulse 4s ease-in-out infinite 1s; }
+    .corner-glow.bl { bottom: -50px; left: -50px; background: var(--vibe); animation: cornerPulse 4s ease-in-out infinite 2s; }
+    .corner-glow.br { bottom: -50px; right: -50px; background: var(--social); animation: cornerPulse 4s ease-in-out infinite 3s; }
+
+    @keyframes cornerPulse {
+      0%, 100% { opacity: 0.2; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.1); }
+    }
+
+    /* 6. Grid Underglow */
+    .bg-underglow {
+      position: absolute;
+      inset: 0;
+      background: var(--bg);
+    }
+
+    .underglow-rect {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 160px;
+      height: 220px;
+      border-radius: 20px;
+      filter: blur(40px);
+      animation: underglowShift 6s ease-in-out infinite;
+    }
+
+    @keyframes underglowShift {
+      0%, 100% { background: var(--beat); opacity: 0.25; }
+      33% { background: var(--vibe); opacity: 0.3; }
+      66% { background: var(--melody); opacity: 0.25; }
+    }
+
+    /* 7. Wave Ripples */
+    .bg-waves {
+      position: absolute;
+      inset: 0;
+      background: var(--bg);
+      overflow: hidden;
+    }
+
+    .wave-ring {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      border: 2px solid var(--vibe);
+      border-radius: 50%;
+      animation: waveExpand 4s ease-out infinite;
+    }
+
+    .wave-ring:nth-child(2) { animation-delay: 1.3s; border-color: var(--beat); }
+    .wave-ring:nth-child(3) { animation-delay: 2.6s; border-color: var(--melody); }
+
+    @keyframes waveExpand {
+      0% { width: 100px; height: 100px; opacity: 0.5; }
+      100% { width: 400px; height: 400px; opacity: 0; }
+    }
+
+    /* 8. Audio Reactive Particles */
+    .bg-audio {
+      position: absolute;
+      inset: 0;
+      background: var(--bg);
+    }
+
+    .audio-particle {
+      position: absolute;
+      border-radius: 50%;
+      animation: audioPulse 0.5s ease-out infinite;
+    }
+
+    @keyframes audioPulse {
+      0%, 100% { transform: scale(1); opacity: 0.4; }
+      50% { transform: scale(1.3); opacity: 0.6; }
+    }
+
+    /* 9. Noise Overlay */
+    .bg-noise {
+      position: absolute;
+      inset: 0;
+      background: var(--bg);
+    }
+
+    .bg-noise::after {
+      content: '';
+      position: absolute;
+      inset: -50%;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      opacity: 0.03;
+      animation: noiseScroll 0.5s steps(5) infinite;
+    }
+
+    @keyframes noiseScroll {
+      0% { transform: translate(0, 0); }
+      100% { transform: translate(10px, 10px); }
+    }
+
+    /* 10. Geometric Pattern */
+    .bg-geometric {
+      position: absolute;
+      inset: 0;
+      background: var(--bg);
+      overflow: hidden;
+    }
+
+    .geo-shape {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      border: 1px solid var(--dim);
+      opacity: 0.1;
+      animation: geoRotate 20s linear infinite;
+    }
+
+    .geo-shape.diamond { transform: rotate(45deg); }
+
+    @keyframes geoRotate {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Recommended Badge */
+    .recommended {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: linear-gradient(90deg, #AAFF00, #00E5FF);
+      color: #000;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 4px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      z-index: 20;
+    }
+  </style>
+</head>
+<body>
+  <h1>Animated Background Options</h1>
+  <p class="subtitle">Click palette to preview all backgrounds with that color scheme</p>
+
+  <div class="palette-selector">
+    <div class="palette-btn active" data-palette="signal">
+      <div class="palette-dots">
+        <div class="palette-dot" style="background: #00E5FF"></div>
+        <div class="palette-dot" style="background: #FF2D78"></div>
+        <div class="palette-dot" style="background: #AAFF00"></div>
+      </div>
+      <span class="palette-name">Signal</span>
+    </div>
+    <div class="palette-btn" data-palette="analogue">
+      <div class="palette-dots">
+        <div class="palette-dot" style="background: #D4521A"></div>
+        <div class="palette-dot" style="background: #E8A090"></div>
+        <div class="palette-dot" style="background: #2E7D7A"></div>
+      </div>
+      <span class="palette-name">Analogue</span>
+    </div>
+    <div class="palette-btn" data-palette="vaporwave">
+      <div class="palette-dots">
+        <div class="palette-dot" style="background: #9D4EDD"></div>
+        <div class="palette-dot" style="background: #FF6B9D"></div>
+        <div class="palette-dot" style="background: #00D4FF"></div>
+      </div>
+      <span class="palette-name">Vaporwave</span>
+    </div>
+    <div class="palette-btn" data-palette="sunrise">
+      <div class="palette-dots">
+        <div class="palette-dot" style="background: #FF6B35"></div>
+        <div class="palette-dot" style="background: #FF8066"></div>
+        <div class="palette-dot" style="background: #E879F9"></div>
+      </div>
+      <span class="palette-name">Sunrise</span>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- 1. Breathing Gradient -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">1. Breathing Gradient</span>
+        <div class="card-perf">
+          <span class="perf-label">Perf</span>
+          <span class="perf-stars">★★★★★</span>
+        </div>
+      </div>
+      <div class="preview">
+        <span class="recommended">Recommended</span>
+        <div class="bg-breathing"></div>
+        <div class="game-grid">
+          <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell beat"></div><div class="grid-cell"></div>
+          <div class="grid-cell"></div><div class="grid-cell beat"></div><div class="grid-cell beat"></div><div class="grid-cell"></div>
+          <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell melody"></div>
+          <div class="grid-cell vibe"></div><div class="grid-cell"></div><div class="grid-cell melody"></div><div class="grid-cell melody"></div>
+          <div class="grid-cell vibe"></div><div class="grid-cell vibe"></div><div class="grid-cell beat"></div><div class="grid-cell melody"></div>
+          <div class="grid-cell vibe"></div><div class="grid-cell beat"></div><div class="grid-cell beat"></div><div class="grid-cell beat"></div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="palette-tag">bg color</span> shifts toward beat/vibe color over 4s cycle. Single color lerp per frame.
+      </div>
+    </div>
+
+    <!-- 2. Vignette Pulse -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">2. Vignette Pulse</span>
+        <div class="card-perf">
+          <span class="perf-label">Perf</span>
+          <span class="perf-stars">★★★★★</span>
+        </div>
+      </div>
+      <div class="preview">
+        <span class="recommended">Recommended</span>
+        <div class="bg-vignette"></div>
+        <div class="game-grid">
+          <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell beat"></div><div class="grid-cell"></div>
+          <div class="grid-cell"></div><div class="grid-cell beat"></div><div class="grid-cell beat"></div><div class="grid-cell"></div>
+          <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell melody"></div>
+          <div class="grid-cell vibe"></div><div class="grid-cell"></div><div class="grid-cell melody"></div><div class="grid-cell melody"></div>
+          <div class="grid-cell vibe"></div><div class="grid-cell vibe"></div><div class="grid-cell beat"></div><div class="grid-cell melody"></div>
+          <div class="grid-cell vibe"></div><div class="grid-cell beat"></div><div class="grid-cell beat"></div><div class="grid-cell beat"></div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="palette-tag">bg-dark</span> radial gradient pulses alpha 0.5-0.8. One static sprite, alpha animate only.
+      </div>
+    </div>
+
+    <!-- 3. Scan Lines -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">3. Horizontal Scan Lines</span>
+        <div class="card-perf">
+          <span class="perf-label">Perf</span>
+          <span class="perf-stars">★★★★★</span>
+        </div>
+      </div>
+      <div class="preview">
+        <div class="bg-scanlines"></div>
+        <div class="game-grid">
+          <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell beat"></div><div class="grid-cell"></div>
+          <div class="grid-cell"></div><div class="grid-cell beat"></div><div class="grid-cell beat"></div><div class="grid-cell"></div>
+          <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell melody"></div>
+          <div class="grid-cell vibe"></div><div class="grid-cell"></div><div class="grid-cell melody"></div><div class="grid-cell melody"></div>
+          <div class="grid-cell vibe"></div><div class="grid-cell vibe"></div><div class="grid-cell beat"></div><div class="grid-cell melody"></div>
+          <div class="grid-cell vibe"></div><div class="grid-cell beat"></div><div class="grid-cell beat"></div><div class="grid-cell beat"></div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="palette-tag">dim</span> colored lines at 6% opacity. Pre-rendered tiling sprite, scrolls Y slowly.
+      </div>
+    </div>
+
+    <!-- 4. Floating Dust -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">4. Floating Dust Motes</span>
+        <div class="card-perf">
+          <span class="perf-label">Perf</span>
+          <span class="perf-stars">★★★★☆</span>
+        </div>
+      </div>
+      <div class="preview">
+        <div class="bg-dust">
+          <div class="dust-particle" style="top: 20%; left: 15%; background: var(--beat); animation-delay: 0s;"></div>
+          <div class="dust-particle" style="top: 40%; left: 80%; background: var(--melody); animation-delay: 2s;"></div>
+          <div class="dust-particle" style="top: 70%; left: 25%; background: var(--vibe); animation-delay: 4s;"></div>
+          <div class="dust-particle" style="top: 30%; left: 60%; background: var(--beat); animation-delay: 6s;"></div>
+          <div class="dust-particle" style="top: 80%; left: 70%; background: var(--melody); animation-delay: 8s;"></div>
+          <div class="dust-particle" style="top: 50%; left: 10%; background: var(--vibe); animation-delay: 10s;"></div>
+        </div>
+        <div class="game-grid">
+          <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell beat"></div><div class="grid-cell"></div>
+          <div class="grid-cell"></div><div class="grid-cell beat"></div><div class="grid-cell beat"></div><div class="grid-cell"></div>
+          <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell melody"></div>
+          <div class="grid-cell vibe"></div><div class="grid-cell"></div><div class="grid-cell melody"></div><div class="grid-cell melody"></div>
+          <div class="grid-cell vibe"></div><div class="grid-cell vibe"></div><div class="grid-cell beat"></div><div class="grid-cell melody"></div>
+          <div class="grid-cell vibe"></div><div class="grid-cell beat"></div><div class="grid-cell beat"></div><div class="grid-cell beat"></div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="palette-tag">beat</span> <span class="palette-tag">melody</span> <span class="palette-tag">vibe</span> colored particles. Pool of 15-20 sprites, simple drift.
+      </div>
+    </div>
+
+    <!-- 5. Corner Glows -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">5. Corner Glow Accents</span>
+        <div class="card-perf">
+          <span class="perf-label">Perf</span>
+          <span class="perf-stars">★★★★☆</span>
+        </div>
+      </div>
+      <div class="preview">
+        <div class="bg-corners">
+          <div class="corner-glow tl"></div>
+          <div class="corner-glow tr"></div>
+          <div class="corner-glow bl"></div>
+          <div class="corner-glow br"></div>
+        </div>
+        <div class="game-grid">
+          <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell beat"></div><div class="grid-cell"></div>
+          <div class="grid-cell"></div><div class="grid-cell beat"></div><div class="grid-cell beat"></div><div class="grid-cell"></div>
+          <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell melody"></div>
+          <div class="grid-cell vibe"></div><div class="grid-cell"></div><div class="grid-cell melody"></div><div class="grid-cell melody"></div>
+          <div class="grid-cell vibe"></div><div class="grid-cell vibe"></div><div class="grid-cell beat"></div><div class="grid-cell melody"></div>
+          <div class="grid-cell vibe"></div><div class="grid-cell beat"></div><div class="grid-cell beat"></div><div class="grid-cell beat"></div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="palette-tag">beat</span> <span class="palette-tag">melody</span> <span class="palette-tag">vibe</span> <span class="palette-tag">social</span> in corners. 4 static blurred sprites, pulse alpha.
+      </div>
+    </div>
+
+    <!-- 6. Grid Underglow -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">6. Grid Underglow</span>
+        <div class="card-perf">
+          <span class="perf-label">Perf</span>
+          <span class="perf-stars">★★★★☆</span>
+        </div>
+      </div>
+      <div class="preview">
+        <span class="recommended">Recommended</span>
+        <div class="bg-underglow">
+          <div class="underglow-rect"></div>
+        </div>
+        <div class="game-grid">
+          <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell beat"></div><div class="grid-cell"></div>
+          <div class="grid-cell"></div><div class="grid-cell beat"></div><div class="grid-cell beat"></div><div class="grid-cell"></div>
+          <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell melody"></div>
+          <div class="grid-cell vibe"></div><div class="grid-cell"></div><div class="grid-cell melody"></div><div class="grid-cell melody"></div>
+          <div class="grid-cell vibe"></div><div class="grid-cell vibe"></div><div class="grid-cell beat"></div><div class="grid-cell melody"></div>
+          <div class="grid-cell vibe"></div><div class="grid-cell beat"></div><div class="grid-cell beat"></div><div class="grid-cell beat"></div>
+        </div>
+      </div>
+      <div class="card-footer">
+        Color shifts to match most active loop category. One blurred rect behind grid, color lerp.
+      </div>
+    </div>
+
+    <!-- 7. Wave Ripples -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">7. Wave Ripples</span>
+        <div class="card-perf">
+          <span class="perf-label">Perf</span>
+          <span class="perf-stars medium">★★★☆☆</span>
+        </div>
+      </div>
+      <div class="preview">
+        <div class="bg-waves">
+          <div class="wave-ring"></div>
+          <div class="wave-ring"></div>
+          <div class="wave-ring"></div>
+        </div>
+        <div class="game-grid">
+          <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell beat"></div><div class="grid-cell"></div>
+          <div class="grid-cell"></div><div class="grid-cell beat"></div><div class="grid-cell beat"></div><div class="grid-cell"></div>
+          <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell melody"></div>
+          <div class="grid-cell vibe"></div><div class="grid-cell"></div><div class="grid-cell melody"></div><div class="grid-cell melody"></div>
+          <div class="grid-cell vibe"></div><div class="grid-cell vibe"></div><div class="grid-cell beat"></div><div class="grid-cell melody"></div>
+          <div class="grid-cell vibe"></div><div class="grid-cell beat"></div><div class="grid-cell beat"></div><div class="grid-cell beat"></div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="palette-tag">beat</span> <span class="palette-tag">vibe</span> <span class="palette-tag">melody</span> rings spawn on cluster clear. Max 3 active, pooled.
+      </div>
+    </div>
+
+    <!-- 8. Audio Reactive -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">8. Audio Reactive Particles</span>
+        <div class="card-perf">
+          <span class="perf-label">Perf</span>
+          <span class="perf-stars medium">★★★☆☆</span>
+        </div>
+      </div>
+      <div class="preview">
+        <div class="bg-audio">
+          <div class="audio-particle" style="top: 15%; left: 20%; width: 8px; height: 8px; background: var(--beat); animation-duration: 0.52s;"></div>
+          <div class="audio-particle" style="top: 25%; left: 75%; width: 6px; height: 6px; background: var(--melody); animation-duration: 0.48s;"></div>
+          <div class="audio-particle" style="top: 60%; left: 12%; width: 10px; height: 10px; background: var(--vibe); animation-duration: 0.55s;"></div>
+          <div class="audio-particle" style="top: 75%; left: 85%; width: 7px; height: 7px; background: var(--beat); animation-duration: 0.50s;"></div>
+          <div class="audio-particle" style="top: 40%; left: 88%; width: 5px; height: 5px; background: var(--melody); animation-duration: 0.45s;"></div>
+          <div class="audio-particle" style="top: 85%; left: 30%; width: 9px; height: 9px; background: var(--vibe); animation-duration: 0.58s;"></div>
+        </div>
+        <div class="game-grid">
+          <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell beat"></div><div class="grid-cell"></div>
+          <div class="grid-cell"></div><div class="grid-cell beat"></div><div class="grid-cell beat"></div><div class="grid-cell"></div>
+          <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell melody"></div>
+          <div class="grid-cell vibe"></div><div class="grid-cell"></div><div class="grid-cell melody"></div><div class="grid-cell melody"></div>
+          <div class="grid-cell vibe"></div><div class="grid-cell vibe"></div><div class="grid-cell beat"></div><div class="grid-cell melody"></div>
+          <div class="grid-cell vibe"></div><div class="grid-cell beat"></div><div class="grid-cell beat"></div><div class="grid-cell beat"></div>
+        </div>
+      </div>
+      <div class="card-footer">
+        Particles pulse to BPM. More spawn when that category plays. 30-50 sprites batched.
+      </div>
+    </div>
+
+    <!-- 9. Noise Overlay -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">9. Noise Texture Overlay</span>
+        <div class="card-perf">
+          <span class="perf-label">Perf</span>
+          <span class="perf-stars low">★★☆☆☆</span>
+        </div>
+      </div>
+      <div class="preview">
+        <div class="bg-noise"></div>
+        <div class="game-grid">
+          <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell beat"></div><div class="grid-cell"></div>
+          <div class="grid-cell"></div><div class="grid-cell beat"></div><div class="grid-cell beat"></div><div class="grid-cell"></div>
+          <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell melody"></div>
+          <div class="grid-cell vibe"></div><div class="grid-cell"></div><div class="grid-cell melody"></div><div class="grid-cell melody"></div>
+          <div class="grid-cell vibe"></div><div class="grid-cell vibe"></div><div class="grid-cell beat"></div><div class="grid-cell melody"></div>
+          <div class="grid-cell vibe"></div><div class="grid-cell beat"></div><div class="grid-cell beat"></div><div class="grid-cell beat"></div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="palette-tag">bg</span> tinted noise at 3% opacity. Large texture with UV scroll. Film grain feel.
+      </div>
+    </div>
+
+    <!-- 10. Geometric Pattern -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">10. Geometric Grid Pattern</span>
+        <div class="card-perf">
+          <span class="perf-label">Perf</span>
+          <span class="perf-stars low">★★☆☆☆</span>
+        </div>
+      </div>
+      <div class="preview">
+        <div class="bg-geometric">
+          <div class="geo-shape diamond" style="top: 10%; left: 15%;"></div>
+          <div class="geo-shape diamond" style="top: 10%; left: 50%;"></div>
+          <div class="geo-shape diamond" style="top: 10%; left: 85%;"></div>
+          <div class="geo-shape diamond" style="top: 40%; left: 5%;"></div>
+          <div class="geo-shape diamond" style="top: 40%; left: 95%;"></div>
+          <div class="geo-shape diamond" style="top: 70%; left: 15%;"></div>
+          <div class="geo-shape diamond" style="top: 70%; left: 50%;"></div>
+          <div class="geo-shape diamond" style="top: 70%; left: 85%;"></div>
+          <div class="geo-shape diamond" style="top: 90%; left: 30%;"></div>
+          <div class="geo-shape diamond" style="top: 90%; left: 70%;"></div>
+        </div>
+        <div class="game-grid">
+          <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell beat"></div><div class="grid-cell"></div>
+          <div class="grid-cell"></div><div class="grid-cell beat"></div><div class="grid-cell beat"></div><div class="grid-cell"></div>
+          <div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell"></div><div class="grid-cell melody"></div>
+          <div class="grid-cell vibe"></div><div class="grid-cell"></div><div class="grid-cell melody"></div><div class="grid-cell melody"></div>
+          <div class="grid-cell vibe"></div><div class="grid-cell vibe"></div><div class="grid-cell beat"></div><div class="grid-cell melody"></div>
+          <div class="grid-cell vibe"></div><div class="grid-cell beat"></div><div class="grid-cell beat"></div><div class="grid-cell beat"></div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="palette-tag">dim</span> colored shapes at 10% opacity. Pre-rendered sprite recommended to avoid draw calls.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Palette definitions
+    const palettes = {
+      signal: {
+        bg: '#080D14',
+        bgLight: '#0c1825',
+        bgDark: '#040810',
+        grid: '#0c1420',
+        beat: '#00E5FF',
+        melody: '#FF2D78',
+        vibe: '#AAFF00',
+        social: '#FFD700',
+        dim: '#556677'
+      },
+      analogue: {
+        bg: '#1A1208',
+        bgLight: '#251a0e',
+        bgDark: '#0f0a04',
+        grid: '#251a0e',
+        beat: '#D4521A',
+        melody: '#E8A090',
+        vibe: '#2E7D7A',
+        social: '#CFB53B',
+        dim: '#776655'
+      },
+      vaporwave: {
+        bg: '#1a0a2e',
+        bgLight: '#2d1b4e',
+        bgDark: '#0d0517',
+        grid: '#2d1b4e',
+        beat: '#9D4EDD',
+        melody: '#FF6B9D',
+        vibe: '#00D4FF',
+        social: '#FFD700',
+        dim: '#8866aa'
+      },
+      sunrise: {
+        bg: '#1a0f0a',
+        bgLight: '#2a1a10',
+        bgDark: '#0d0805',
+        grid: '#2a1a10',
+        beat: '#FF6B35',
+        melody: '#FF8066',
+        vibe: '#E879F9',
+        social: '#FBbF24',
+        dim: '#aa7755'
+      }
+    };
+
+    function setPalette(name) {
+      const p = palettes[name];
+      document.documentElement.style.setProperty('--bg', p.bg);
+      document.documentElement.style.setProperty('--bg-light', p.bgLight);
+      document.documentElement.style.setProperty('--bg-dark', p.bgDark);
+      document.documentElement.style.setProperty('--grid-color', p.grid);
+      document.documentElement.style.setProperty('--beat', p.beat);
+      document.documentElement.style.setProperty('--melody', p.melody);
+      document.documentElement.style.setProperty('--vibe', p.vibe);
+      document.documentElement.style.setProperty('--social', p.social);
+      document.documentElement.style.setProperty('--dim', p.dim);
+
+      // Update button states
+      document.querySelectorAll('.palette-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.palette === name);
+      });
+    }
+
+    // Initialize
+    setPalette('signal');
+
+    // Event listeners
+    document.querySelectorAll('.palette-btn').forEach(btn => {
+      btn.addEventListener('click', () => setPalette(btn.dataset.palette));
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SONGSUGAR - Palette Options</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0a0a0f;
+      color: #fff;
+      min-height: 100vh;
+      padding: 40px;
+    }
+    h1 {
+      text-align: center;
+      font-size: 32px;
+      margin-bottom: 40px;
+      font-weight: 300;
+      letter-spacing: 4px;
+    }
+    .palettes {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 30px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .palette {
+      border-radius: 16px;
+      padding: 24px;
+      position: relative;
+    }
+    .palette h2 {
+      font-size: 14px;
+      letter-spacing: 2px;
+      margin-bottom: 20px;
+      font-weight: 600;
+      opacity: 0.9;
+    }
+    .palette .subtitle {
+      font-size: 11px;
+      opacity: 0.5;
+      margin-top: -16px;
+      margin-bottom: 20px;
+    }
+    .tiles {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .tile {
+      width: 80px;
+      height: 80px;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
+    .tile .hex {
+      font-size: 9px;
+      opacity: 0.7;
+      margin-top: 4px;
+      font-weight: 400;
+    }
+    .game-preview {
+      background: rgba(0,0,0,0.3);
+      border-radius: 12px;
+      padding: 16px;
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 4px;
+    }
+    .mini-tile {
+      aspect-ratio: 1;
+      border-radius: 4px;
+      opacity: 0.85;
+    }
+    .info {
+      margin-top: 16px;
+      font-size: 11px;
+      opacity: 0.6;
+      line-height: 1.6;
+    }
+
+    /* Current Palette */
+    .palette.current { background: linear-gradient(135deg, #1a0f0a 0%, #0f0a0a 100%); border: 1px solid #333; }
+
+    /* BandLab Inspired */
+    .palette.bandlab { background: linear-gradient(135deg, #1a0a0a 0%, #0a0808 100%); border: 1px solid #F12C18; }
+
+    /* Fire & Electric */
+    .palette.fire { background: linear-gradient(135deg, #0f0a0a 0%, #0a0a0f 100%); border: 1px solid #00D4FF; }
+
+    /* Neon Studio */
+    .palette.neon { background: linear-gradient(135deg, #0a0a12 0%, #120a12 100%); border: 1px solid #FF3366; }
+
+    /* Dark Producer */
+    .palette.dark { background: linear-gradient(135deg, #09090b 0%, #0b0909 100%); border: 1px solid #8B5CF6; }
+
+    /* Spotify Inspired */
+    .palette.spotify { background: linear-gradient(135deg, #0a0f0a 0%, #050805 100%); border: 1px solid #1DB954; }
+  </style>
+</head>
+<body>
+  <h1>SONGSUGAR PALETTE OPTIONS</h1>
+
+  <div class="palettes">
+
+    <!-- Current -->
+    <div class="palette current">
+      <h2>CURRENT</h2>
+      <p class="subtitle">Green / Purple / Orange</p>
+      <div class="tiles">
+        <div class="tile" style="background: #4ADE80; color: #000;">
+          BEAT
+          <span class="hex">#4ADE80</span>
+        </div>
+        <div class="tile" style="background: #A855F7; color: #fff;">
+          VIBE
+          <span class="hex">#A855F7</span>
+        </div>
+        <div class="tile" style="background: #FB923C; color: #000;">
+          MELODY
+          <span class="hex">#FB923C</span>
+        </div>
+      </div>
+      <div class="game-preview">
+        <div class="mini-tile" style="background: #4ADE80;"></div>
+        <div class="mini-tile" style="background: #A855F7;"></div>
+        <div class="mini-tile" style="background: #4ADE80;"></div>
+        <div class="mini-tile" style="background: #FB923C;"></div>
+        <div class="mini-tile" style="background: #A855F7;"></div>
+        <div class="mini-tile" style="background: #FB923C;"></div>
+        <div class="mini-tile" style="background: #FB923C;"></div>
+        <div class="mini-tile" style="background: #4ADE80;"></div>
+        <div class="mini-tile" style="background: #A855F7;"></div>
+        <div class="mini-tile" style="background: #4ADE80;"></div>
+        <div class="mini-tile" style="background: #FB923C;"></div>
+        <div class="mini-tile" style="background: #A855F7;"></div>
+      </div>
+      <p class="info">Current implementation with green beats, purple vibes, orange melodies.</p>
+    </div>
+
+    <!-- BandLab Inspired -->
+    <div class="palette bandlab">
+      <h2>BANDLAB INSPIRED</h2>
+      <p class="subtitle">Red / Purple / Cyan</p>
+      <div class="tiles">
+        <div class="tile" style="background: #F12C18; color: #fff;">
+          BEAT
+          <span class="hex">#F12C18</span>
+        </div>
+        <div class="tile" style="background: #A855F7; color: #fff;">
+          VIBE
+          <span class="hex">#A855F7</span>
+        </div>
+        <div class="tile" style="background: #00D4FF; color: #000;">
+          MELODY
+          <span class="hex">#00D4FF</span>
+        </div>
+      </div>
+      <div class="game-preview">
+        <div class="mini-tile" style="background: #F12C18;"></div>
+        <div class="mini-tile" style="background: #A855F7;"></div>
+        <div class="mini-tile" style="background: #F12C18;"></div>
+        <div class="mini-tile" style="background: #00D4FF;"></div>
+        <div class="mini-tile" style="background: #A855F7;"></div>
+        <div class="mini-tile" style="background: #00D4FF;"></div>
+        <div class="mini-tile" style="background: #00D4FF;"></div>
+        <div class="mini-tile" style="background: #F12C18;"></div>
+        <div class="mini-tile" style="background: #A855F7;"></div>
+        <div class="mini-tile" style="background: #F12C18;"></div>
+        <div class="mini-tile" style="background: #00D4FF;"></div>
+        <div class="mini-tile" style="background: #A855F7;"></div>
+      </div>
+      <p class="info">Uses BandLab's signature red (#F12C18) for beats. Bold, energetic, music-production focused.</p>
+    </div>
+
+    <!-- Fire & Electric -->
+    <div class="palette fire">
+      <h2>FIRE & ELECTRIC</h2>
+      <p class="subtitle">Red / Cyan / Gold</p>
+      <div class="tiles">
+        <div class="tile" style="background: #F12C18; color: #fff;">
+          BEAT
+          <span class="hex">#F12C18</span>
+        </div>
+        <div class="tile" style="background: #00D4FF; color: #000;">
+          VIBE
+          <span class="hex">#00D4FF</span>
+        </div>
+        <div class="tile" style="background: #FFD700; color: #000;">
+          MELODY
+          <span class="hex">#FFD700</span>
+        </div>
+      </div>
+      <div class="game-preview">
+        <div class="mini-tile" style="background: #F12C18;"></div>
+        <div class="mini-tile" style="background: #00D4FF;"></div>
+        <div class="mini-tile" style="background: #F12C18;"></div>
+        <div class="mini-tile" style="background: #FFD700;"></div>
+        <div class="mini-tile" style="background: #00D4FF;"></div>
+        <div class="mini-tile" style="background: #FFD700;"></div>
+        <div class="mini-tile" style="background: #FFD700;"></div>
+        <div class="mini-tile" style="background: #F12C18;"></div>
+        <div class="mini-tile" style="background: #00D4FF;"></div>
+        <div class="mini-tile" style="background: #F12C18;"></div>
+        <div class="mini-tile" style="background: #FFD700;"></div>
+        <div class="mini-tile" style="background: #00D4FF;"></div>
+      </div>
+      <p class="info">High contrast, EDM festival vibe. Warm beats, cool vibes, golden melodies.</p>
+    </div>
+
+    <!-- Neon Studio -->
+    <div class="palette neon">
+      <h2>NEON STUDIO</h2>
+      <p class="subtitle">Hot Pink / Violet / Orange</p>
+      <div class="tiles">
+        <div class="tile" style="background: #FF3366; color: #fff;">
+          BEAT
+          <span class="hex">#FF3366</span>
+        </div>
+        <div class="tile" style="background: #7C3AED; color: #fff;">
+          VIBE
+          <span class="hex">#7C3AED</span>
+        </div>
+        <div class="tile" style="background: #F97316; color: #fff;">
+          MELODY
+          <span class="hex">#F97316</span>
+        </div>
+      </div>
+      <div class="game-preview">
+        <div class="mini-tile" style="background: #FF3366;"></div>
+        <div class="mini-tile" style="background: #7C3AED;"></div>
+        <div class="mini-tile" style="background: #FF3366;"></div>
+        <div class="mini-tile" style="background: #F97316;"></div>
+        <div class="mini-tile" style="background: #7C3AED;"></div>
+        <div class="mini-tile" style="background: #F97316;"></div>
+        <div class="mini-tile" style="background: #F97316;"></div>
+        <div class="mini-tile" style="background: #FF3366;"></div>
+        <div class="mini-tile" style="background: #7C3AED;"></div>
+        <div class="mini-tile" style="background: #FF3366;"></div>
+        <div class="mini-tile" style="background: #F97316;"></div>
+        <div class="mini-tile" style="background: #7C3AED;"></div>
+      </div>
+      <p class="info">Synthwave/retrowave aesthetic. All warm tones, feels like a neon-lit studio.</p>
+    </div>
+
+    <!-- Dark Producer -->
+    <div class="palette dark">
+      <h2>DARK PRODUCER</h2>
+      <p class="subtitle">Red / Purple / Amber</p>
+      <div class="tiles">
+        <div class="tile" style="background: #EF4444; color: #fff;">
+          BEAT
+          <span class="hex">#EF4444</span>
+        </div>
+        <div class="tile" style="background: #8B5CF6; color: #fff;">
+          VIBE
+          <span class="hex">#8B5CF6</span>
+        </div>
+        <div class="tile" style="background: #F59E0B; color: #000;">
+          MELODY
+          <span class="hex">#F59E0B</span>
+        </div>
+      </div>
+      <div class="game-preview">
+        <div class="mini-tile" style="background: #EF4444;"></div>
+        <div class="mini-tile" style="background: #8B5CF6;"></div>
+        <div class="mini-tile" style="background: #EF4444;"></div>
+        <div class="mini-tile" style="background: #F59E0B;"></div>
+        <div class="mini-tile" style="background: #8B5CF6;"></div>
+        <div class="mini-tile" style="background: #F59E0B;"></div>
+        <div class="mini-tile" style="background: #F59E0B;"></div>
+        <div class="mini-tile" style="background: #EF4444;"></div>
+        <div class="mini-tile" style="background: #8B5CF6;"></div>
+        <div class="mini-tile" style="background: #EF4444;"></div>
+        <div class="mini-tile" style="background: #F59E0B;"></div>
+        <div class="mini-tile" style="background: #8B5CF6;"></div>
+      </div>
+      <p class="info">Moody, professional. Classic DAW colors - red for drums, amber for leads.</p>
+    </div>
+
+    <!-- Spotify Inspired -->
+    <div class="palette spotify">
+      <h2>SPOTIFY FLOW</h2>
+      <p class="subtitle">Green / Pink / Blue</p>
+      <div class="tiles">
+        <div class="tile" style="background: #1DB954; color: #fff;">
+          BEAT
+          <span class="hex">#1DB954</span>
+        </div>
+        <div class="tile" style="background: #E91E63; color: #fff;">
+          VIBE
+          <span class="hex">#E91E63</span>
+        </div>
+        <div class="tile" style="background: #2196F3; color: #fff;">
+          MELODY
+          <span class="hex">#2196F3</span>
+        </div>
+      </div>
+      <div class="game-preview">
+        <div class="mini-tile" style="background: #1DB954;"></div>
+        <div class="mini-tile" style="background: #E91E63;"></div>
+        <div class="mini-tile" style="background: #1DB954;"></div>
+        <div class="mini-tile" style="background: #2196F3;"></div>
+        <div class="mini-tile" style="background: #E91E63;"></div>
+        <div class="mini-tile" style="background: #2196F3;"></div>
+        <div class="mini-tile" style="background: #2196F3;"></div>
+        <div class="mini-tile" style="background: #1DB954;"></div>
+        <div class="mini-tile" style="background: #E91E63;"></div>
+        <div class="mini-tile" style="background: #1DB954;"></div>
+        <div class="mini-tile" style="background: #2196F3;"></div>
+        <div class="mini-tile" style="background: #E91E63;"></div>
+      </div>
+      <p class="info">Streaming platform aesthetic. Spotify green for beats, vibrant and modern.</p>
+    </div>
+
+  </div>
+</body>
+</html>

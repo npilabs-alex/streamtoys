@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+body { background: #111; color: #fff; font-family: sans-serif; }
+#overlay { 
+  position: fixed; inset: 0; 
+  background: rgba(0,0,0,0.9); 
+  display: none; 
+  align-items: center; 
+  justify-content: center; 
+  flex-direction: column;
+  z-index: 100;
+}
+#overlay.show { display: flex; }
+button { padding: 20px 40px; font-size: 20px; cursor: pointer; }
+#game { padding: 50px; text-align: center; }
+</style>
+</head>
+<body>
+<div id="game">
+  <h1>GAME AREA</h1>
+  <p>If you see this, the overlay is hidden</p>
+</div>
+<div id="overlay" class="show">
+  <h1>OVERLAY</h1>
+  <button id="start-btn">START</button>
+</div>
+<script>
+document.getElementById('start-btn').addEventListener('click', function() {
+  alert('Button clicked!');
+  document.getElementById('overlay').classList.remove('show');
+});
+</script>
+</body>
+</html>

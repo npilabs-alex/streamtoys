@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SONGSUGAR - Cluster Effect Examples</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #1a0f0a;
+      --grid: #2a1a10;
+      --beat: #FF6B35;
+      --melody: #aa7755;
+      --vibe: #E879F9;
+      --text: #fff5e0;
+      --dim: #FF8066;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      padding: 30px;
+      min-height: 100vh;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 24px;
+      margin-bottom: 8px;
+      color: var(--vibe);
+    }
+
+    .subtitle {
+      text-align: center;
+      color: var(--dim);
+      margin-bottom: 40px;
+      font-size: 13px;
+    }
+
+    .effects-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 24px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .effect-card {
+      background: var(--grid);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .effect-name {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: var(--text);
+    }
+
+    .effect-desc {
+      font-size: 10px;
+      color: var(--dim);
+      margin-bottom: 16px;
+      line-height: 1.4;
+    }
+
+    .cluster-demo {
+      display: flex;
+      justify-content: center;
+      gap: 4px;
+      flex-wrap: wrap;
+      width: 140px;
+      margin: 0 auto;
+    }
+
+    .tile {
+      width: 40px;
+      height: 40px;
+      border-radius: 6px;
+      background: rgba(232, 121, 249, 0.65);
+      border: 1px solid rgba(245, 208, 254, 0.4);
+    }
+
+    /* 1. PULSE BORDER (current) */
+    @keyframes pulse-border {
+      0%, 100% { box-shadow: 0 0 0 0 var(--vibe); }
+      50% { box-shadow: 0 0 0 4px var(--vibe); }
+    }
+    .effect-pulse-border .tile {
+      animation: pulse-border 1s ease-in-out infinite;
+    }
+    .effect-pulse-border .tile:nth-child(2) { animation-delay: 0.1s; }
+    .effect-pulse-border .tile:nth-child(3) { animation-delay: 0.2s; }
+    .effect-pulse-border .tile:nth-child(4) { animation-delay: 0.15s; }
+
+    /* 2. GLOW PULSE */
+    @keyframes glow-pulse {
+      0%, 100% { box-shadow: 0 0 8px 0 var(--vibe); }
+      50% { box-shadow: 0 0 20px 6px var(--vibe); }
+    }
+    .effect-glow-pulse .tile {
+      animation: glow-pulse 1.2s ease-in-out infinite;
+    }
+    .effect-glow-pulse .tile:nth-child(2) { animation-delay: 0.15s; }
+    .effect-glow-pulse .tile:nth-child(3) { animation-delay: 0.3s; }
+    .effect-glow-pulse .tile:nth-child(4) { animation-delay: 0.2s; }
+
+    /* 3. SCALE BREATHE */
+    @keyframes scale-breathe {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.08); }
+    }
+    .effect-scale-breathe .tile {
+      animation: scale-breathe 0.8s ease-in-out infinite;
+    }
+    .effect-scale-breathe .tile:nth-child(2) { animation-delay: 0.1s; }
+    .effect-scale-breathe .tile:nth-child(3) { animation-delay: 0.2s; }
+    .effect-scale-breathe .tile:nth-child(4) { animation-delay: 0.15s; }
+
+    /* 4. ALPHA BREATHE */
+    @keyframes alpha-breathe {
+      0%, 100% { opacity: 0.65; }
+      50% { opacity: 1; }
+    }
+    .effect-alpha-breathe .tile {
+      animation: alpha-breathe 1s ease-in-out infinite;
+    }
+    .effect-alpha-breathe .tile:nth-child(2) { animation-delay: 0.1s; }
+    .effect-alpha-breathe .tile:nth-child(3) { animation-delay: 0.2s; }
+    .effect-alpha-breathe .tile:nth-child(4) { animation-delay: 0.15s; }
+
+    /* 5. SHIMMER */
+    @keyframes shimmer {
+      0% { background-position: -100% 0; }
+      100% { background-position: 200% 0; }
+    }
+    .effect-shimmer .tile {
+      background: linear-gradient(
+        90deg,
+        rgba(232, 121, 249, 0.65) 0%,
+        rgba(245, 208, 254, 0.9) 50%,
+        rgba(232, 121, 249, 0.65) 100%
+      );
+      background-size: 200% 100%;
+      animation: shimmer 2s linear infinite;
+    }
+    .effect-shimmer .tile:nth-child(2) { animation-delay: 0.2s; }
+    .effect-shimmer .tile:nth-child(3) { animation-delay: 0.4s; }
+    .effect-shimmer .tile:nth-child(4) { animation-delay: 0.3s; }
+
+    /* 6. HEARTBEAT */
+    @keyframes heartbeat {
+      0%, 100% { transform: scale(1); }
+      15% { transform: scale(1.1); }
+      30% { transform: scale(1); }
+      45% { transform: scale(1.05); }
+      60% { transform: scale(1); }
+    }
+    .effect-heartbeat .tile {
+      animation: heartbeat 1.5s ease-in-out infinite;
+    }
+
+    /* 7. ROTATE HUE */
+    @keyframes hue-shift {
+      0%, 100% { filter: hue-rotate(0deg); }
+      50% { filter: hue-rotate(30deg); }
+    }
+    .effect-hue-shift .tile {
+      animation: hue-shift 2s ease-in-out infinite;
+    }
+
+    /* 8. BORDER DASH */
+    @keyframes dash-rotate {
+      0% { stroke-dashoffset: 0; }
+      100% { stroke-dashoffset: 20; }
+    }
+    .effect-dash-border .tile {
+      border: none;
+      position: relative;
+      overflow: visible;
+    }
+    .effect-dash-border .tile::after {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border: 2px dashed var(--vibe);
+      border-radius: 8px;
+      animation: dash-spin 1s linear infinite;
+    }
+    @keyframes dash-spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* 9. NEON FLICKER */
+    @keyframes neon-flicker {
+      0%, 100% {
+        box-shadow: 0 0 5px var(--vibe), 0 0 10px var(--vibe), 0 0 20px var(--vibe);
+        opacity: 1;
+      }
+      50% {
+        box-shadow: 0 0 2px var(--vibe), 0 0 5px var(--vibe);
+        opacity: 0.9;
+      }
+      52% {
+        box-shadow: 0 0 8px var(--vibe), 0 0 15px var(--vibe), 0 0 25px var(--vibe);
+        opacity: 1;
+      }
+    }
+    .effect-neon-flicker .tile {
+      animation: neon-flicker 0.8s ease-in-out infinite;
+    }
+
+    /* 10. WAVE */
+    @keyframes wave {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+    .effect-wave .tile {
+      animation: wave 0.6s ease-in-out infinite;
+    }
+    .effect-wave .tile:nth-child(1) { animation-delay: 0s; }
+    .effect-wave .tile:nth-child(2) { animation-delay: 0.1s; }
+    .effect-wave .tile:nth-child(3) { animation-delay: 0.2s; }
+    .effect-wave .tile:nth-child(4) { animation-delay: 0.15s; }
+
+    /* 11. RING EXPAND */
+    @keyframes ring-expand {
+      0% { box-shadow: 0 0 0 0 rgba(232, 121, 249, 0.6); }
+      100% { box-shadow: 0 0 0 8px rgba(232, 121, 249, 0); }
+    }
+    .effect-ring-expand .tile {
+      animation: ring-expand 1.2s ease-out infinite;
+    }
+    .effect-ring-expand .tile:nth-child(2) { animation-delay: 0.3s; }
+    .effect-ring-expand .tile:nth-child(3) { animation-delay: 0.6s; }
+    .effect-ring-expand .tile:nth-child(4) { animation-delay: 0.45s; }
+
+    /* 12. INNER GLOW */
+    @keyframes inner-glow {
+      0%, 100% {
+        box-shadow: inset 0 0 8px rgba(245, 208, 254, 0.3);
+      }
+      50% {
+        box-shadow: inset 0 0 15px rgba(245, 208, 254, 0.7);
+      }
+    }
+    .effect-inner-glow .tile {
+      animation: inner-glow 1s ease-in-out infinite;
+    }
+
+    /* 13. BORDER TRACE */
+    .effect-border-trace .tile {
+      position: relative;
+      border: none;
+      overflow: hidden;
+    }
+    .effect-border-trace .tile::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border: 2px solid transparent;
+      border-radius: 6px;
+      background: linear-gradient(90deg, var(--vibe), transparent, var(--vibe)) border-box;
+      -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      animation: trace-rotate 2s linear infinite;
+    }
+    @keyframes trace-rotate {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* 14. DOUBLE BORDER */
+    @keyframes double-pulse {
+      0%, 100% {
+        box-shadow: 0 0 0 2px var(--vibe), 0 0 0 4px transparent;
+      }
+      50% {
+        box-shadow: 0 0 0 2px var(--vibe), 0 0 0 6px rgba(232, 121, 249, 0.3);
+      }
+    }
+    .effect-double-border .tile {
+      animation: double-pulse 1s ease-in-out infinite;
+    }
+
+    /* 15. JELLY */
+    @keyframes jelly {
+      0%, 100% { transform: scale(1, 1); }
+      25% { transform: scale(1.05, 0.95); }
+      50% { transform: scale(0.95, 1.05); }
+      75% { transform: scale(1.02, 0.98); }
+    }
+    .effect-jelly .tile {
+      animation: jelly 0.8s ease-in-out infinite;
+    }
+
+    /* 16. CORNER DOTS */
+    .effect-corner-dots .tile {
+      position: relative;
+    }
+    .effect-corner-dots .tile::before,
+    .effect-corner-dots .tile::after {
+      content: '';
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: var(--vibe);
+      border-radius: 50%;
+      animation: dot-pulse 0.8s ease-in-out infinite;
+    }
+    .effect-corner-dots .tile::before { top: -2px; left: -2px; }
+    .effect-corner-dots .tile::after { bottom: -2px; right: -2px; }
+    @keyframes dot-pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.5); opacity: 0.6; }
+    }
+
+    .perf-note {
+      text-align: center;
+      margin-top: 40px;
+      padding: 20px;
+      background: var(--grid);
+      border-radius: 8px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .perf-note h3 {
+      color: var(--vibe);
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+
+    .perf-note p {
+      font-size: 11px;
+      color: var(--dim);
+      line-height: 1.5;
+    }
+
+    .perf-good { color: #4ade80; }
+    .perf-ok { color: #fbbf24; }
+    .perf-heavy { color: #f87171; }
+  </style>
+</head>
+<body>
+  <h1>Cluster Effects</h1>
+  <p class="subtitle">Performance-friendly effects for connected tile clusters</p>
+
+  <div class="effects-grid">
+    <div class="effect-card">
+      <div class="effect-name">1. Pulse Border <span class="perf-good">[LOW]</span></div>
+      <div class="effect-desc">Box-shadow expands and contracts. Current implementation.</div>
+      <div class="cluster-demo effect-pulse-border">
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+      </div>
+    </div>
+
+    <div class="effect-card">
+      <div class="effect-name">2. Glow Pulse <span class="perf-good">[LOW]</span></div>
+      <div class="effect-desc">Soft outer glow that breathes in and out.</div>
+      <div class="cluster-demo effect-glow-pulse">
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+      </div>
+    </div>
+
+    <div class="effect-card">
+      <div class="effect-name">3. Scale Breathe <span class="perf-good">[LOW]</span></div>
+      <div class="effect-desc">Tiles gently grow and shrink together.</div>
+      <div class="cluster-demo effect-scale-breathe">
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+      </div>
+    </div>
+
+    <div class="effect-card">
+      <div class="effect-name">4. Alpha Breathe <span class="perf-good">[LOW]</span></div>
+      <div class="effect-desc">Opacity pulses between semi and full.</div>
+      <div class="cluster-demo effect-alpha-breathe">
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+      </div>
+    </div>
+
+    <div class="effect-card">
+      <div class="effect-name">5. Shimmer <span class="perf-ok">[MED]</span></div>
+      <div class="effect-desc">Highlight sweeps across tiles.</div>
+      <div class="cluster-demo effect-shimmer">
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+      </div>
+    </div>
+
+    <div class="effect-card">
+      <div class="effect-name">6. Heartbeat <span class="perf-good">[LOW]</span></div>
+      <div class="effect-desc">Quick double-pulse like a heartbeat.</div>
+      <div class="cluster-demo effect-heartbeat">
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+      </div>
+    </div>
+
+    <div class="effect-card">
+      <div class="effect-name">7. Hue Shift <span class="perf-ok">[MED]</span></div>
+      <div class="effect-desc">Color shifts slightly through spectrum.</div>
+      <div class="cluster-demo effect-hue-shift">
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+      </div>
+    </div>
+
+    <div class="effect-card">
+      <div class="effect-name">8. Dash Border <span class="perf-ok">[MED]</span></div>
+      <div class="effect-desc">Rotating dashed border around tiles.</div>
+      <div class="cluster-demo effect-dash-border">
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+      </div>
+    </div>
+
+    <div class="effect-card">
+      <div class="effect-name">9. Neon Flicker <span class="perf-ok">[MED]</span></div>
+      <div class="effect-desc">Electric neon glow with subtle flicker.</div>
+      <div class="cluster-demo effect-neon-flicker">
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+      </div>
+    </div>
+
+    <div class="effect-card">
+      <div class="effect-name">10. Wave <span class="perf-good">[LOW]</span></div>
+      <div class="effect-desc">Tiles bob up and down in sequence.</div>
+      <div class="cluster-demo effect-wave">
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+      </div>
+    </div>
+
+    <div class="effect-card">
+      <div class="effect-name">11. Ring Expand <span class="perf-good">[LOW]</span></div>
+      <div class="effect-desc">Rings expand outward from each tile.</div>
+      <div class="cluster-demo effect-ring-expand">
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+      </div>
+    </div>
+
+    <div class="effect-card">
+      <div class="effect-name">12. Inner Glow <span class="perf-good">[LOW]</span></div>
+      <div class="effect-desc">Glow pulses from inside the tile.</div>
+      <div class="cluster-demo effect-inner-glow">
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+      </div>
+    </div>
+
+    <div class="effect-card">
+      <div class="effect-name">13. Border Trace <span class="perf-heavy">[HIGH]</span></div>
+      <div class="effect-desc">Animated line traces around border.</div>
+      <div class="cluster-demo effect-border-trace">
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+      </div>
+    </div>
+
+    <div class="effect-card">
+      <div class="effect-name">14. Double Border <span class="perf-good">[LOW]</span></div>
+      <div class="effect-desc">Two concentric borders pulse.</div>
+      <div class="cluster-demo effect-double-border">
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+      </div>
+    </div>
+
+    <div class="effect-card">
+      <div class="effect-name">15. Jelly <span class="perf-good">[LOW]</span></div>
+      <div class="effect-desc">Squash and stretch like jelly.</div>
+      <div class="cluster-demo effect-jelly">
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+      </div>
+    </div>
+
+    <div class="effect-card">
+      <div class="effect-name">16. Corner Dots <span class="perf-ok">[MED]</span></div>
+      <div class="effect-desc">Pulsing dots at tile corners.</div>
+      <div class="cluster-demo effect-corner-dots">
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+      </div>
+    </div>
+  </div>
+
+    <div class="effect-card" style="grid-column: span 2; background: linear-gradient(135deg, var(--grid), #3a2a20);">
+      <div class="effect-name" style="font-size: 18px;">COMBO: Glow Pulse + Jelly <span class="perf-good">[LOW]</span></div>
+      <div class="effect-desc">Both effects combined - glow breathes while tiles squash and stretch.</div>
+      <div class="cluster-demo effect-combo-glow-jelly" style="width: 180px;">
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+      </div>
+    </div>
+
+    <div class="effect-card" style="grid-column: span 2; background: linear-gradient(135deg, var(--grid), #3a2a20);">
+      <div class="effect-name" style="font-size: 18px;">COMBO: Alpha Breathe + Wave <span class="perf-good">[LOW]</span></div>
+      <div class="effect-desc">Tiles fade in/out while bobbing up and down in sequence.</div>
+      <div class="cluster-demo effect-combo-alpha-wave" style="width: 180px;">
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+      </div>
+    </div>
+
+    <div class="effect-card" style="grid-column: span 2; background: linear-gradient(135deg, var(--grid), #3a2a20);">
+      <div class="effect-name" style="font-size: 18px;">COMBO: Alpha Breathe + Jelly <span class="perf-good">[LOW]</span></div>
+      <div class="effect-desc">Tiles fade while squashing and stretching like breathing jelly.</div>
+      <div class="cluster-demo effect-combo-alpha-jelly" style="width: 180px;">
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+        <div class="tile"></div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    /* COMBO: Glow Pulse + Jelly */
+    @keyframes combo-glow-jelly {
+      0%, 100% {
+        transform: scale(1, 1);
+        box-shadow: 0 0 8px 0 var(--vibe);
+      }
+      25% {
+        transform: scale(1.05, 0.95);
+        box-shadow: 0 0 14px 3px var(--vibe);
+      }
+      50% {
+        transform: scale(0.95, 1.05);
+        box-shadow: 0 0 20px 6px var(--vibe);
+      }
+      75% {
+        transform: scale(1.02, 0.98);
+        box-shadow: 0 0 14px 3px var(--vibe);
+      }
+    }
+    .effect-combo-glow-jelly .tile {
+      animation: combo-glow-jelly 1s ease-in-out infinite;
+    }
+    .effect-combo-glow-jelly .tile:nth-child(2) { animation-delay: 0.05s; }
+    .effect-combo-glow-jelly .tile:nth-child(3) { animation-delay: 0.1s; }
+    .effect-combo-glow-jelly .tile:nth-child(4) { animation-delay: 0.08s; }
+
+    /* COMBO: Alpha Breathe + Wave */
+    @keyframes combo-alpha-wave {
+      0%, 100% {
+        opacity: 0.65;
+        transform: translateY(0);
+      }
+      50% {
+        opacity: 1;
+        transform: translateY(-5px);
+      }
+    }
+    .effect-combo-alpha-wave .tile {
+      animation: combo-alpha-wave 0.8s ease-in-out infinite;
+    }
+    .effect-combo-alpha-wave .tile:nth-child(1) { animation-delay: 0s; }
+    .effect-combo-alpha-wave .tile:nth-child(2) { animation-delay: 0.1s; }
+    .effect-combo-alpha-wave .tile:nth-child(3) { animation-delay: 0.2s; }
+    .effect-combo-alpha-wave .tile:nth-child(4) { animation-delay: 0.15s; }
+
+    /* COMBO: Alpha Breathe + Jelly */
+    @keyframes combo-alpha-jelly {
+      0%, 100% {
+        opacity: 0.65;
+        transform: scale(1, 1);
+      }
+      25% {
+        opacity: 0.8;
+        transform: scale(1.06, 0.94);
+      }
+      50% {
+        opacity: 1;
+        transform: scale(0.94, 1.06);
+      }
+      75% {
+        opacity: 0.8;
+        transform: scale(1.02, 0.98);
+      }
+    }
+    .effect-combo-alpha-jelly .tile {
+      animation: combo-alpha-jelly 1s ease-in-out infinite;
+    }
+    .effect-combo-alpha-jelly .tile:nth-child(2) { animation-delay: 0.05s; }
+    .effect-combo-alpha-jelly .tile:nth-child(3) { animation-delay: 0.1s; }
+    .effect-combo-alpha-jelly .tile:nth-child(4) { animation-delay: 0.08s; }
+  </style>
+
+  <div class="perf-note">
+    <h3>Performance Notes</h3>
+    <p>
+      <span class="perf-good">[LOW]</span> = Simple transforms/opacity, runs at 60fps easily<br>
+      <span class="perf-ok">[MED]</span> = Uses filters or complex gradients, may impact mobile<br>
+      <span class="perf-heavy">[HIGH]</span> = Complex CSS, use sparingly or simplify for PIXI
+    </p>
+    <p style="margin-top: 12px;">
+      <strong>Best for PIXI.js:</strong> Glow Pulse, Scale Breathe, Alpha Breathe, Ring Expand, Double Border
+    </p>
+  </div>
+</body>
+</html>
