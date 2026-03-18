@@ -468,6 +468,7 @@ const TileRenderer = {
   tileContainer: null,
   clipMask: null,    // Mask to clip buffer rows and grid overflow
   needsSync: false,  // Set true when grid state changes
+  isInitialLoad: false,  // Skip drop animation on initial board load
   texSize: 64,       // Render texture size (will be scaled to tileSize)
   filterCache: new WeakMap(),  // Cache GlowFilter instances per sprite
   // Collapse FX
@@ -482,8 +483,9 @@ const TileRenderer = {
     this.tileContainer = new PIXI.Container();
     layers.game.addChild(this.tileContainer);
 
-    // Create clip mask for visible grid area (not added to scene graph - PIXI v7 applies masks without needing visible child)
+    // Create clip mask for visible grid area (MUST be in scene graph for PIXI v7)
     this.clipMask = new PIXI.Graphics();
+    this.tileContainer.addChild(this.clipMask);  // Add as child of masked container
     this.tileContainer.mask = this.clipMask;
 
     // Generate textures for each category (idle + cluster variants)
@@ -672,8 +674,8 @@ const TileRenderer = {
           this.spriteGrid[r][c] = newSpr;
           targetSpr = newSpr;
 
-          // Drop animation: start above grid, lerp to final position
-          if (r >= BUFFER_ROWS) {
+          // Drop animation: start above grid, lerp to final position (skip on initial load)
+          if (r >= BUFFER_ROWS && !this.isInitialLoad) {
             const finalY = gridY + (r - BUFFER_ROWS) * tileSize + tileSize / 2;
             newSpr.x = gridX + c * tileSize + tileSize / 2;
             newSpr.y = gridY - tileSize * 2;  // Start above grid
@@ -707,6 +709,8 @@ const TileRenderer = {
         }
       }
     }
+    // Clear initial load flag after first sync
+    if (this.isInitialLoad) this.isInitialLoad = false;
   },
 
   updatePositions() {
@@ -5051,8 +5055,10 @@ async function startSession() {
 
   initGrid();
 
-  // Initialize sprite grid (sync handled by renderGame via needsSync flag)
+  // Initialize sprite grid and trigger initial sync (skip drop animation)
+  TileRenderer.isInitialLoad = true;
   TileRenderer.createSpriteGrid();
+  TileRenderer.needsSync = true;
 
   G.screen = 'PLAY';
   G.dirty = true;
