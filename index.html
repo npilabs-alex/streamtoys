@@ -646,70 +646,9 @@ const TileRenderer = {
 
     const scale = tileSize / this.texSize;
 
-    // Handle swap animation
-    let swappingCells = null;
-    if (G.swapAnim) {
-      const a = G.swapAnim;
-      a.t += app.ticker.deltaMS;
-      const progress = Math.min(1, a.t / a.duration);
-      const eased = 1 - Math.pow(1 - progress, 2);  // ease-out quad
-
-      const spr1 = this.spriteGrid[a.r1]?.[a.c1];
-      const spr2 = this.spriteGrid[a.r2]?.[a.c2];
-
-      if (spr1 && spr2) {
-        const x1 = gridX + a.c1 * tileSize + tileSize / 2;
-        const y1 = gridY + (a.r1 - BUFFER_ROWS) * tileSize + tileSize / 2;
-        const x2 = gridX + a.c2 * tileSize + tileSize / 2;
-        const y2 = gridY + (a.r2 - BUFFER_ROWS) * tileSize + tileSize / 2;
-
-        spr1.x = x1 + (x2 - x1) * eased;
-        spr1.y = y1 + (y2 - y1) * eased;
-        spr1.scale.set(scale);
-        spr2.x = x2 + (x1 - x2) * eased;
-        spr2.y = y2 + (y1 - y2) * eased;
-        spr2.scale.set(scale);
-      }
-
-      if (progress >= 1) {
-        // Apply actual grid swap
-        G.grid[a.r1][a.c1] = a.cell2;
-        G.grid[a.r2][a.c2] = a.cell1;
-
-        // Swap sprites in grid
-        const tmp = this.spriteGrid[a.r1][a.c1];
-        this.spriteGrid[a.r1][a.c1] = this.spriteGrid[a.r2][a.c2];
-        this.spriteGrid[a.r2][a.c2] = tmp;
-
-        // Snap to final positions - read from spriteGrid AFTER the swap
-        const snapSpr1 = this.spriteGrid[a.r1][a.c1];
-        const snapSpr2 = this.spriteGrid[a.r2][a.c2];
-        if (snapSpr1) {
-          snapSpr1.x = gridX + a.c1 * tileSize + tileSize / 2;
-          snapSpr1.y = gridY + (a.r1 - BUFFER_ROWS) * tileSize + tileSize / 2;
-        }
-        if (snapSpr2) {
-          snapSpr2.x = gridX + a.c2 * tileSize + tileSize / 2;
-          snapSpr2.y = gridY + (a.r2 - BUFFER_ROWS) * tileSize + tileSize / 2;
-        }
-
-        TileRenderer.needsSync = true;
-        findClusters();
-        G.swapAnim = null;
-      } else {
-        // Mark cells being swapped to skip in normal loop
-        swappingCells = new Set([`${a.r1},${a.c1}`, `${a.r2},${a.c2}`]);
-      }
-
-      G.dirty = true;
-    }
-
     // Position all sprites
     for (let r = BUFFER_ROWS; r < ROWS; r++) {
       for (let c = 0; c < COLS; c++) {
-        // Skip sprites being animated by swap
-        if (swappingCells?.has(`${r},${c}`)) continue;
-
         const spr = this.spriteGrid[r][c];
         if (!spr || !spr.visible) continue;
 
@@ -1938,23 +1877,16 @@ function initGrid() {
   TileRenderer.needsSync = true;
 }
 
-// Swap two tiles (Candy Crush style) with animation
+// Swap two tiles (Candy Crush style) - instant swap
 function swapTiles(r1, c1, r2, c2) {
   const cell1 = G.grid[r1][c1];
   const cell2 = G.grid[r2][c2];
-
-  // Both cells must exist (should always be true - no empty cells in redesign)
   if (!cell1 || !cell2) return;
-
-  // Start swap animation instead of instant swap
-  G.swapAnim = {
-    r1, c1, r2, c2,
-    cell1, cell2,
-    t: 0,
-    duration: 120  // ms
-  };
-
+  G.grid[r1][c1] = cell2;
+  G.grid[r2][c2] = cell1;
   Audio.playRotate();
+  TileRenderer.needsSync = true;
+  findClusters();
   G.dirty = true;
 }
 
