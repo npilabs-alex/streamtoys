@@ -2500,8 +2500,10 @@ async function collapse(r, c) {
       });
       G.dirty = true;
       await sleep(120);
-      applyGravity(); findClusters();
-      G.collapsing = false;
+      applyGravity();
+      findClusters();
+      TileRenderer.needsSync = true;
+      fallFromBuffer();
       return;
     }
     if (cell.type === 'SHUFFLE') {
@@ -3356,6 +3358,13 @@ function renderGame() {
     // NOISE cells are inert — no selection, no collapse, no swap target
     if (cell.type === 'NOISE') return;
 
+    // PRIORITY 0: Tap on special tile = activate it immediately
+    const specialTiles = ['BEAT_BOMB','VIBE_BOMB','MELODY_BOMB','SHUFFLE','DOUBLE','SOCIAL'];
+    if (specialTiles.includes(cell.type)) {
+      collapse(r, c);
+      return;
+    }
+
     // PRIORITY 1: Tap on cluster = collapse it (with chain reaction)
     const cluster = getCluster(r, c);
     if (cluster && cluster.tiles.length >= 3) {
@@ -3409,58 +3418,47 @@ function renderGame() {
       TileRenderer.needsSync = true;
       G.dirty = true;
     }
+
+    // Store drag start for pointermove handler
+    const lx2 = e.data.global.x - gridX, ly2 = e.data.global.y - gridY;
+    const dc2 = Math.floor(lx2 / tileSize), dr2 = Math.floor(ly2 / tileSize) + BUFFER_ROWS;
+    if (dc2 >= 0 && dc2 < COLS && dr2 >= BUFFER_ROWS && dr2 < ROWS) {
+      const dragCell = G.grid[dr2][dc2];
+      if (dragCell && dragCell.type !== 'NOISE') {
+        G._dragStart = { r: dr2, c: dc2, x: e.data.global.x, y: e.data.global.y };
+      }
+    }
   });
 
-  // Touch drag to swap
-  let dragStart = null;
-  gridHit.on('pointerdown', e => {
-    if (G.collapsing || G.paused) return;
-    const lx = e.data.global.x - gridX, ly = e.data.global.y - gridY;
-    const c = Math.floor(lx / tileSize), r = Math.floor(ly / tileSize) + BUFFER_ROWS;
-    if (c < 0 || c >= COLS || r < BUFFER_ROWS || r >= ROWS) return;
-    const cell = G.grid[r][c];
-    if (!cell || cell.type === 'NOISE') return;
-    dragStart = { r, c, x: e.data.global.x, y: e.data.global.y };
-  });
-
+  // Touch drag to swap — pointermove/pointerup only (dragStart set in main pointerdown above)
   gridHit.on('pointermove', e => {
-    if (!dragStart || G.collapsing || G.paused) return;
-    const dx = e.data.global.x - dragStart.x;
-    const dy = e.data.global.y - dragStart.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    if (dist < 8) return; // Below drag threshold
+    if (!G._dragStart || G.collapsing || G.paused) return;
+    const dx = e.data.global.x - G._dragStart.x;
+    const dy = e.data.global.y - G._dragStart.y;
+    if (Math.sqrt(dx * dx + dy * dy) < 8) return;
 
-    // Determine drag direction (cardinal only)
     let dr = 0, dc = 0;
-    if (Math.abs(dx) > Math.abs(dy)) {
-      dc = dx > 0 ? 1 : -1;
-    } else {
-      dr = dy > 0 ? 1 : -1;
-    }
+    if (Math.abs(dx) > Math.abs(dy)) { dc = dx > 0 ? 1 : -1; }
+    else { dr = dy > 0 ? 1 : -1; }
 
-    const targetR = dragStart.r + dr;
-    const targetC = dragStart.c + dc;
+    const targetR = G._dragStart.r + dr;
+    const targetC = G._dragStart.c + dc;
     if (targetR < BUFFER_ROWS || targetR >= ROWS || targetC < 0 || targetC >= COLS) {
-      dragStart = null;
-      return;
+      G._dragStart = null; return;
     }
-
-    const targetCell = G.grid[targetR][targetC];
+    const targetCell = G.grid[targetR]?.[targetC];
     if (!targetCell || targetCell.type === 'NOISE') {
-      dragStart = null;
-      return;
+      G._dragStart = null; return;
     }
-
-    // Trigger swap
-    swapTiles(dragStart.r, dragStart.c, targetR, targetC);
+    swapTiles(G._dragStart.r, G._dragStart.c, targetR, targetC);
     G.selected = null;
     TileRenderer.needsSync = true;
     G.dirty = true;
-    dragStart = null;
+    G._dragStart = null;
   });
 
-  gridHit.on('pointerup', () => { dragStart = null; });
-  gridHit.on('pointerupoutside', () => { dragStart = null; });
+  gridHit.on('pointerup', () => { G._dragStart = null; });
+  gridHit.on('pointerupoutside', () => { G._dragStart = null; });
 
   layers.game.addChild(gridHit);
 
