@@ -2494,6 +2494,11 @@ async function collapse(r, c) {
       G.res[bombCat] = Math.min((G.res[bombCat] || 0) + cleared * 5, G.unlockCost);
       shake(Math.min(cleared, 12));
       G.comboPopups.push({
+        text: 'BOOM!',
+        x: gridX + gridW / 2, y: gridY + gridH / 2 - 80,
+        life: 1.6, color: getColor(bombCat)
+      });
+      G.comboPopups.push({
         text: bombCat + ' CLEARED!',
         x: gridX + gridW / 2, y: gridY + gridH / 2,
         life: 1.5, color: getColor(bombCat)
@@ -2533,10 +2538,13 @@ async function collapse(r, c) {
       colourPositions.forEach(([rr, cc], idx) => {
         G.grid[rr][cc] = colourTiles[idx];
       });
-      shake(8); G.dirty = true;
+      shake(8);
       await sleep(150);
-      applyGravity(); findClusters();
+      applyGravity();
+      findClusters();
+      TileRenderer.needsSync = true;
       G.collapsing = false;
+      G.dirty = true;
       return;
     }
     if (cell.type === 'DOUBLE') {
@@ -3419,13 +3427,11 @@ function renderGame() {
       G.dirty = true;
     }
 
-    // Store drag start for pointermove handler
-    const lx2 = e.data.global.x - gridX, ly2 = e.data.global.y - gridY;
-    const dc2 = Math.floor(lx2 / tileSize), dr2 = Math.floor(ly2 / tileSize) + BUFFER_ROWS;
-    if (dc2 >= 0 && dc2 < COLS && dr2 >= BUFFER_ROWS && dr2 < ROWS) {
-      const dragCell = G.grid[dr2][dc2];
+    // Store drag start using r,c already resolved above
+    if (r >= BUFFER_ROWS && r < ROWS && c >= 0 && c < COLS) {
+      const dragCell = G.grid[r][c];
       if (dragCell && dragCell.type !== 'NOISE') {
-        G._dragStart = { r: dr2, c: dc2, x: e.data.global.x, y: e.data.global.y };
+        G._dragStart = { r, c, x: e.data.global.x, y: e.data.global.y };
       }
     }
   });
@@ -3628,7 +3634,7 @@ function renderHUD() {
   if (!G.pendingUnlocks) G.pendingUnlocks = [];
 
   // Category colors
-  const catColors = { BEAT: 0xe05555, VIBE: 0x4caf70, MELODY: 0x5599e0 };
+  const catColors = { BEAT: P().beat, VIBE: P().vibe, MELODY: P().melody };
 
   // ========== ROW 1: SCORE + NEXT PIECE + PAUSE ==========
   const row1Y = pad;
@@ -4250,11 +4256,7 @@ function renderMix() {
   const pad = isMobile ? 12 : 20;
 
   // Category colors (no orange)
-  const catColors = {
-    BEAT: 0xe05555,
-    VIBE: 0x4caf70,
-    MELODY: 0x5599e0
-  };
+  const catColors = { BEAT: P().beat, VIBE: P().vibe, MELODY: P().melody };
 
   // Initialize state if not set
   if (!G.mixTab) G.mixTab = 'BEAT';
