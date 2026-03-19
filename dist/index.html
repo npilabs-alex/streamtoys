@@ -724,7 +724,7 @@ const TileRenderer = {
             if (cached.cluster) cached.cluster.destroy();
             if (PIXI.filters?.GlowFilter) {
               cached.cluster = new PIXI.filters.GlowFilter({
-                distance: 15, outerStrength: 2.5, innerStrength: 0.5,
+                distance: 6, outerStrength: 0.8, innerStrength: 0.4,
                 color: clusterColor, quality: 0.3
               });
               cached.clusterType = cell.type;
@@ -2296,6 +2296,9 @@ function collapseCluster(cluster) {
     G.grid[t.r][t.c] = null;
   }
 
+  // Immediately rebuild cluster cache so stale highlights don't show during fall animation
+  findClusters();
+
   // Mark sprites for resync (after collapse animations complete)
   TileRenderer.needsSync = true;
 
@@ -3302,6 +3305,54 @@ function renderHome() {
   }
 }
 
+function drawClusterBorders() {
+  if (!G.clusters || G.clusters.length === 0) return;
+
+  const borderGfx = new PIXI.Graphics();
+  const inCluster = G.clusterCache?.inCluster;
+  if (!inCluster) return;
+
+  for (const cluster of G.clusters) {
+    if (cluster.tiles.length < 3) continue;
+
+    const color = (P().clusterColors && P().clusterColors[cluster.type])
+      ? P().clusterColors[cluster.type]
+      : (P().gradients[cluster.type] || P().gradients.SOCIAL).shine;
+
+    const tileSet = new Set(cluster.tiles.map(t => `${t.r},${t.c}`));
+
+    borderGfx.lineStyle(2, color, 0.9);
+
+    for (const t of cluster.tiles) {
+      const x = gridX + t.c * tileSize;
+      const y = gridY + (t.r - BUFFER_ROWS) * tileSize;
+
+      // Top edge — draw if no cluster neighbour above
+      if (!tileSet.has(`${t.r - 1},${t.c}`)) {
+        borderGfx.moveTo(x, y);
+        borderGfx.lineTo(x + tileSize, y);
+      }
+      // Bottom edge — draw if no cluster neighbour below
+      if (!tileSet.has(`${t.r + 1},${t.c}`)) {
+        borderGfx.moveTo(x, y + tileSize);
+        borderGfx.lineTo(x + tileSize, y + tileSize);
+      }
+      // Left edge — draw if no cluster neighbour to the left
+      if (!tileSet.has(`${t.r},${t.c - 1}`)) {
+        borderGfx.moveTo(x, y);
+        borderGfx.lineTo(x, y + tileSize);
+      }
+      // Right edge — draw if no cluster neighbour to the right
+      if (!tileSet.has(`${t.r},${t.c + 1}`)) {
+        borderGfx.moveTo(x + tileSize, y);
+        borderGfx.lineTo(x + tileSize, y + tileSize);
+      }
+    }
+  }
+
+  layers.game.addChild(borderGfx);
+}
+
 function renderGame() {
   // Hide background effects canvas during gameplay
   if (BgEffects.active) {
@@ -3376,6 +3427,9 @@ function renderGame() {
   // Update sprite positions (handles fall animations, selection scale)
   TileRenderer.updatePositions();
 
+  // Draw explicit cluster borders (exposed edges only, no GlowFilter dependency)
+  drawClusterBorders();
+
   // Draw special tiles (SOCIAL, EFFECT) that still use immediate mode
   const gap = 4;
   for (let r = BUFFER_ROWS; r < ROWS; r++) {
@@ -3432,6 +3486,9 @@ function renderGame() {
 
     const cell = G.grid[r][c];
     if (!cell) return;
+
+    // NOISE cells are inert — no selection, no collapse, no swap target
+    if (cell.type === 'NOISE') return;
 
     // PRIORITY 1: Tap on cluster = collapse it
     const cluster = getCluster(r, c);
