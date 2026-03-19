@@ -84,6 +84,7 @@ const PALETTES = {
     beat: 0x10c0a0, melody: 0x80c010, vibe: 0xc02880,
     social: [0x30ffe0, 0xff50c0, 0xc0ff20, 0xffffff],
     text: 0xffffff, dim: 0x445566,
+    clusterColors: { BEAT: 0xff50c0, VIBE: 0xc0ff20, MELODY: 0x30ffe0 },
     gradients: {
       BEAT:   { mid: 0x10c0a0, shine: 0x30ffe0, bot: 0x031210 },
       VIBE:   { mid: 0xc02880, shine: 0xff50c0, bot: 0x140610 },
@@ -660,6 +661,12 @@ const TileRenderer = {
         }
 
         const isClusterTile = inCluster.has(`${r},${c}`);
+        if (isClusterTile) {
+          const cl = inCluster.get(`${r},${c}`);
+          if (cl && cl.tiles.length < 3) {
+            console.warn('BUG: tile at', r, c, 'in cluster with only', cl.tiles.length, 'tiles');
+          }
+        }
         const texKey = `${cell.type}_${isClusterTile ? 'cluster' : 'idle'}`;
         const tex = this.textures[texKey];
 
@@ -690,22 +697,29 @@ const TileRenderer = {
         // Apply/remove cluster glow filter
         if (isClusterTile && targetSpr) {
           let cached = this.filterCache.get(targetSpr);
-          if (!cached) cached = { cluster: null, selected: null };
-          if (!cached.cluster && PIXI.filters?.GlowFilter) {
-            const grad = P().gradients[cell.type] || P().gradients.SOCIAL;
-            cached.cluster = new PIXI.filters.GlowFilter({
-              distance: 15, outerStrength: 2.5, innerStrength: 0.5,
-              color: grad.shine, quality: 0.3
-            });
-            this.filterCache.set(targetSpr, cached);
+          if (!cached) { cached = { cluster: null, selected: null }; this.filterCache.set(targetSpr, cached); }
+
+          const clusterColor = (P().clusterColors && P().clusterColors[cell.type])
+            ? P().clusterColors[cell.type]
+            : (P().gradients[cell.type] || P().gradients.SOCIAL).shine;
+
+          if (!cached.cluster || cached.clusterType !== cell.type) {
+            if (cached.cluster) cached.cluster.destroy();
+            if (PIXI.filters?.GlowFilter) {
+              cached.cluster = new PIXI.filters.GlowFilter({
+                distance: 15, outerStrength: 2.5, innerStrength: 0.5,
+                color: clusterColor, quality: 0.3
+              });
+              cached.clusterType = cell.type;
+            }
           }
-          if (cached.cluster) {
-            targetSpr.filters = [cached.cluster];
-          }
+          if (cached.cluster) targetSpr.filters = [cached.cluster];
           targetSpr._isCluster = true;
         } else if (targetSpr) {
           targetSpr.filters = null;
           targetSpr._isCluster = false;
+          const cached = this.filterCache.get(targetSpr);
+          if (cached) { cached.cluster = null; cached.clusterType = null; }
         }
       }
     }
@@ -2516,12 +2530,15 @@ function findClusters() {
 
       if (tiles.length >= 3) {
         G.clusters.push({ tiles: tiles, type: t });
+      } else if (tiles.length > 0) {
+        console.log('findClusters: skipped small group', tiles.length, 'tiles of type', t, 'at', tiles.map(t => `${t.r},${t.c}`).join(' '));
       }
     }
   }
 
   // Cache cluster membership for fast render lookup (avoids per-frame garbage)
   G.clusterCache = { inCluster: new Map(), tileSets: new Map() };
+  console.log('findClusters — cluster sizes:', G.clusters.map(c => c.tiles.length));
   for (const cl of G.clusters) {
     if (cl.tiles.length >= 3) {
       const tileSet = new Set(cl.tiles.map(t => `${t.r},${t.c}`));
