@@ -554,7 +554,7 @@ const TileRenderer = {
       for (let c = 0; c < COLS; c++) {
         const cell = G.grid[r][c];
         if (!cell || cell.type === 'NOISE') continue;
-        if (['SOCIAL','BOMB','FREEZE','SHUFFLE','DOUBLE'].includes(cell.type)) continue;
+        if (['SOCIAL','BEAT_BOMB','VIBE_BOMB','MELODY_BOMB','SHUFFLE','DOUBLE'].includes(cell.type)) continue;
 
         const x = gridX + c * tileSize + gap;
         const y = gridY + (r - BUFFER_ROWS) * tileSize + gap;
@@ -1939,14 +1939,14 @@ const Audio = {
 // Grid - Phase-based tile frequency weights
 // NOTE: Object key order matters for distribution - NOISE must be first in each object
 const PHASE_WEIGHTS = [
-  // Phase 0: no loops — sparse board, mostly noise, no special tiles yet
-  { NOISE: 0.35, BEAT: 0.28, VIBE: 0.20, MELODY: 0.12, WILD: 0.02, BOMB: 0.01, FREEZE: 0.01, SHUFFLE: 0.005, DOUBLE: 0.005 },
+  // Phase 0: no loops — sparse board, mostly noise
+  { NOISE: 0.35, BEAT: 0.29, VIBE: 0.21, MELODY: 0.13, BEAT_BOMB: 0.004, VIBE_BOMB: 0.003, MELODY_BOMB: 0.003, SHUFFLE: 0.005, DOUBLE: 0.005 },
   // Phase 1: beat active — denser beat tiles, specials appear
-  { NOISE: 0.38, BEAT: 0.28, VIBE: 0.16, MELODY: 0.10, WILD: 0.02, BOMB: 0.01, FREEZE: 0.01, SHUFFLE: 0.005, DOUBLE: 0.005 },
+  { NOISE: 0.38, BEAT: 0.29, VIBE: 0.17, MELODY: 0.11, BEAT_BOMB: 0.004, VIBE_BOMB: 0.003, MELODY_BOMB: 0.003, SHUFFLE: 0.005, DOUBLE: 0.005 },
   // Phase 2: beat+vibe — melody starts appearing more
-  { NOISE: 0.33, BEAT: 0.18, VIBE: 0.20, MELODY: 0.18, WILD: 0.03, BOMB: 0.01, FREEZE: 0.015, SHUFFLE: 0.005, DOUBLE: 0.01 },
+  { NOISE: 0.33, BEAT: 0.19, VIBE: 0.21, MELODY: 0.19, BEAT_BOMB: 0.005, VIBE_BOMB: 0.005, MELODY_BOMB: 0.005, SHUFFLE: 0.005, DOUBLE: 0.01 },
   // Phase 3: all active — balanced colours, highest special rate
-  { NOISE: 0.28, BEAT: 0.20, VIBE: 0.20, MELODY: 0.20, WILD: 0.03, BOMB: 0.015, FREEZE: 0.015, SHUFFLE: 0.01, DOUBLE: 0.01 },
+  { NOISE: 0.28, BEAT: 0.21, VIBE: 0.21, MELODY: 0.21, BEAT_BOMB: 0.007, VIBE_BOMB: 0.007, MELODY_BOMB: 0.006, SHUFFLE: 0.01, DOUBLE: 0.01 },
 ];
 
 // Update G.phase based on active loops per category
@@ -2205,12 +2205,23 @@ function boardDensity() {
     for (let c = 0; c < COLS; c++) {
       total++;
       const cell = G.grid[r][c];
-      if (cell && cell.type !== 'NOISE' && !['WILD','BOMB','FREEZE','SHUFFLE','DOUBLE','SOCIAL'].includes(cell.type)) {
+      if (cell && cell.type !== 'NOISE' && !['BEAT_BOMB','VIBE_BOMB','MELODY_BOMB','SHUFFLE','DOUBLE','SOCIAL'].includes(cell.type)) {
         solid++;
       }
     }
   }
   return total > 0 ? solid / total : 0;
+}
+
+function countSpecialTiles() {
+  let count = 0;
+  for (let r = BUFFER_ROWS; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const t = G.grid[r][c];
+      if (t && ['BEAT_BOMB','VIBE_BOMB','MELODY_BOMB','SHUFFLE','DOUBLE','SOCIAL'].includes(t.type)) count++;
+    }
+  }
+  return count;
 }
 
 // Fall from buffer to fill gaps
@@ -2259,6 +2270,11 @@ function fallFromBuffer() {
         if (wouldCreateAdjacent(G.grid, r, c, type)) {
           type = 'NOISE';
         }
+        // Cap special tiles at 5 on board
+        const specialTypes = ['BEAT_BOMB','VIBE_BOMB','MELODY_BOMB','SHUFFLE','DOUBLE','SOCIAL'];
+        if (specialTypes.includes(type) && countSpecialTiles() >= 5) {
+          type = 'NOISE';
+        }
       }
 
       const newTile = { type };
@@ -2301,18 +2317,19 @@ function finishCollapseSequence() {
 // - SHUFFLE: Rearranges board (white outline)
 // - DOUBLE: 2x score for cluster (white outline)
 // - SOCIAL: Rare gold tile with special bonus (gold outline + glow)
-const EFFECT_TILES = ['WILD', 'BOMB', 'FREEZE', 'SHUFFLE', 'DOUBLE'];
+const EFFECT_TILES = ['BEAT_BOMB', 'VIBE_BOMB', 'MELODY_BOMB', 'SHUFFLE', 'DOUBLE'];
 
 function tileType() {
   const r = Math.random();
   // Rare special tile (gold)
   if (r < 0.02) return 'SOCIAL';
   // Effect tiles (white outline) - 8% total
-  if (r < 0.035) return 'WILD';
-  if (r < 0.05) return 'BOMB';
-  if (r < 0.065) return 'FREEZE';
-  if (r < 0.075) return 'SHUFFLE';
-  if (r < 0.08) return 'DOUBLE';
+  if (r < 0.04) {
+    const bombTypes = ['BEAT_BOMB', 'VIBE_BOMB', 'MELODY_BOMB'];
+    return bombTypes[Math.floor(Math.random() * 3)];
+  }
+  if (r < 0.07) return 'SHUFFLE';
+  if (r < 0.09) return 'DOUBLE';
   // Regular colored tiles
   return CATS[Math.floor(Math.random() * 3)];
 }
@@ -2370,42 +2387,8 @@ function place() {
   }
   Audio.playLand();
   applyGravity();
-  transformWildTiles(); // Chameleon: WILD becomes adjacent color
   findClusters();
   G.dirty = true;
-}
-
-// Chameleon WILD: transforms into adjacent tile color when placed
-function transformWildTiles() {
-  for (let r = 0; r < ROWS; r++) {
-    for (let c = 0; c < COLS; c++) {
-      const cell = G.grid[r][c];
-      if (!cell || cell.type !== 'WILD') continue;
-
-      // Find adjacent colored tile (BEAT, VIBE, MELODY)
-      const neighbors = [
-        [r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]
-      ];
-
-      let newType = null;
-      for (const [nr, nc] of neighbors) {
-        if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS) {
-          const neighbor = G.grid[nr][nc];
-          if (neighbor && CATS.includes(neighbor.type)) {
-            newType = neighbor.type;
-            break; // Take first adjacent color found
-          }
-        }
-      }
-
-      // Transform if adjacent color found, otherwise pick random
-      if (newType) {
-        cell.type = newType;
-      } else {
-        cell.type = CATS[Math.floor(Math.random() * CATS.length)];
-      }
-    }
-  }
 }
 
 function applyGravity() {
@@ -2418,7 +2401,7 @@ function applyGravity() {
 }
 
 // Clusters - WILD transforms on placement (chameleon), so won't appear in clusters
-const NON_CLUSTER_TILES = ['WILD', 'BOMB', 'FREEZE', 'SHUFFLE', 'DOUBLE', 'SOCIAL'];
+const NON_CLUSTER_TILES = ['BEAT_BOMB', 'VIBE_BOMB', 'MELODY_BOMB', 'SHUFFLE', 'DOUBLE', 'SOCIAL'];
 
 function findClusters() {
   G.clusters = [];
@@ -2492,33 +2475,31 @@ async function collapse(r, c) {
   if (!cell) return;
 
   try {
-    if (cell.type === 'BOMB') {
+    if (cell.type === 'BEAT_BOMB' || cell.type === 'VIBE_BOMB' || cell.type === 'MELODY_BOMB') {
+      const bombCat = cell.type.replace('_BOMB', '');
       Audio.playBomb();
       G.collapsing = true;
-      for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
-        const nr = r + dr, nc = c + dc;
-        if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && G.grid[nr][nc]) {
-          spawnParticles(nr, nc, getColor('BEAT'), 12);
-          G.grid[nr][nc] = null; G.score += 5;
+      G.grid[r][c] = null;
+      let cleared = 0;
+      for (let rr = BUFFER_ROWS; rr < ROWS; rr++) {
+        for (let cc = 0; cc < COLS; cc++) {
+          if (G.grid[rr][cc]?.type === bombCat) {
+            spawnParticles(rr, cc, getColor(bombCat), 15);
+            G.grid[rr][cc] = null;
+            G.score += 8;
+            cleared++;
+          }
         }
       }
-      shake(10); G.dirty = true;
-      await sleep(100);
-      applyGravity(); findClusters();
-      G.collapsing = false;
-      return;
-    }
-    if (cell.type === 'FREEZE') {
-      Audio.playFreeze();
-      G.collapsing = true;
-      G.grid[r][c] = null;
-      spawnParticles(r, c, getColor('VIBE'), 15);
-      // Extend freeze timer (stacks)
-      const newEnd = Date.now() + 5000;
-      G.frozen = true;
-      G.freezeEnd = Math.max(G.freezeEnd || 0, newEnd);
+      G.res[bombCat] = Math.min((G.res[bombCat] || 0) + cleared * 5, G.unlockCost);
+      shake(Math.min(cleared, 12));
+      G.comboPopups.push({
+        text: bombCat + ' CLEARED!',
+        x: gridX + gridW / 2, y: gridY + gridH / 2,
+        life: 1.5, color: getColor(bombCat)
+      });
       G.dirty = true;
-      await sleep(80);
+      await sleep(120);
       applyGravity(); findClusters();
       G.collapsing = false;
       return;
@@ -2528,25 +2509,28 @@ async function collapse(r, c) {
       G.collapsing = true;
       G.grid[r][c] = null;
       spawnParticles(r, c, P().text, 20);
-      // Shuffle all tiles on the board
-      const allTiles = [];
-      for (let rr = 0; rr < ROWS; rr++) {
+      // Collect positions of colour tiles only (visible rows)
+      const colourPositions = [];
+      const colourTiles = [];
+      for (let rr = BUFFER_ROWS; rr < ROWS; rr++) {
         for (let cc = 0; cc < COLS; cc++) {
-          if (G.grid[rr][cc]) { allTiles.push(G.grid[rr][cc]); G.grid[rr][cc] = null; }
+          const t = G.grid[rr][cc];
+          if (t && ['BEAT','VIBE','MELODY'].includes(t.type)) {
+            colourPositions.push([rr, cc]);
+            colourTiles.push(t);
+            G.grid[rr][cc] = null;
+          }
         }
       }
-      // Shuffle array
-      for (let i = allTiles.length - 1; i > 0; i--) {
+      // Fisher-Yates shuffle of colour tiles only
+      for (let i = colourTiles.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [allTiles[i], allTiles[j]] = [allTiles[j], allTiles[i]];
+        [colourTiles[i], colourTiles[j]] = [colourTiles[j], colourTiles[i]];
       }
-      // Place back from bottom
-      let idx = 0;
-      for (let rr = ROWS - 1; rr >= 0 && idx < allTiles.length; rr--) {
-        for (let cc = 0; cc < COLS && idx < allTiles.length; cc++) {
-          G.grid[rr][cc] = allTiles[idx++];
-        }
-      }
+      // Place shuffled colour tiles back into same positions
+      colourPositions.forEach(([rr, cc], idx) => {
+        G.grid[rr][cc] = colourTiles[idx];
+      });
       shake(8); G.dirty = true;
       await sleep(150);
       applyGravity(); findClusters();
@@ -3426,6 +3410,58 @@ function renderGame() {
       G.dirty = true;
     }
   });
+
+  // Touch drag to swap
+  let dragStart = null;
+  gridHit.on('pointerdown', e => {
+    if (G.collapsing || G.paused) return;
+    const lx = e.data.global.x - gridX, ly = e.data.global.y - gridY;
+    const c = Math.floor(lx / tileSize), r = Math.floor(ly / tileSize) + BUFFER_ROWS;
+    if (c < 0 || c >= COLS || r < BUFFER_ROWS || r >= ROWS) return;
+    const cell = G.grid[r][c];
+    if (!cell || cell.type === 'NOISE') return;
+    dragStart = { r, c, x: e.data.global.x, y: e.data.global.y };
+  });
+
+  gridHit.on('pointermove', e => {
+    if (!dragStart || G.collapsing || G.paused) return;
+    const dx = e.data.global.x - dragStart.x;
+    const dy = e.data.global.y - dragStart.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < 8) return; // Below drag threshold
+
+    // Determine drag direction (cardinal only)
+    let dr = 0, dc = 0;
+    if (Math.abs(dx) > Math.abs(dy)) {
+      dc = dx > 0 ? 1 : -1;
+    } else {
+      dr = dy > 0 ? 1 : -1;
+    }
+
+    const targetR = dragStart.r + dr;
+    const targetC = dragStart.c + dc;
+    if (targetR < BUFFER_ROWS || targetR >= ROWS || targetC < 0 || targetC >= COLS) {
+      dragStart = null;
+      return;
+    }
+
+    const targetCell = G.grid[targetR][targetC];
+    if (!targetCell || targetCell.type === 'NOISE') {
+      dragStart = null;
+      return;
+    }
+
+    // Trigger swap
+    swapTiles(dragStart.r, dragStart.c, targetR, targetC);
+    G.selected = null;
+    TileRenderer.needsSync = true;
+    G.dirty = true;
+    dragStart = null;
+  });
+
+  gridHit.on('pointerup', () => { dragStart = null; });
+  gridHit.on('pointerupoutside', () => { dragStart = null; });
+
   layers.game.addChild(gridHit);
 
   // HUD
@@ -3517,38 +3553,14 @@ function drawEffectTile(g, x, y, type, now) {
   const cx = tx+tw/2, cy = ty+th/2, ir = tw*0.28;
 
   // Draw icon based on type
-  if (type === 'WILD') {
-    // Star icon
-    g.beginFill(neonColor, 0.9);
-    for (let i = 0; i < 5; i++) {
-      const a = (i*72-90)*Math.PI/180, ia = ((i*72)+36-90)*Math.PI/180;
-      if (i === 0) g.moveTo(cx+Math.cos(a)*ir, cy+Math.sin(a)*ir);
-      else g.lineTo(cx+Math.cos(a)*ir, cy+Math.sin(a)*ir);
-      g.lineTo(cx+Math.cos(ia)*ir*0.45, cy+Math.sin(ia)*ir*0.45);
-    }
-    g.closePath(); g.endFill();
-  } else if (type === 'BOMB') {
-    // Bomb icon - circle with fuse
-    g.beginFill(neonColor, 0.85); g.drawCircle(cx, cy+ir*0.1, ir*0.65); g.endFill();
-    g.lineStyle(2, neonColor, 0.9); g.moveTo(cx, cy-ir*0.5); g.lineTo(cx+ir*0.25, cy-ir*0.85);
+  if (type === 'BEAT_BOMB' || type === 'VIBE_BOMB' || type === 'MELODY_BOMB') {
+    const bombCat = type.replace('_BOMB', '');
+    const bombColor = getColor(bombCat);
+    // Coloured bomb body
+    g.beginFill(bombColor, 0.9); g.drawCircle(cx, cy+ir*0.1, ir*0.65); g.endFill();
+    g.lineStyle(2, bombColor, 1); g.moveTo(cx, cy-ir*0.5); g.lineTo(cx+ir*0.25, cy-ir*0.85);
     g.lineStyle(0);
     g.beginFill(0xffaa00, 0.95); g.drawCircle(cx+ir*0.3, cy-ir*0.85, 3); g.endFill();
-  } else if (type === 'FREEZE') {
-    // Snowflake icon
-    g.lineStyle(2, neonColor, 0.9);
-    for (let i = 0; i < 6; i++) {
-      const a = i * Math.PI / 3;
-      g.moveTo(cx, cy);
-      g.lineTo(cx + Math.cos(a) * ir, cy + Math.sin(a) * ir);
-      // Small branches
-      const bx = cx + Math.cos(a) * ir * 0.6, by = cy + Math.sin(a) * ir * 0.6;
-      g.moveTo(bx, by);
-      g.lineTo(bx + Math.cos(a + 0.5) * ir * 0.3, by + Math.sin(a + 0.5) * ir * 0.3);
-      g.moveTo(bx, by);
-      g.lineTo(bx + Math.cos(a - 0.5) * ir * 0.3, by + Math.sin(a - 0.5) * ir * 0.3);
-    }
-    g.lineStyle(0);
-    g.beginFill(neonColor, 0.7); g.drawCircle(cx, cy, ir*0.15); g.endFill();
   } else if (type === 'SHUFFLE') {
     // Shuffle arrows icon
     g.lineStyle(2.5, neonColor, 0.9);
