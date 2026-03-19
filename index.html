@@ -86,9 +86,9 @@ const PALETTES = {
     text: 0xffffff, dim: 0x445566,
     clusterColors: { BEAT: 0xff50c0, VIBE: 0xc0ff20, MELODY: 0x30ffe0 },
     gradients: {
-      BEAT:   { mid: 0x10c0a0, shine: 0x30ffe0, bot: 0x031210 },
-      VIBE:   { mid: 0xc02880, shine: 0xff50c0, bot: 0x140610 },
-      MELODY: { mid: 0x80c010, shine: 0xc0ff20, bot: 0x0a1202 },
+      BEAT:   { mid: 0x10c0a0, shine: 0x30ffe0, bot: 0x0a3830 },
+      VIBE:   { mid: 0xc02880, shine: 0xff50c0, bot: 0x3a0e28 },
+      MELODY: { mid: 0x80c010, shine: 0xc0ff20, bot: 0x243806 },
       SOCIAL: { mid: 0xffffff, shine: 0xffffff, bot: 0x444444 }
     }
   }
@@ -552,9 +552,12 @@ const TileRenderer = {
     gfx.drawRoundedRect(gap, gap, size - gap * 2, size - gap * 2, radius);
     gfx.endFill();
 
-    // Pass 3: draw gradient circles on top (clipped by rounded rect naturally)
+    // Pass 3: draw gradient circles on top — capped to inner rounded rect
     const cx = size / 2, cy = size / 2;
-    const maxR = (size - gap * 2) / 2 - radius * 0.3;
+    const innerW = size - gap * 2;
+    const innerH = size - gap * 2;
+    // Max circle radius = half the inner rect short side, minus a small margin
+    const maxR = Math.min(innerW, innerH) / 2 - 2;
     const steps = 8;
 
     for (let i = steps; i >= 0; i--) {
@@ -566,11 +569,18 @@ const TileRenderer = {
       const g = Math.round(g1 * t + g2 * (1 - t));
       const b = Math.round(b1 * t + b2 * (1 - t));
       const color = (r << 16) | (g << 8) | b;
-      const circleR = maxR * (0.3 + 0.7 * t);
+      // Cap circle to stay within inner rect — no overflow past corners
+      const circleR = maxR * (0.25 + 0.75 * t);
       gfx.beginFill(color, 1);
       gfx.drawCircle(cx, cy, circleR);
       gfx.endFill();
     }
+
+    // Pass 4: edge stroke so tile reads as a square
+    const edgeColor = isCluster ? grad.shine : grad.mid;
+    gfx.lineStyle(1.5, edgeColor, 0.45);
+    gfx.drawRoundedRect(gap, gap, size - gap * 2, size - gap * 2, radius);
+    gfx.lineStyle(0);
 
     // Render to texture
     const rt = PIXI.RenderTexture.create({ width: size, height: size });
@@ -681,12 +691,19 @@ const TileRenderer = {
           this.spriteGrid[r][c] = newSpr;
           targetSpr = newSpr;
 
-          // Drop animation: start above grid, lerp to final position (skip on initial load)
+          // Drop animation: use fallAnim if available, else lerp from above
           if (r >= BUFFER_ROWS && !this.isInitialLoad) {
             const finalY = gridY + (r - BUFFER_ROWS) * tileSize + tileSize / 2;
             newSpr.x = gridX + c * tileSize + tileSize / 2;
-            newSpr.y = gridY - tileSize * 2;  // Start above grid
-            newSpr._targetY = finalY;
+            const hasFallAnim = G.fallAnim?.moveMap?.has(G.grid[r][c]);
+            if (!hasFallAnim) {
+              // No fallAnim for this tile — use _targetY lerp
+              newSpr.y = gridY - tileSize * 2;
+              newSpr._targetY = finalY;
+            } else {
+              // fallAnim will drive position — start at correct final Y immediately
+              newSpr.y = finalY;
+            }
           }
         } else {
           // Update existing sprite texture if needed
@@ -2334,7 +2351,7 @@ function fallFromBuffer() {
       const newTile = { type };
       G.grid[r][c] = newTile;
       // Animate from off-screen (row -1) to final position
-      moves.push({ tile: newTile, fromR: r - (writeR + 1), toR: r, col: c, isNew: true });
+      moves.push({ tile: newTile, fromR: BUFFER_ROWS - 1 - spawnedInCol, toR: r, col: c, isNew: true });
       spawnedInCol++;
     }
   }
