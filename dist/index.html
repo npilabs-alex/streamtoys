@@ -2232,6 +2232,7 @@ function swapTiles(r1, c1, r2, c2) {
   const cell1 = G.grid[r1][c1];
   const cell2 = G.grid[r2][c2];
   if (!cell1 || !cell2) return;
+  if (cell1.type === 'NOISE' || cell2.type === 'NOISE') return;
   G.grid[r1][c1] = cell2;
   G.grid[r2][c2] = cell1;
   Audio.playRotate();
@@ -3446,10 +3447,16 @@ function renderGame() {
     const isAdjacent = (dr === 1 && dc === 0) || (dr === 0 && dc === 1);
 
     if (isAdjacent) {
-      // Swap tiles (works with NOISE tiles too)
-      swapTiles(G.selected.r, G.selected.c, r, c);
-      G.selected = null;
-      G.dirty = true;
+      if (cell.type === 'NOISE') {
+        // Tapping NOISE as swap target — deselect silently
+        G.selected = null;
+        G.dirty = true;
+      } else {
+        // Swap tiles (colour tiles only)
+        swapTiles(G.selected.r, G.selected.c, r, c);
+        G.selected = null;
+        G.dirty = true;
+      }
     } else {
       // Non-adjacent: change selection (only if tapped tile is colour, not NOISE)
       if (cell.type !== 'NOISE') {
