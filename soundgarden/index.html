@@ -1,0 +1,1508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SoundGarden — Infinite Music Canvas</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=DM+Sans:wght@300;400;500&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --cyan: #00f5d4;
+    --magenta: #f72585;
+    --amber: #ffd60a;
+    --blue: #4361ee;
+    --violet: #7b2ff7;
+    --coral: #ff6b6b;
+    --glass-bg: rgba(10, 5, 20, 0.65);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-highlight: rgba(255, 255, 255, 0.04);
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: #030108;
+    font-family: 'DM Sans', sans-serif;
+    color: rgba(255,255,255,0.85);
+    cursor: none;
+  }
+
+  #world-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 1;
+  }
+
+  #ui-layer {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  #ui-layer > * { pointer-events: auto; }
+
+  /* Custom cursor */
+  #cursor {
+    position: fixed;
+    width: 20px; height: 20px;
+    border: 1.5px solid rgba(0, 245, 212, 0.6);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: width 0.3s, height 0.3s, border-color 0.3s, background 0.3s;
+    mix-blend-mode: screen;
+  }
+
+  #cursor.hovering {
+    width: 40px; height: 40px;
+    border-color: rgba(247, 37, 133, 0.8);
+    background: rgba(247, 37, 133, 0.1);
+  }
+
+  #cursor-trail {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9998;
+  }
+
+  /* Logo / Title */
+  #title-area {
+    position: fixed;
+    top: 28px; left: 32px;
+    z-index: 20;
+    pointer-events: none;
+  }
+
+  #title-area h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    font-size: 28px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.7);
+    text-shadow: 0 0 40px rgba(0, 245, 212, 0.3);
+  }
+
+  #title-area h1 span {
+    font-weight: 600;
+    color: var(--cyan);
+    text-shadow: 0 0 30px rgba(0, 245, 212, 0.5);
+  }
+
+  #title-area p {
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+    margin-top: 4px;
+  }
+
+  /* Mini-map */
+  #minimap {
+    position: fixed;
+    top: 24px; right: 24px;
+    width: 180px; height: 180px;
+    border-radius: 16px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 var(--glass-highlight);
+  }
+
+  #minimap canvas {
+    width: 100%; height: 100%;
+  }
+
+  #minimap-label {
+    position: absolute;
+    bottom: 8px; left: 12px;
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+  }
+
+  /* Bottom HUD */
+  #hud {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 10px 8px;
+    border-radius: 20px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5), inset 0 1px 0 var(--glass-highlight);
+    z-index: 20;
+  }
+
+  .hud-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 300;
+    color: rgba(255,255,255,0.5);
+    border-right: 1px solid rgba(255,255,255,0.06);
+    white-space: nowrap;
+  }
+
+  .hud-item:last-child { border-right: none; }
+
+  .hud-item .label {
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.25);
+  }
+
+  .hud-item .value {
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 400;
+    color: rgba(255,255,255,0.6);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .hud-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--cyan);
+    box-shadow: 0 0 8px var(--cyan);
+    animation: dotPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes dotPulse {
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.3); }
+  }
+
+  #plant-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 20px;
+    margin-left: 6px;
+    border: 1px solid rgba(0, 245, 212, 0.3);
+    border-radius: 12px;
+    background: rgba(0, 245, 212, 0.08);
+    color: var(--cyan);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    cursor: none;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+  }
+
+  #plant-btn:hover {
+    background: rgba(0, 245, 212, 0.15);
+    border-color: rgba(0, 245, 212, 0.5);
+    box-shadow: 0 0 20px rgba(0, 245, 212, 0.15);
+  }
+
+  #plant-btn svg { width: 14px; height: 14px; }
+
+  /* Organism tooltip */
+  #tooltip {
+    position: fixed;
+    padding: 14px 18px;
+    border-radius: 14px;
+    background: rgba(8, 4, 18, 0.85);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.25s, transform 0.25s;
+    z-index: 50;
+    min-width: 180px;
+  }
+
+  #tooltip.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  #tooltip .tt-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    font-weight: 400;
+    color: #fff;
+    margin-bottom: 2px;
+  }
+
+  #tooltip .tt-creator {
+    font-size: 11px;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 10px;
+  }
+
+  #tooltip .tt-meta {
+    display: flex;
+    gap: 12px;
+  }
+
+  #tooltip .tt-tag {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.5);
+  }
+
+  /* Seed Planting Modal */
+  #plant-modal {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+  }
+
+  #plant-modal.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  #plant-modal-backdrop {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(3, 1, 8, 0.7);
+    backdrop-filter: blur(8px);
+  }
+
+  #plant-modal-content {
+    position: relative;
+    width: 420px;
+    padding: 36px 40px;
+    border-radius: 24px;
+    background: rgba(12, 6, 28, 0.9);
+    border: 1px solid rgba(255,255,255,0.08);
+    box-shadow: 0 24px 80px rgba(0,0,0,0.6), 0 0 120px rgba(123, 47, 247, 0.08);
+    transform: scale(0.92) translateY(20px);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  #plant-modal.open #plant-modal-content {
+    transform: scale(1) translateY(0);
+  }
+
+  #plant-modal-content h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    font-size: 26px;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+
+  #plant-modal-content .subtitle {
+    font-size: 12px;
+    color: rgba(255,255,255,0.35);
+    margin-bottom: 28px;
+    letter-spacing: 0.05em;
+  }
+
+  .field-group {
+    margin-bottom: 22px;
+  }
+
+  .field-label {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+    margin-bottom: 10px;
+  }
+
+  .genre-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .genre-chip {
+    padding: 7px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.03);
+    color: rgba(255,255,255,0.5);
+    font-size: 12px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: none;
+    transition: all 0.25s ease;
+  }
+
+  .genre-chip:hover {
+    border-color: rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.8);
+  }
+
+  .genre-chip.selected {
+    border-color: rgba(0, 245, 212, 0.4);
+    background: rgba(0, 245, 212, 0.1);
+    color: var(--cyan);
+    box-shadow: 0 0 12px rgba(0, 245, 212, 0.1);
+  }
+
+  .bpm-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .bpm-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 3px;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.08);
+    outline: none;
+    cursor: none;
+  }
+
+  .bpm-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--cyan);
+    box-shadow: 0 0 12px rgba(0, 245, 212, 0.4);
+    cursor: none;
+    transition: box-shadow 0.2s;
+  }
+
+  .bpm-slider::-webkit-slider-thumb:hover {
+    box-shadow: 0 0 20px rgba(0, 245, 212, 0.6);
+  }
+
+  .bpm-value {
+    font-variant-numeric: tabular-nums;
+    font-size: 20px;
+    font-weight: 300;
+    color: var(--cyan);
+    min-width: 48px;
+    text-align: right;
+  }
+
+  .key-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .key-chip {
+    width: 38px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.02);
+    color: rgba(255,255,255,0.4);
+    font-size: 12px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: none;
+    transition: all 0.25s ease;
+  }
+
+  .key-chip:hover {
+    border-color: rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.7);
+  }
+
+  .key-chip.selected {
+    border-color: rgba(247, 37, 133, 0.4);
+    background: rgba(247, 37, 133, 0.1);
+    color: var(--magenta);
+    box-shadow: 0 0 12px rgba(247, 37, 133, 0.1);
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 28px;
+  }
+
+  .btn-cancel {
+    flex: 1;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: transparent;
+    color: rgba(255,255,255,0.4);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    cursor: none;
+    transition: all 0.2s;
+  }
+
+  .btn-cancel:hover {
+    border-color: rgba(255,255,255,0.15);
+    color: rgba(255,255,255,0.6);
+  }
+
+  .btn-plant {
+    flex: 2;
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    background: linear-gradient(135deg, var(--cyan), var(--blue));
+    color: #030108;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: none;
+    transition: all 0.3s;
+    box-shadow: 0 4px 20px rgba(0, 245, 212, 0.2);
+  }
+
+  .btn-plant:hover {
+    box-shadow: 0 4px 30px rgba(0, 245, 212, 0.35);
+    transform: translateY(-1px);
+  }
+
+  /* Organism count badge */
+  .creator-count {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .creator-avatars {
+    display: flex;
+    margin-right: 2px;
+  }
+
+  .creator-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    border: 1px solid rgba(3, 1, 8, 0.8);
+    margin-left: -3px;
+  }
+
+  /* Intro overlay */
+  #intro {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    background: #030108;
+    transition: opacity 1.2s ease;
+  }
+
+  #intro.fade-out {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  #intro h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    font-size: 56px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.85);
+    text-shadow: 0 0 60px rgba(0, 245, 212, 0.3);
+    animation: introFadeIn 2s ease forwards;
+    opacity: 0;
+  }
+
+  #intro h1 span {
+    font-weight: 600;
+    background: linear-gradient(135deg, var(--cyan), var(--magenta));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  #intro p {
+    font-size: 14px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.25);
+    margin-top: 16px;
+    animation: introFadeIn 2s ease 0.5s forwards;
+    opacity: 0;
+  }
+
+  #intro .enter-btn {
+    margin-top: 48px;
+    padding: 14px 40px;
+    border-radius: 14px;
+    border: 1px solid rgba(0, 245, 212, 0.3);
+    background: rgba(0, 245, 212, 0.06);
+    color: var(--cyan);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    cursor: none;
+    animation: introFadeIn 2s ease 1s forwards;
+    opacity: 0;
+    transition: all 0.3s ease;
+  }
+
+  #intro .enter-btn:hover {
+    background: rgba(0, 245, 212, 0.12);
+    border-color: rgba(0, 245, 212, 0.5);
+    box-shadow: 0 0 40px rgba(0, 245, 212, 0.15);
+  }
+
+  @keyframes introFadeIn {
+    to { opacity: 1; }
+  }
+
+  /* Notification toast */
+  #toast {
+    position: fixed;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-60px);
+    padding: 10px 22px;
+    border-radius: 12px;
+    background: rgba(12, 6, 28, 0.9);
+    border: 1px solid rgba(0, 245, 212, 0.2);
+    color: rgba(255,255,255,0.7);
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    z-index: 150;
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    backdrop-filter: blur(16px);
+    pointer-events: none;
+  }
+
+  #toast.show {
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    #hud { gap: 0; padding: 8px 4px; }
+    .hud-item { padding: 4px 8px; font-size: 10px; }
+    #minimap { width: 120px; height: 120px; }
+    #plant-modal-content { width: 90vw; padding: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="world-canvas"></canvas>
+
+<div id="cursor"></div>
+<canvas id="cursor-trail" width="800" height="600"></canvas>
+
+<div id="ui-layer">
+  <!-- Title -->
+  <div id="title-area">
+    <h1>Sound<span>Garden</span></h1>
+    <p>Infinite music canvas</p>
+  </div>
+
+  <!-- Minimap -->
+  <div id="minimap">
+    <canvas id="minimap-canvas"></canvas>
+    <div id="minimap-label">Garden Map</div>
+  </div>
+
+  <!-- Tooltip -->
+  <div id="tooltip">
+    <div class="tt-name"></div>
+    <div class="tt-creator"></div>
+    <div class="tt-meta"></div>
+  </div>
+
+  <!-- Bottom HUD -->
+  <div id="hud">
+    <div class="hud-item">
+      <div class="hud-dot"></div>
+      <div>
+        <div class="label">Position</div>
+        <div class="value" id="hud-pos">0, 0</div>
+      </div>
+    </div>
+    <div class="hud-item">
+      <div>
+        <div class="label">Zoom</div>
+        <div class="value" id="hud-zoom">100%</div>
+      </div>
+    </div>
+    <div class="hud-item">
+      <div>
+        <div class="label">Nearby</div>
+        <div class="value">
+          <span class="creator-count">
+            <span class="creator-avatars">
+              <span class="creator-dot" style="background: var(--cyan)"></span>
+              <span class="creator-dot" style="background: var(--magenta)"></span>
+              <span class="creator-dot" style="background: var(--amber)"></span>
+            </span>
+            <span id="hud-creators">24 creators</span>
+          </span>
+        </div>
+      </div>
+    </div>
+    <div class="hud-item">
+      <div>
+        <div class="label">Garden</div>
+        <div class="value" id="hud-organisms">142 organisms</div>
+      </div>
+    </div>
+    <button id="plant-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 5v14M5 12h14"/>
+      </svg>
+      Plant Seed
+    </button>
+  </div>
+</div>
+
+<!-- Seed Planting Modal -->
+<div id="plant-modal">
+  <div id="plant-modal-backdrop"></div>
+  <div id="plant-modal-content">
+    <h2>Plant a Seed</h2>
+    <p class="subtitle">Your creation will grow with the garden</p>
+
+    <div class="field-group">
+      <div class="field-label">Genre</div>
+      <div class="genre-grid">
+        <button class="genre-chip" data-genre="ambient">Ambient</button>
+        <button class="genre-chip" data-genre="hiphop">Hip Hop</button>
+        <button class="genre-chip" data-genre="electronic">Electronic</button>
+        <button class="genre-chip" data-genre="lofi">Lo-fi</button>
+        <button class="genre-chip" data-genre="rnb">R&B</button>
+        <button class="genre-chip" data-genre="rock">Rock</button>
+        <button class="genre-chip" data-genre="jazz">Jazz</button>
+        <button class="genre-chip" data-genre="classical">Classical</button>
+        <button class="genre-chip" data-genre="pop">Pop</button>
+        <button class="genre-chip" data-genre="world">World</button>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <div class="field-label">Tempo</div>
+      <div class="bpm-row">
+        <input type="range" class="bpm-slider" min="60" max="180" value="120">
+        <div class="bpm-value">120</div>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <div class="field-label">Key</div>
+      <div class="key-grid">
+        <button class="key-chip" data-key="C">C</button>
+        <button class="key-chip" data-key="C#">C#</button>
+        <button class="key-chip" data-key="D">D</button>
+        <button class="key-chip" data-key="Eb">Eb</button>
+        <button class="key-chip" data-key="E">E</button>
+        <button class="key-chip" data-key="F">F</button>
+        <button class="key-chip" data-key="F#">F#</button>
+        <button class="key-chip" data-key="G">G</button>
+        <button class="key-chip" data-key="Ab">Ab</button>
+        <button class="key-chip" data-key="A">A</button>
+        <button class="key-chip" data-key="Bb">Bb</button>
+        <button class="key-chip" data-key="B">B</button>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" id="cancel-plant">Cancel</button>
+      <button class="btn-plant" id="confirm-plant">Plant Seed</button>
+    </div>
+  </div>
+</div>
+
+<!-- Intro Screen -->
+<div id="intro">
+  <h1>Sound<span>Garden</span></h1>
+  <p>An infinite living music canvas</p>
+  <button class="enter-btn" id="enter-btn">Enter the Garden</button>
+</div>
+
+<!-- Toast -->
+<div id="toast">Seed planted successfully</div>
+
+<script>
+// ============================================================
+// SoundGarden — Infinite Music Canvas
+// ============================================================
+
+const canvas = document.getElementById('world-canvas');
+const ctx = canvas.getContext('2d');
+const trailCanvas = document.getElementById('cursor-trail');
+const trailCtx = trailCanvas.getContext('2d');
+const minimapCanvas = document.getElementById('minimap-canvas');
+const minimapCtx = minimapCanvas.getContext('2d');
+
+// --- State ---
+const state = {
+  width: 0, height: 0,
+  camera: { x: 0, y: 0, zoom: 1, targetZoom: 1 },
+  mouse: { x: 0, y: 0, worldX: 0, worldY: 0 },
+  dragging: false,
+  dragStart: { x: 0, y: 0 },
+  cameraStart: { x: 0, y: 0 },
+  time: 0,
+  hoveredOrganism: null,
+  started: false,
+};
+
+// --- Colors ---
+const PALETTES = {
+  ambient:    { primary: '#00f5d4', secondary: '#0a9396', glow: 'rgba(0,245,212,' },
+  hiphop:     { primary: '#ffd60a', secondary: '#e09f3e', glow: 'rgba(255,214,10,' },
+  electronic: { primary: '#f72585', secondary: '#b5179e', glow: 'rgba(247,37,133,' },
+  lofi:       { primary: '#7b2ff7', secondary: '#5a189a', glow: 'rgba(123,47,247,' },
+  rnb:        { primary: '#ff6b6b', secondary: '#c9184a', glow: 'rgba(255,107,107,' },
+  rock:       { primary: '#e09f3e', secondary: '#c17817', glow: 'rgba(224,159,62,' },
+  jazz:       { primary: '#4361ee', secondary: '#3a0ca3', glow: 'rgba(67,97,238,' },
+  classical:  { primary: '#f0e6d3', secondary: '#c4a882', glow: 'rgba(240,230,211,' },
+  pop:        { primary: '#ff79c6', secondary: '#ff2d95', glow: 'rgba(255,121,198,' },
+  world:      { primary: '#06d6a0', secondary: '#118ab2', glow: 'rgba(6,214,160,' },
+};
+
+const GENRES = Object.keys(PALETTES);
+const KEYS = ['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B'];
+const STAGES = ['seed', 'sprout', 'bloom', 'ancient'];
+const NAMES_ADJ = ['Ethereal','Glowing','Drifting','Pulsing','Shimmering','Velvet','Cosmic','Midnight','Golden','Silver','Electric','Deep','Floating','Radiant','Mystic','Neon','Phantom','Solar','Lunar','Crystal'];
+const NAMES_NOUN = ['Reef','Bloom','Spore','Tendril','Echo','Pulse','Wave','Current','Drift','Nebula','Coral','Ember','Mist','Haze','Fern','Root','Vine','Shell','Arc','Glow'];
+const CREATOR_NAMES = ['astralbeats','loopweaver','synthgarden','beatroot','echomoss','pulseflora','wavefern','bassbloom','melodrift','rhythmvine','sonicspore','harmonyleaf','deepcoral','neonmist','chordember'];
+
+// --- Noise (simple value noise) ---
+function hash(x, y) {
+  let h = x * 374761393 + y * 668265263;
+  h = (h ^ (h >> 13)) * 1274126177;
+  return (h ^ (h >> 16)) / 2147483648;
+}
+
+function noise2D(x, y) {
+  const ix = Math.floor(x), iy = Math.floor(y);
+  const fx = x - ix, fy = y - iy;
+  const sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
+  const a = hash(ix, iy), b = hash(ix + 1, iy);
+  const c = hash(ix, iy + 1), d = hash(ix + 1, iy + 1);
+  return a + (b - a) * sx + (c - a) * sy + (a - b - c + d) * sx * sy;
+}
+
+// --- Generate organisms ---
+const organisms = [];
+
+function generateName() {
+  return NAMES_ADJ[Math.random() * NAMES_ADJ.length | 0] + ' ' + NAMES_NOUN[Math.random() * NAMES_NOUN.length | 0];
+}
+
+function generateOrganism(x, y, opts = {}) {
+  const genre = opts.genre || GENRES[Math.random() * GENRES.length | 0];
+  const key = opts.key || KEYS[Math.random() * KEYS.length | 0];
+  const bpm = opts.bpm || (70 + Math.random() * 110 | 0);
+  const stage = opts.stage || STAGES[Math.random() * 4 | 0];
+  const stageIndex = STAGES.indexOf(stage);
+  const baseSize = [8, 18, 35, 60][stageIndex];
+  const palette = PALETTES[genre];
+
+  return {
+    x, y,
+    genre, key, bpm, stage, stageIndex,
+    name: generateName(),
+    creator: CREATOR_NAMES[Math.random() * CREATOR_NAMES.length | 0],
+    size: baseSize + Math.random() * baseSize * 0.4,
+    palette,
+    phase: Math.random() * Math.PI * 2,
+    wobbleSpeed: 0.3 + Math.random() * 0.5,
+    wobbleAmp: 0.05 + Math.random() * 0.1,
+    pulseSpeed: 0.5 + Math.random() * 1.0,
+    tentacles: stageIndex >= 2 ? 3 + (Math.random() * 5 | 0) : 0,
+    tentacleLength: baseSize * (1.5 + Math.random()),
+    rings: [],
+    ringTimer: 0,
+    ringInterval: 1.5 + Math.random() * 2,
+    particles: [],
+    hoverAmount: 0,
+    contributions: 1 + Math.random() * 20 | 0,
+    plays: Math.random() * 5000 | 0,
+    age: Math.random() * 30 | 0,
+  };
+}
+
+// Scatter organisms across the world
+for (let i = 0; i < 80; i++) {
+  const angle = Math.random() * Math.PI * 2;
+  const dist = Math.random() * 2500;
+  organisms.push(generateOrganism(
+    Math.cos(angle) * dist,
+    Math.sin(angle) * dist
+  ));
+}
+
+// Create clusters
+for (let c = 0; c < 6; c++) {
+  const cx = (Math.random() - 0.5) * 4000;
+  const cy = (Math.random() - 0.5) * 4000;
+  const count = 8 + Math.random() * 15 | 0;
+  const genre = GENRES[Math.random() * GENRES.length | 0];
+  const key = KEYS[Math.random() * KEYS.length | 0];
+  for (let i = 0; i < count; i++) {
+    organisms.push(generateOrganism(
+      cx + (Math.random() - 0.5) * 600,
+      cy + (Math.random() - 0.5) * 600,
+      { genre, key }
+    ));
+  }
+}
+
+// --- Particles (ambient) ---
+const ambientParticles = [];
+for (let i = 0; i < 200; i++) {
+  ambientParticles.push({
+    x: (Math.random() - 0.5) * 8000,
+    y: (Math.random() - 0.5) * 8000,
+    size: 0.5 + Math.random() * 2,
+    speed: 0.1 + Math.random() * 0.3,
+    angle: Math.random() * Math.PI * 2,
+    alpha: 0.1 + Math.random() * 0.3,
+    color: Math.random() > 0.5 ? '0, 245, 212' : '123, 47, 247',
+    drift: Math.random() * 0.02,
+  });
+}
+
+// --- Cursor trail ---
+const cursorTrail = [];
+
+// --- Connections cache ---
+let connections = [];
+function computeConnections() {
+  connections = [];
+  for (let i = 0; i < organisms.length; i++) {
+    for (let j = i + 1; j < organisms.length; j++) {
+      const a = organisms[i], b = organisms[j];
+      const dx = a.x - b.x, dy = a.y - b.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const maxDist = (a.stageIndex + b.stageIndex >= 3) ? 350 : 200;
+      if (dist < maxDist && (a.key === b.key || a.genre === b.genre)) {
+        connections.push({ a, b, dist, maxDist });
+      }
+    }
+  }
+}
+computeConnections();
+
+// --- Resize ---
+function resize() {
+  state.width = window.innerWidth;
+  state.height = window.innerHeight;
+  canvas.width = state.width * devicePixelRatio;
+  canvas.height = state.height * devicePixelRatio;
+  canvas.style.width = state.width + 'px';
+  canvas.style.height = state.height + 'px';
+  ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+
+  trailCanvas.width = state.width;
+  trailCanvas.height = state.height;
+  trailCanvas.style.width = state.width + 'px';
+  trailCanvas.style.height = state.height + 'px';
+
+  minimapCanvas.width = 180 * devicePixelRatio;
+  minimapCanvas.height = 180 * devicePixelRatio;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// --- World to screen ---
+function worldToScreen(wx, wy) {
+  const z = state.camera.zoom;
+  return {
+    x: (wx - state.camera.x) * z + state.width / 2,
+    y: (wy - state.camera.y) * z + state.height / 2
+  };
+}
+
+function screenToWorld(sx, sy) {
+  const z = state.camera.zoom;
+  return {
+    x: (sx - state.width / 2) / z + state.camera.x,
+    y: (sy - state.height / 2) / z + state.camera.y
+  };
+}
+
+// --- Draw organism ---
+function drawOrganism(org, t) {
+  const scr = worldToScreen(org.x, org.y);
+  const z = state.camera.zoom;
+  const sz = org.size * z;
+
+  // Skip if off-screen
+  const margin = sz * 4;
+  if (scr.x < -margin || scr.x > state.width + margin || scr.y < -margin || scr.y > state.height + margin) return;
+
+  const hover = org.hoverAmount;
+  const pulse = Math.sin(t * org.pulseSpeed + org.phase) * 0.5 + 0.5;
+  const effectiveSize = sz * (1 + pulse * 0.08 + hover * 0.15);
+  const alpha = org.stageIndex === 0 ? 0.4 + pulse * 0.3 : 0.6 + pulse * 0.2 + hover * 0.2;
+
+  ctx.save();
+  ctx.translate(scr.x, scr.y);
+
+  // Glow
+  const glowSize = effectiveSize * (2 + org.stageIndex * 0.8 + hover * 1.5);
+  const glow = ctx.createRadialGradient(0, 0, effectiveSize * 0.2, 0, 0, glowSize);
+  glow.addColorStop(0, org.palette.glow + (0.15 + hover * 0.15) + ')');
+  glow.addColorStop(0.5, org.palette.glow + '0.04)');
+  glow.addColorStop(1, org.palette.glow + '0)');
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.arc(0, 0, glowSize, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Tentacles / roots (bloom and ancient)
+  if (org.tentacles > 0) {
+    for (let i = 0; i < org.tentacles; i++) {
+      const angle = (Math.PI * 2 / org.tentacles) * i + Math.sin(t * 0.3 + org.phase) * 0.2;
+      const len = org.tentacleLength * z * (0.7 + pulse * 0.3);
+      const wobble = Math.sin(t * org.wobbleSpeed + i * 1.5) * effectiveSize * 0.5;
+
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.quadraticCurveTo(
+        Math.cos(angle + 0.3) * len * 0.5 + wobble,
+        Math.sin(angle + 0.3) * len * 0.5,
+        Math.cos(angle) * len,
+        Math.sin(angle) * len
+      );
+      ctx.strokeStyle = org.palette.glow + (0.12 + hover * 0.1) + ')';
+      ctx.lineWidth = (1 + org.stageIndex * 0.5) * z;
+      ctx.stroke();
+    }
+  }
+
+  // Pulse rings
+  org.ringTimer += 1 / 60;
+  if (org.ringTimer > org.ringInterval && org.stageIndex >= 1) {
+    org.rings.push({ radius: effectiveSize, alpha: 0.4, maxRadius: effectiveSize * (3 + org.stageIndex) });
+    org.ringTimer = 0;
+  }
+  for (let i = org.rings.length - 1; i >= 0; i--) {
+    const ring = org.rings[i];
+    ring.radius += (0.5 + org.stageIndex * 0.3) * z;
+    ring.alpha -= 0.004;
+    if (ring.alpha <= 0) { org.rings.splice(i, 1); continue; }
+    ctx.beginPath();
+    ctx.arc(0, 0, ring.radius, 0, Math.PI * 2);
+    ctx.strokeStyle = org.palette.glow + ring.alpha + ')';
+    ctx.lineWidth = (1 + hover) * z;
+    ctx.stroke();
+  }
+
+  // Core body — wobbly organic shape
+  const points = 8 + org.stageIndex * 4;
+  ctx.beginPath();
+  for (let i = 0; i <= points; i++) {
+    const a = (Math.PI * 2 / points) * i;
+    const wobble = 1 + Math.sin(t * org.wobbleSpeed + a * 3 + org.phase) * org.wobbleAmp;
+    const r = effectiveSize * wobble;
+    const px = Math.cos(a) * r;
+    const py = Math.sin(a) * r;
+    if (i === 0) ctx.moveTo(px, py);
+    else {
+      const prevA = (Math.PI * 2 / points) * (i - 0.5);
+      const prevWobble = 1 + Math.sin(t * org.wobbleSpeed + prevA * 3 + org.phase) * org.wobbleAmp * 1.2;
+      const cpR = effectiveSize * prevWobble * 1.05;
+      ctx.quadraticCurveTo(
+        Math.cos(prevA) * cpR,
+        Math.sin(prevA) * cpR,
+        px, py
+      );
+    }
+  }
+  ctx.closePath();
+
+  // Fill with radial gradient
+  const bodyGrad = ctx.createRadialGradient(0, 0, 0, 0, 0, effectiveSize * 1.2);
+  bodyGrad.addColorStop(0, org.palette.primary + 'cc');
+  bodyGrad.addColorStop(0.6, org.palette.secondary + '88');
+  bodyGrad.addColorStop(1, org.palette.glow + '0)');
+  ctx.fillStyle = bodyGrad;
+  ctx.fill();
+
+  // Inner bright spot
+  const innerGrad = ctx.createRadialGradient(
+    -effectiveSize * 0.15, -effectiveSize * 0.15, 0,
+    0, 0, effectiveSize * 0.6
+  );
+  innerGrad.addColorStop(0, 'rgba(255,255,255,' + (0.3 + hover * 0.3) + ')');
+  innerGrad.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = innerGrad;
+  ctx.fill();
+
+  // Organism particles (bloom+)
+  if (org.stageIndex >= 2 && Math.random() < 0.15 + hover * 0.3) {
+    const pAngle = Math.random() * Math.PI * 2;
+    org.particles.push({
+      x: Math.cos(pAngle) * effectiveSize * 0.5,
+      y: Math.sin(pAngle) * effectiveSize * 0.5,
+      vx: Math.cos(pAngle) * (0.3 + Math.random() * 0.5),
+      vy: Math.sin(pAngle) * (0.3 + Math.random() * 0.5),
+      alpha: 0.6,
+      size: (1 + Math.random() * 2) * z,
+    });
+  }
+
+  for (let i = org.particles.length - 1; i >= 0; i--) {
+    const p = org.particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.alpha -= 0.008;
+    if (p.alpha <= 0) { org.particles.splice(i, 1); continue; }
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fillStyle = org.palette.glow + p.alpha + ')';
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+// --- Draw connections (mycelium) ---
+function drawConnections(t) {
+  for (const conn of connections) {
+    const sa = worldToScreen(conn.a.x, conn.a.y);
+    const sb = worldToScreen(conn.b.x, conn.b.y);
+
+    // Check if visible
+    const minX = Math.min(sa.x, sb.x), maxX = Math.max(sa.x, sb.x);
+    const minY = Math.min(sa.y, sb.y), maxY = Math.max(sa.y, sb.y);
+    if (maxX < -50 || minX > state.width + 50 || maxY < -50 || minY > state.height + 50) continue;
+
+    const strength = 1 - conn.dist / conn.maxDist;
+    const midX = (sa.x + sb.x) / 2 + Math.sin(t * 0.5 + conn.a.phase) * 30 * state.camera.zoom;
+    const midY = (sa.y + sb.y) / 2 + Math.cos(t * 0.7 + conn.b.phase) * 30 * state.camera.zoom;
+
+    const hover = Math.max(conn.a.hoverAmount, conn.b.hoverAmount);
+    const alpha = (0.04 + strength * 0.08 + hover * 0.15);
+
+    ctx.beginPath();
+    ctx.moveTo(sa.x, sa.y);
+    ctx.quadraticCurveTo(midX, midY, sb.x, sb.y);
+    ctx.strokeStyle = conn.a.palette.glow + alpha + ')';
+    ctx.lineWidth = (0.5 + strength + hover * 1.5) * state.camera.zoom;
+    ctx.stroke();
+
+    // Traveling particle along connection
+    if (strength > 0.4 && Math.random() < 0.02) {
+      const prog = (t * 0.3 + conn.a.phase) % 1;
+      const px = sa.x + (sb.x - sa.x) * prog;
+      const py = sa.y + (sb.y - sa.y) * prog;
+      ctx.beginPath();
+      ctx.arc(px, py, 2 * state.camera.zoom, 0, Math.PI * 2);
+      ctx.fillStyle = conn.a.palette.glow + '0.5)';
+      ctx.fill();
+    }
+  }
+}
+
+// --- Draw ambient particles ---
+function drawAmbientParticles(t) {
+  for (const p of ambientParticles) {
+    p.angle += p.drift;
+    p.x += Math.cos(p.angle) * p.speed;
+    p.y += Math.sin(p.angle) * p.speed;
+
+    const scr = worldToScreen(p.x, p.y);
+    if (scr.x < -10 || scr.x > state.width + 10 || scr.y < -10 || scr.y > state.height + 10) continue;
+
+    const flicker = 0.5 + Math.sin(t * 2 + p.x * 0.01) * 0.5;
+    ctx.beginPath();
+    ctx.arc(scr.x, scr.y, p.size * state.camera.zoom, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${p.color}, ${p.alpha * flicker})`;
+    ctx.fill();
+  }
+}
+
+// --- Draw background ---
+function drawBackground(t) {
+  // Deep gradient
+  const bgGrad = ctx.createRadialGradient(
+    state.width / 2, state.height / 2, 0,
+    state.width / 2, state.height / 2, state.width * 0.8
+  );
+  bgGrad.addColorStop(0, '#0a0518');
+  bgGrad.addColorStop(0.5, '#050210');
+  bgGrad.addColorStop(1, '#030108');
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, state.width, state.height);
+
+  // Subtle nebula clouds
+  for (let i = 0; i < 3; i++) {
+    const nx = state.width * (0.2 + i * 0.3) + Math.sin(t * 0.1 + i) * 50;
+    const ny = state.height * (0.3 + i * 0.15) + Math.cos(t * 0.08 + i) * 40;
+    const nebula = ctx.createRadialGradient(nx, ny, 0, nx, ny, 300 + i * 100);
+    const colors = [
+      'rgba(123, 47, 247, 0.015)',
+      'rgba(247, 37, 133, 0.012)',
+      'rgba(67, 97, 238, 0.01)',
+    ];
+    nebula.addColorStop(0, colors[i]);
+    nebula.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = nebula;
+    ctx.fillRect(0, 0, state.width, state.height);
+  }
+
+  // Star field (fixed relative to camera for parallax)
+  const starSeed = 42;
+  for (let i = 0; i < 150; i++) {
+    const sx = hash(i + starSeed, 0) * state.width;
+    const sy = hash(0, i + starSeed) * state.height;
+    const parallax = 0.02;
+    const px = ((sx - state.camera.x * parallax * state.camera.zoom) % state.width + state.width) % state.width;
+    const py = ((sy - state.camera.y * parallax * state.camera.zoom) % state.height + state.height) % state.height;
+    const brightness = 0.1 + hash(i, starSeed) * 0.3;
+    const twinkle = Math.sin(t * (1 + hash(i, 1) * 2) + i) * 0.5 + 0.5;
+    ctx.beginPath();
+    ctx.arc(px, py, 0.5 + hash(i, 2) * 1, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255,255,255,${brightness * twinkle})`;
+    ctx.fill();
+  }
+}
+
+// --- Draw minimap ---
+function drawMinimap() {
+  const mw = 180 * devicePixelRatio;
+  const mh = 180 * devicePixelRatio;
+  minimapCtx.setTransform(1, 0, 0, 1, 0, 0);
+  minimapCtx.clearRect(0, 0, mw, mh);
+
+  // Background
+  minimapCtx.fillStyle = 'rgba(3, 1, 8, 0.6)';
+  minimapCtx.fillRect(0, 0, mw, mh);
+
+  const scale = mw / 8000;
+  const offsetX = mw / 2;
+  const offsetY = mh / 2;
+
+  // Draw organisms as dots
+  for (const org of organisms) {
+    const mx = org.x * scale + offsetX;
+    const my = org.y * scale + offsetY;
+    if (mx < 0 || mx > mw || my < 0 || my > mh) continue;
+
+    const s = (1 + org.stageIndex) * devicePixelRatio;
+    minimapCtx.beginPath();
+    minimapCtx.arc(mx, my, s, 0, Math.PI * 2);
+    minimapCtx.fillStyle = org.palette.glow + '0.6)';
+    minimapCtx.fill();
+  }
+
+  // Camera viewport
+  const vpLeft = (-state.width / 2 / state.camera.zoom + state.camera.x) * scale + offsetX;
+  const vpTop = (-state.height / 2 / state.camera.zoom + state.camera.y) * scale + offsetY;
+  const vpW = (state.width / state.camera.zoom) * scale;
+  const vpH = (state.height / state.camera.zoom) * scale;
+  minimapCtx.strokeStyle = 'rgba(255,255,255,0.25)';
+  minimapCtx.lineWidth = devicePixelRatio;
+  minimapCtx.strokeRect(vpLeft, vpTop, vpW, vpH);
+}
+
+// --- Cursor trail ---
+function updateCursorTrail() {
+  cursorTrail.push({ x: state.mouse.x, y: state.mouse.y, alpha: 0.4 });
+  if (cursorTrail.length > 20) cursorTrail.shift();
+
+  trailCtx.clearRect(0, 0, state.width, state.height);
+  for (let i = 0; i < cursorTrail.length - 1; i++) {
+    const p = cursorTrail[i];
+    const progress = i / cursorTrail.length;
+    trailCtx.beginPath();
+    trailCtx.arc(p.x, p.y, 2 * progress, 0, Math.PI * 2);
+    trailCtx.fillStyle = `rgba(0, 245, 212, ${p.alpha * progress})`;
+    trailCtx.fill();
+    p.alpha *= 0.92;
+  }
+}
+
+// --- Hit test ---
+function hitTestOrganism(mx, my) {
+  const world = screenToWorld(mx, my);
+  let closest = null;
+  let closestDist = Infinity;
+  for (const org of organisms) {
+    const dx = org.x - world.x;
+    const dy = org.y - world.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const hitRadius = org.size * 1.5;
+    if (dist < hitRadius && dist < closestDist) {
+      closest = org;
+      closestDist = dist;
+    }
+  }
+  return closest;
+}
+
+// --- Tooltip ---
+const tooltip = document.getElementById('tooltip');
+function updateTooltip(org) {
+  if (org) {
+    tooltip.querySelector('.tt-name').textContent = org.name;
+    tooltip.querySelector('.tt-creator').textContent = `by @${org.creator} · ${org.contributions} layers · ${org.plays.toLocaleString()} plays`;
+    tooltip.querySelector('.tt-meta').innerHTML =
+      `<span class="tt-tag" style="color:${org.palette.primary}">${org.genre}</span>` +
+      `<span class="tt-tag">${org.bpm} BPM</span>` +
+      `<span class="tt-tag">${org.key}</span>` +
+      `<span class="tt-tag">${org.stage}</span>`;
+
+    const scr = worldToScreen(org.x, org.y);
+    tooltip.style.left = (scr.x + org.size * state.camera.zoom + 16) + 'px';
+    tooltip.style.top = (scr.y - 30) + 'px';
+    tooltip.classList.add('visible');
+  } else {
+    tooltip.classList.remove('visible');
+  }
+}
+
+// --- HUD update ---
+function updateHUD() {
+  document.getElementById('hud-pos').textContent =
+    `${Math.round(state.camera.x)}, ${Math.round(state.camera.y)}`;
+  document.getElementById('hud-zoom').textContent =
+    `${Math.round(state.camera.zoom * 100)}%`;
+
+  // Count nearby
+  const nearCount = organisms.filter(o => {
+    const dx = o.x - state.camera.x;
+    const dy = o.y - state.camera.y;
+    return Math.sqrt(dx * dx + dy * dy) < 800 / state.camera.zoom;
+  }).length;
+  document.getElementById('hud-creators').textContent = `${nearCount} creators`;
+  document.getElementById('hud-organisms').textContent = `${organisms.length} organisms`;
+}
+
+// --- Main loop ---
+function frame(timestamp) {
+  if (!state.started) { requestAnimationFrame(frame); return; }
+
+  const t = timestamp / 1000;
+  state.time = t;
+
+  // Smooth zoom
+  state.camera.zoom += (state.camera.targetZoom - state.camera.zoom) * 0.1;
+
+  // Clear and draw
+  ctx.clearRect(0, 0, state.width, state.height);
+
+  drawBackground(t);
+  drawAmbientParticles(t);
+  drawConnections(t);
+
+  // Update hover states
+  for (const org of organisms) {
+    if (org === state.hoveredOrganism) {
+      org.hoverAmount = Math.min(1, org.hoverAmount + 0.06);
+    } else {
+      org.hoverAmount = Math.max(0, org.hoverAmount - 0.04);
+    }
+  }
+
+  // Sort by size for draw order
+  const sorted = [...organisms].sort((a, b) => a.size - b.size);
+  for (const org of sorted) {
+    drawOrganism(org, t);
+  }
+
+  updateCursorTrail();
+  drawMinimap();
+
+  if (Math.floor(t * 4) % 4 === 0) updateHUD();
+
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+// --- Events ---
+const cursorEl = document.getElementById('cursor');
+
+document.addEventListener('mousemove', (e) => {
+  state.mouse.x = e.clientX;
+  state.mouse.y = e.clientY;
+  cursorEl.style.left = e.clientX + 'px';
+  cursorEl.style.top = e.clientY + 'px';
+
+  if (state.dragging) {
+    state.camera.x = state.cameraStart.x - (e.clientX - state.dragStart.x) / state.camera.zoom;
+    state.camera.y = state.cameraStart.y - (e.clientY - state.dragStart.y) / state.camera.zoom;
+  }
+
+  // Hit test
+  const hit = hitTestOrganism(e.clientX, e.clientY);
+  state.hoveredOrganism = hit;
+  updateTooltip(hit);
+  cursorEl.classList.toggle('hovering', !!hit);
+});
+
+canvas.addEventListener('mousedown', (e) => {
+  state.dragging = true;
+  state.dragStart.x = e.clientX;
+  state.dragStart.y = e.clientY;
+  state.cameraStart.x = state.camera.x;
+  state.cameraStart.y = state.camera.y;
+  canvas.style.cursor = 'none';
+});
+
+document.addEventListener('mouseup', (e) => {
+  if (state.dragging) {
+    const dx = e.clientX - state.dragStart.x;
+    const dy = e.clientY - state.dragStart.y;
+    // If barely moved, treat as click on empty space
+    if (Math.abs(dx) < 3 && Math.abs(dy) < 3 && !state.hoveredOrganism) {
+      openPlantModal(e.clientX, e.clientY);
+    }
+  }
+  state.dragging = false;
+});
+
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+  state.camera.targetZoom = Math.max(0.15, Math.min(4, state.camera.targetZoom * zoomFactor));
+}, { passive: false });
+
+// --- Plant modal ---
+let plantPos = { x: 0, y: 0 };
+const plantModal = document.getElementById('plant-modal');
+let selectedGenre = null;
+let selectedKey = null;
+
+function openPlantModal(sx, sy) {
+  plantPos = screenToWorld(sx, sy);
+  plantModal.classList.add('open');
+}
+
+function closePlantModal() {
+  plantModal.classList.remove('open');
+  selectedGenre = null;
+  selectedKey = null;
+  document.querySelectorAll('.genre-chip, .key-chip').forEach(c => c.classList.remove('selected'));
+}
+
+document.getElementById('plant-modal-backdrop').addEventListener('click', closePlantModal);
+document.getElementById('cancel-plant').addEventListener('click', closePlantModal);
+
+document.querySelectorAll('.genre-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('.genre-chip').forEach(c => c.classList.remove('selected'));
+    chip.classList.add('selected');
+    selectedGenre = chip.dataset.genre;
+  });
+});
+
+document.querySelectorAll('.key-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('.key-chip').forEach(c => c.classList.remove('selected'));
+    chip.classList.add('selected');
+    selectedKey = chip.dataset.key;
+  });
+});
+
+const bpmSlider = document.querySelector('.bpm-slider');
+const bpmValue = document.querySelector('.bpm-value');
+bpmSlider.addEventListener('input', () => {
+  bpmValue.textContent = bpmSlider.value;
+});
+
+document.getElementById('confirm-plant').addEventListener('click', () => {
+  const genre = selectedGenre || 'ambient';
+  const key = selectedKey || 'C';
+  const bpm = parseInt(bpmSlider.value);
+
+  const newOrg = generateOrganism(plantPos.x, plantPos.y, {
+    genre, key, bpm, stage: 'seed'
+  });
+  newOrg.creator = 'you';
+  organisms.push(newOrg);
+  computeConnections();
+  closePlantModal();
+
+  // Toast
+  showToast(`Seed planted — ${genre} in ${key} at ${bpm} BPM`);
+
+  // Animate camera to new seed
+  const targetX = plantPos.x;
+  const targetY = plantPos.y;
+  const startX = state.camera.x;
+  const startY = state.camera.y;
+  let progress = 0;
+  function animateToSeed() {
+    progress += 0.03;
+    if (progress >= 1) return;
+    const ease = 1 - Math.pow(1 - progress, 3);
+    state.camera.x = startX + (targetX - startX) * ease;
+    state.camera.y = startY + (targetY - startY) * ease;
+    requestAnimationFrame(animateToSeed);
+  }
+  animateToSeed();
+});
+
+document.getElementById('plant-btn').addEventListener('click', () => {
+  openPlantModal(state.width / 2, state.height / 2);
+});
+
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+// --- Intro ---
+document.getElementById('enter-btn').addEventListener('click', () => {
+  document.getElementById('intro').classList.add('fade-out');
+  state.started = true;
+  setTimeout(() => {
+    document.getElementById('intro').style.display = 'none';
+  }, 1200);
+});
+
+// --- Keyboard ---
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closePlantModal();
+  if (e.key === '+' || e.key === '=') state.camera.targetZoom = Math.min(4, state.camera.targetZoom * 1.2);
+  if (e.key === '-') state.camera.targetZoom = Math.max(0.15, state.camera.targetZoom * 0.8);
+});
+
+// Prevent context menu
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+</script>
+</body>
+</html>
