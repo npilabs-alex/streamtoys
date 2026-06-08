@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Soundgarden — United States</title>
+<link rel="stylesheet" href="bandlab.css" />
+<style>
+  .page {
+    position: relative;
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    padding: 24px 40px 36px;
+    gap: 20px;
+  }
+
+  /* ---- TOP BAR ---- */
+  .topbar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .topbar-left { display: flex; align-items: center; gap: 40px; }
+  .back {
+    font-family: var(--font-mono);
+    font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--ink-dim);
+    font-weight: 500;
+    transition: color 120ms ease;
+  }
+  .back:hover { color: var(--bl-red); }
+
+  .logo {
+    display: flex; align-items: center; gap: 12px;
+    font-family: var(--font-display);
+    font-size: 16px; font-weight: 600; letter-spacing: -0.005em;
+    color: var(--ink);
+  }
+  .logo::before { content: ''; width: 10px; height: 10px; background: var(--bl-red); }
+
+  .location {
+    font-family: var(--font-display);
+    font-size: 26px; font-weight: 500;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+  .location .accent { color: var(--bl-red); }
+  .location-sub {
+    font-family: var(--font-mono);
+    font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-top: 4px;
+    font-weight: 500;
+  }
+
+  .topbar-right {
+    display: flex; align-items: center; gap: 40px;
+  }
+  .tb-item .k {
+    font-family: var(--font-mono);
+    font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--ink-faint);
+    font-weight: 500;
+  }
+  .tb-item .v {
+    font-family: var(--font-display);
+    font-size: 15px; font-weight: 500;
+    color: var(--ink);
+    margin-top: 3px;
+    letter-spacing: -0.005em;
+  }
+  .tb-item .v .accent { color: var(--bl-red); }
+
+  .plant-btn {
+    padding: 12px 24px;
+    background: var(--bl-red);
+    border: 0;
+    color: var(--bl-white);
+    font-family: var(--font-display);
+    font-size: 13px; font-weight: 600;
+    letter-spacing: 0.04em; text-transform: uppercase;
+    cursor: pointer;
+    transition: background 150ms ease;
+  }
+  .plant-btn:hover { background: #ff3c25; }
+
+  /* ---- CANVAS ---- */
+  .canvas-wrap {
+    flex: 1;
+    position: relative;
+    min-height: 600px;
+    border: 1px solid var(--rule);
+    overflow: hidden;
+    background: var(--surface-0);
+  }
+  #scene {
+    width: 100%; height: 100%;
+    display: block;
+    cursor: grab;
+  }
+  #scene:active { cursor: grabbing; }
+
+  .legend {
+    position: absolute;
+    bottom: 20px; left: 20px;
+    max-width: 320px;
+    padding: 22px 24px;
+    background: rgba(10,12,14,0.88);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--rule-strong);
+  }
+  .legend strong {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 9px; font-weight: 600;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--bl-red);
+    margin-bottom: 10px;
+  }
+  .legend p {
+    font-size: 13px; line-height: 1.55;
+    color: var(--ink-dim);
+  }
+  .legend em {
+    font-style: normal;
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  .fork-panel {
+    position: absolute;
+    top: 20px; right: 20px;
+    padding: 22px 24px;
+    background: rgba(10,12,14,0.88);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--rule-strong);
+    min-width: 240px;
+  }
+  .fork-panel .title {
+    font-family: var(--font-mono);
+    font-size: 9px; font-weight: 600;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--bl-red);
+    margin-bottom: 16px;
+  }
+  .fork-panel .row {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 12px;
+    font-family: var(--font-mono);
+    font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  .fork-panel .v {
+    font-family: var(--font-display);
+    font-size: 14px; font-weight: 500;
+    color: var(--ink); text-transform: none; letter-spacing: 0;
+  }
+  .fork-panel .v .accent { color: var(--bl-red); }
+  .hue-row { display: block; margin-bottom: 0; }
+  .hue-row input[type="range"] {
+    width: 100%; margin-top: 10px;
+    -webkit-appearance: none; appearance: none;
+    height: 4px;
+    background: linear-gradient(90deg,
+      var(--bl-red), var(--bl-orange), var(--bl-yellow),
+      var(--bl-green), var(--bl-cyan), var(--bl-blue),
+      var(--bl-purple), var(--bl-red));
+    outline: none;
+  }
+  .hue-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    background: #fff;
+    box-shadow: 0 0 0 2px var(--bl-red);
+    cursor: pointer;
+  }
+
+  /* ---- BOTTOM STRIP ---- */
+  .bottom-strip {
+    display: flex; flex-wrap: wrap; gap: 28px; align-items: center; justify-content: space-between;
+    padding-top: 18px;
+    border-top: 1px solid var(--rule);
+    font-family: var(--font-mono);
+    font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--ink-faint);
+    font-weight: 500;
+  }
+  .bottom-strip .pair strong {
+    display: block;
+    font-family: var(--font-display);
+    font-size: 13px; font-weight: 500;
+    color: var(--ink);
+    text-transform: none; letter-spacing: -0.005em;
+    margin-top: 4px;
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <div class="topbar">
+    <div class="topbar-left">
+      <a class="back" href="landing.html">← Departures</a>
+      <div class="logo">Soundgarden</div>
+      <div>
+        <div class="location"><span class="accent">United States</span> / North America</div>
+        <div class="location-sub">2,487 creatures · 16 active cities</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="tb-item"><div class="k">Viewing</div><div class="v"><span class="accent">Home region</span></div></div>
+      <div class="tb-item"><div class="k">Passport</div><div class="v">3 stamps</div></div>
+      <button class="plant-btn">Plant a seed</button>
+    </div>
+  </div>
+
+  <div class="canvas-wrap">
+    <canvas id="scene"></canvas>
+
+    <div class="legend">
+      <strong>Cross-section</strong>
+      <p>Every city plays many kinds of music at once, so every city grows many kinds of creatures. A <em>zone's identity</em> comes from its atmosphere — the palette, the architecture, the light — not from a single genre. The creatures stay diverse.</p>
+    </div>
+
+    <div class="fork-panel">
+      <div class="title">Your next seed</div>
+      <div class="row"><span>Archetype</span><span class="v"><span class="accent">Drifter</span></span></div>
+      <div class="row"><span>Forked from</span><span class="v">Lagos / Maw</span></div>
+      <div class="row"><span>Hue</span><span class="v" id="hue-val">196°</span></div>
+      <div class="row hue-row"><input type="range" id="hue" min="0" max="360" value="196" /></div>
+    </div>
+  </div>
+
+  <div class="bottom-strip">
+    <div class="pair">Seattle<strong>Drift + Hush</strong></div>
+    <div class="pair">LA<strong>Pulse + Grid + Swing</strong></div>
+    <div class="pair">Nashville<strong>Swing + Pulse</strong></div>
+    <div class="pair">Chicago<strong>Pulse + Grid + Hush</strong></div>
+    <div class="pair">New York<strong>All six</strong></div>
+    <div class="pair">Miami<strong>Pulse + Grid</strong></div>
+  </div>
+
+</div>
+
+<script src="creatures.js"></script>
+<script>
+const CITIES = [
+  { name: 'Seattle',     lat: 47.6, lon: -122.3, mix: [{biome:0,arch:0},{biome:0,arch:1},{biome:4,arch:0},{biome:4,arch:1}] },
+  { name: 'Portland',    lat: 45.5, lon: -122.7, mix: [{biome:0,arch:0},{biome:4,arch:1},{biome:3,arch:0}] },
+  { name: 'San Francisco',lat:37.8, lon: -122.4, mix: [{biome:5,arch:0},{biome:5,arch:1},{biome:0,arch:1},{biome:4,arch:0}] },
+  { name: 'Los Angeles', lat: 34.0, lon: -118.2, mix: [{biome:1,arch:0},{biome:1,arch:1},{biome:5,arch:0},{biome:3,arch:1},{biome:3,arch:0}] },
+  { name: 'Las Vegas',   lat: 36.2, lon: -115.1, mix: [{biome:5,arch:0},{biome:1,arch:0},{biome:3,arch:1}] },
+  { name: 'Denver',      lat: 39.7, lon: -104.9, mix: [{biome:0,arch:1},{biome:2,arch:1},{biome:4,arch:1}] },
+  { name: 'Austin',      lat: 30.3, lon: -97.7,  mix: [{biome:2,arch:0},{biome:3,arch:0},{biome:1,arch:1},{biome:2,arch:1}] },
+  { name: 'Houston',     lat: 29.8, lon: -95.4,  mix: [{biome:1,arch:0},{biome:3,arch:1},{biome:1,arch:1}] },
+  { name: 'Nashville',   lat: 36.2, lon: -86.8,  mix: [{biome:3,arch:0},{biome:3,arch:1},{biome:1,arch:0},{biome:4,arch:1}] },
+  { name: 'New Orleans', lat: 30.0, lon: -90.1,  mix: [{biome:3,arch:0},{biome:3,arch:1},{biome:1,arch:0}] },
+  { name: 'Atlanta',     lat: 33.7, lon: -84.4,  mix: [{biome:1,arch:0},{biome:1,arch:1},{biome:1,arch:0}] },
+  { name: 'Miami',       lat: 25.8, lon: -80.2,  mix: [{biome:1,arch:1},{biome:5,arch:0},{biome:5,arch:1}] },
+  { name: 'Chicago',     lat: 41.9, lon: -87.6,  mix: [{biome:1,arch:0},{biome:5,arch:1},{biome:4,arch:0},{biome:3,arch:1}] },
+  { name: 'Detroit',     lat: 42.3, lon: -83.0,  mix: [{biome:5,arch:0},{biome:5,arch:1},{biome:1,arch:0},{biome:2,arch:0}] },
+  { name: 'Boston',      lat: 42.4, lon: -71.1,  mix: [{biome:4,arch:0},{biome:4,arch:1},{biome:0,arch:1}] },
+  { name: 'New York',    lat: 40.7, lon: -74.0,  mix: [
+    {biome:0,arch:0},{biome:1,arch:0},{biome:2,arch:0},
+    {biome:3,arch:0},{biome:4,arch:0},{biome:5,arch:0},
+    {biome:1,arch:1},{biome:3,arch:1}
+  ] },
+];
+
+function project(lat, lon, W, H) {
+  const x = ((lon - (-125)) / ((-66) - (-125))) * W;
+  const y = ((50 - lat) / (50 - 24)) * H;
+  return [x, y];
+}
+function stageForIndex(i, total) {
+  if (i === 0 && total >= 3) return 3;
+  if (i < 2) return 2;
+  if (i < total - 1) return 1;
+  return 0;
+}
+
+const canvas = document.getElementById('scene');
+const ctx = canvas.getContext('2d');
+let W, H;
+function fit() {
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  W = rect.width; H = rect.height;
+}
+window.addEventListener('resize', fit);
+fit();
+
+const CREATURES = [];
+CITIES.forEach((city, ci) => {
+  const [cx, cy] = project(city.lat, city.lon, 1, 1);
+  city.mix.forEach((m, i) => {
+    const archetype = BIOMES[m.biome].archetypes[m.arch];
+    const stage = stageForIndex(i, city.mix.length);
+    const angle = (i / city.mix.length) * Math.PI * 2 + ci * 0.3;
+    const r = i === 0 ? 0 : 42 + i * 6;
+    CREATURES.push({ city, archetype, stage, angle, r, normX: cx, normY: cy, seed: ci * 13 + i * 7 + 1, biomeIdx: m.biome });
+  });
+});
+
+let camX = 0, camY = 0;
+let dragging = false, dragStart = null, camStart = null;
+canvas.addEventListener('mousedown', e => {
+  dragging = true;
+  const rect = canvas.getBoundingClientRect();
+  dragStart = [e.clientX - rect.left, e.clientY - rect.top];
+  camStart = [camX, camY];
+});
+window.addEventListener('mousemove', e => {
+  if (!dragging) return;
+  const rect = canvas.getBoundingClientRect();
+  camX = camStart[0] + (e.clientX - rect.left) - dragStart[0];
+  camY = camStart[1] + (e.clientY - rect.top) - dragStart[1];
+});
+window.addEventListener('mouseup', () => dragging = false);
+
+// BandLab-tinted ghost biome for US view — cool with subtle red pulse
+const GHOST_BIOME = { tint: { r: 241, g: 44, b: 24, strength: 0.035 } };
+
+const start = performance.now();
+function loop() {
+  const t = (performance.now() - start) / 1000;
+  drawCosmicBg(ctx, W, H, GHOST_BIOME, t);
+
+  // Faint city halos
+  for (const city of CITIES) {
+    const [nx, ny] = project(city.lat, city.lon, 1, 1);
+    const x = nx * W + camX;
+    const y = ny * H + camY;
+    const g = ctx.createRadialGradient(x, y, 0, x, y, 100);
+    g.addColorStop(0, 'rgba(194,215,242,0.06)');
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(x, y, 100, 0, Math.PI*2); ctx.fill();
+  }
+
+  // City labels — BandLab mono above cluster
+  ctx.save();
+  ctx.font = '600 10px "JetBrains Mono", monospace';
+  ctx.textAlign = 'center';
+  for (const city of CITIES) {
+    const [nx, ny] = project(city.lat, city.lon, 1, 1);
+    const x = nx * W + camX;
+    const y = ny * H + camY;
+    // marker bracket
+    ctx.strokeStyle = 'rgba(241,44,24,0.6)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(x - 4, y - 88); ctx.lineTo(x - 4, y - 84); ctx.lineTo(x, y - 84);
+    ctx.moveTo(x + 4, y - 84); ctx.lineTo(x + 4, y - 88);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.fillText(city.name.toUpperCase(), x, y - 98);
+  }
+  ctx.restore();
+
+  // Creatures
+  for (const cr of CREATURES) {
+    const baseX = cr.normX * W + camX;
+    const baseY = cr.normY * H + camY;
+    const cx = baseX + Math.cos(cr.angle) * cr.r;
+    const cy = baseY + Math.sin(cr.angle) * cr.r;
+    drawCreature(ctx, cx, cy, cr.archetype, cr.stage, BIOMES[cr.biomeIdx], t, cr.seed);
+  }
+
+  // Same-city mycelium connections
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  for (const city of CITIES) {
+    const cityCreatures = CREATURES.filter(c => c.city === city);
+    for (let i = 0; i < cityCreatures.length; i++) {
+      for (let j = i+1; j < cityCreatures.length; j++) {
+        const a = cityCreatures[i], b = cityCreatures[j];
+        const ax = a.normX * W + camX + Math.cos(a.angle)*a.r;
+        const ay = a.normY * H + camY + Math.sin(a.angle)*a.r;
+        const bx = b.normX * W + camX + Math.cos(b.angle)*b.r;
+        const by = b.normY * H + camY + Math.sin(b.angle)*b.r;
+        const mx = (ax+bx)/2 + Math.sin(t*0.5 + a.seed)*8;
+        const my = (ay+by)/2 + Math.cos(t*0.4 + b.seed)*8;
+        ctx.strokeStyle = `rgba(${a.archetype.palette.glowRgb},0.08)`;
+        ctx.lineWidth = 0.8;
+        ctx.beginPath();
+        ctx.moveTo(ax, ay);
+        ctx.quadraticCurveTo(mx, my, bx, by);
+        ctx.stroke();
+      }
+    }
+  }
+  ctx.restore();
+
+  requestAnimationFrame(loop);
+}
+loop();
+
+// Hue control
+const hueInput = document.getElementById('hue');
+const hueVal = document.getElementById('hue-val');
+hueInput.addEventListener('input', () => {
+  hueVal.textContent = hueInput.value + '°';
+});
+</script>
+</body>
+</html>

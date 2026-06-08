@@ -1,0 +1,791 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>FLYER by BandLab</title>
+<link rel="stylesheet" href="bandlab.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&family=Abril+Fatface&family=Bebas+Neue&family=Bungee&family=Caveat:wght@400;700&family=Monoton&family=Permanent+Marker&family=Press+Start+2P&family=Rubik+Mono+One&family=Unica+One&family=Syne:wght@400;700;800&family=Shrikhand&family=Staatliches&family=VT323&family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   FLYER HOME — Magazine Landing
+   ============================================================ */
+html{scroll-behavior:smooth}
+body{overflow-x:hidden;overflow-y:auto;background:#050403}
+
+/* Wall texture base */
+body::before{content:'';position:fixed;inset:0;z-index:-2;
+  background-color:#0a0806;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.5  0 0 0 0 0.4  0 0 0 0 0.3  0 0 0 0.32 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  mix-blend-mode:normal;opacity:.18;pointer-events:none}
+body::after{content:'';position:fixed;inset:0;z-index:-1;
+  background:radial-gradient(ellipse at 50% 30%,transparent 30%,rgba(0,0,0,.5) 80%,rgba(0,0,0,.8));pointer-events:none}
+
+/* Layout */
+.wrap{max-width:1280px;margin:0 auto;padding:0 40px}
+@media(max-width:768px){.wrap{padding:0 20px}}
+
+/* ---- Topbar ---- */
+.topbar{position:fixed;top:0;left:0;right:0;height:64px;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 40px;
+  background:linear-gradient(180deg,rgba(5,4,3,.95),rgba(5,4,3,.7) 80%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.tb-logo{display:flex;align-items:center;gap:12px}
+.tb-mark{position:relative;width:28px;height:24px}
+.tb-mark::before,.tb-mark::after{content:'';position:absolute;box-shadow:0 1px 4px rgba(0,0,0,.6)}
+.tb-mark::before{left:0;top:5px;width:14px;height:18px;transform:rotate(-8deg);background:rgba(255,255,255,.45)}
+.tb-mark::after{right:0;top:0;width:17px;height:21px;transform:rotate(7deg);background:#fff}
+.tb-name{font-family:var(--font-display);font-size:28px;font-weight:700;text-transform:uppercase;letter-spacing:-.01em;color:#fff}
+.tb-sub{font-family:var(--font-mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,0.75);align-self:flex-end;margin-bottom:4px}
+.tb-links{display:flex;gap:24px;align-items:center}
+.tb-links a{font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-dim);transition:color .15s}
+.tb-links a:hover{color:#fff}
+.tb-cta{padding:10px 20px;background:var(--bl-red);color:#fff;font-family:var(--font-display);font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;border:0;cursor:pointer;transition:background .15s}
+.tb-cta:hover{background:#ff3c25}
+@media(max-width:768px){.topbar{padding:0 20px}.tb-links a:not(.tb-cta){display:none}}
+
+/* ============================================================
+   SECTION 1: HERO (with integrated LIVE NOW)
+   ============================================================ */
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:120px 0 40px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;z-index:0;
+  background-image:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='80' viewBox='0 0 160 80'><rect width='160' height='80' fill='%23ddd5bd'/><g stroke='%23888068' stroke-width='2' fill='none'><path d='M0 0 L160 0 M0 40 L160 40 M0 80 L160 80 M80 0 L80 40 M40 40 L40 80 M120 40 L120 80'/></g><g fill='%23e8e1cc' opacity='0.6'><rect x='2' y='2' width='76' height='36'/><rect x='82' y='2' width='76' height='36'/><rect x='-38' y='42' width='76' height='36'/><rect x='42' y='42' width='76' height='36'/><rect x='122' y='42' width='76' height='36'/></g></svg>");
+  background-size:160px 80px;opacity:.22;pointer-events:none}
+.hero::after{content:'';position:absolute;left:0;right:0;bottom:0;height:30%;z-index:0;background:linear-gradient(180deg,transparent,rgba(5,4,3,.8));pointer-events:none}
+.hero-main{display:grid;grid-template-columns:1.4fr 1fr;align-items:center;gap:40px;position:relative;z-index:1}
+.hero-left .hero-wordmark{font-family:var(--font-display);font-size:64px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#fff;margin-bottom:8px}
+.hero-left .hero-tagline{font-family:var(--font-display);font-size:clamp(40px,6vw,80px);font-weight:700;line-height:.88;letter-spacing:-.04em;color:#fff;margin-bottom:32px}
+.hero-left .hero-tagline em{font-style:normal;color:var(--bl-red)}
+.hero-ticker{font-family:var(--font-mono);font-size:12px;letter-spacing:.08em;color:var(--ink-dim);margin-bottom:40px;display:flex;flex-wrap:wrap;gap:6px}
+.hero-ticker strong{color:var(--ink-high)}
+.hero-ticker .sep{color:var(--ink-faint)}
+.hero-cta{display:inline-flex;align-items:center;gap:12px;padding:18px 40px;background:var(--bl-red);color:#fff;font-family:var(--font-display);font-size:16px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;border:0;cursor:pointer;transition:all .2s}
+.hero-cta:hover{background:#ff3c25;transform:translateY(-2px);box-shadow:0 8px 30px rgba(241,44,24,.4)}
+
+/* Flyer cluster */
+.hero-cluster{position:relative;height:500px}
+.lp-flyer{position:absolute;box-shadow:0 2px 6px rgba(0,0,0,.4),0 12px 28px rgba(0,0,0,.5);overflow:hidden;transform-origin:center;transition:transform .4s cubic-bezier(.16,1,.3,1)}
+.lp-flyer:hover{z-index:10!important;transform:rotate(0deg) scale(1.08)!important}
+.lp-flyer .lp-c{padding:14px 12px;display:flex;flex-direction:column;height:100%;position:relative;z-index:2}
+.lp-flyer::before{content:'';position:absolute;inset:0;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.5' numOctaves='2'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.12 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  mix-blend-mode:multiply;opacity:.6;pointer-events:none;z-index:1}
+/* Flyer 1: MIDNIGHT DRIFT */
+.f-drift{width:200px;height:280px;top:20px;left:60px;transform:rotate(-4deg);z-index:3;
+  background:linear-gradient(180deg,#faf4e1,#f1e8ce);color:#1a1208}
+.f-drift .kicker{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.15em;text-transform:uppercase;opacity:.8;margin-bottom:10px}
+.f-drift .title{font-family:'Anton',sans-serif;font-size:52px;line-height:.85;text-transform:uppercase;letter-spacing:-.01em}
+.f-drift .footer{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;margin-top:auto;padding-top:10px;border-top:1px solid currentColor;opacity:.85;display:flex;justify-content:space-between}
+/* Flyer 2: BASS CHURCH */
+.f-bass{width:180px;height:240px;top:60px;right:20px;transform:rotate(3deg);z-index:4;
+  background:var(--bl-red);color:#fff}
+.f-bass .lp-c{justify-content:space-between;padding:20px 16px}
+.f-bass .kicker{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;opacity:.75}
+.f-bass .title{font-family:'Archivo Black',sans-serif;font-size:30px;line-height:.9;letter-spacing:-.035em}
+.f-bass .footer{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;opacity:.7}
+/* Flyer 3: cassette */
+.f-tape{width:220px;height:140px;bottom:100px;left:40px;transform:rotate(2deg);z-index:2;
+  background:linear-gradient(180deg,#d9c4a0,#c4b08a);color:#1a1208;border-radius:3px}
+.f-tape .lp-c{justify-content:center;text-align:center;padding:28px 20px}
+.f-tape .kicker{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.18em;text-transform:uppercase;opacity:.75;margin-bottom:4px}
+.f-tape .title{font-family:'Permanent Marker',cursive;font-size:22px;line-height:.95}
+.f-tape .sub{font-family:'Caveat',cursive;font-size:15px;font-weight:700;margin-top:4px;opacity:.85}
+.f-tape .spool{position:absolute;width:36px;height:36px;top:50%;border-radius:50%;background:radial-gradient(circle,#0a0806 30%,#2a1a10 33%,#0a0806 60%);box-shadow:inset 0 0 0 2px rgba(255,255,255,.2);z-index:3;transform:translateY(-50%)}
+.f-tape .spool.l{left:18px}.f-tape .spool.r{right:18px}
+.f-tape .spool::after{content:'';position:absolute;inset:25%;border-radius:50%;background:repeating-conic-gradient(rgba(255,255,255,.3) 0deg 20deg,transparent 20deg 40deg);animation:spoolSpin 5s linear infinite}
+@keyframes spoolSpin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+/* Flyer 4: speech bubble */
+.f-bubble{width:180px;height:170px;bottom:30px;right:60px;transform:rotate(-2deg);z-index:5;background:none}
+.f-bubble .lp-c{position:absolute;left:4%;top:2%;right:4%;bottom:24%;z-index:3;padding:10px 12px;display:flex;flex-direction:column;justify-content:center;text-align:center}
+.f-bubble .title{font-family:'Caveat',cursive;font-size:18px;font-weight:700;line-height:1.1;color:#0a0806}
+.f-bubble .sub{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:.08em;margin-top:6px;color:rgba(10,8,6,0.6)}
+.f-bubble svg{position:absolute;inset:0;width:100%;height:100%}
+.f-flame{width:80px;height:80px;bottom:180px;right:10px;transform:rotate(6deg);z-index:6;background:none!important;
+  filter:drop-shadow(0 3px 8px rgba(0,0,0,0.5)) drop-shadow(0 0 12px rgba(241,44,24,0.3));box-shadow:none}
+.f-thumb{width:72px;height:72px;top:10px;right:160px;transform:rotate(-8deg);z-index:6;background:none!important;
+  filter:drop-shadow(0 3px 8px rgba(0,0,0,0.5)) drop-shadow(0 0 10px rgba(252,201,49,0.25));box-shadow:none}
+
+/* LIVE NOW strip inside hero */
+.hero-live{position:relative;z-index:1;margin-top:48px;overflow:visible;max-width:1280px;margin-left:auto;margin-right:auto;padding:0 40px}
+.hero-live-head{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.hero-live-dot{width:8px;height:8px;border-radius:50%;background:var(--bl-red);animation:blink 1.2s ease-in-out infinite;flex-shrink:0}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.hero-live-head span{font-family:var(--font-display);font-size:14px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#fff}
+.hero-live-scroll{display:flex;gap:14px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding:8px 0 16px}
+.hero-live-scroll::-webkit-scrollbar{display:none}
+.hlv-card{flex:0 0 240px;padding:0;display:flex;flex-direction:column;gap:0;transition:transform .2s;
+  box-shadow:0 2px 6px rgba(0,0,0,0.4),0 10px 24px rgba(0,0,0,0.5);text-decoration:none;color:inherit;overflow:hidden}
+.hlv-img{height:90px;position:relative;overflow:hidden}
+.hlv-img .hlv-sign{position:absolute;bottom:8px;left:10px;z-index:2}
+.hlv-img::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(0,0,0,0.5))}
+.hlv-card:nth-child(1) .hlv-img{background:linear-gradient(135deg,#2a1a0a,#4a3220,#2a1a0a)}
+.hlv-card:nth-child(2) .hlv-img{background:linear-gradient(135deg,#1a2a3a,#0a1a2a,#2a3a4a)}
+.hlv-card:nth-child(3) .hlv-img{background:linear-gradient(135deg,#0a1a0a,#1a2a1a,#0a1a0a)}
+.hlv-card:nth-child(4) .hlv-img{background:linear-gradient(135deg,#2a0808,#4a1010,#2a0808)}
+.hlv-card:nth-child(5) .hlv-img{background:linear-gradient(135deg,#1a1a2a,#0a0a1a,#2a1a3a)}
+.hlv-body{padding:12px 16px;display:flex;flex-direction:column;gap:4px}
+.hlv-card:hover{transform:translateY(-3px) rotate(-1deg)}
+.hlv-card:nth-child(1){background:#faf4e1;color:#1a1208;transform:rotate(-2deg)}
+.hlv-card:nth-child(2){background:#ff690d;color:#0a0806;transform:rotate(1.5deg)}
+.hlv-card:nth-child(3){background:#050505;color:#f4eedd;transform:rotate(-1deg)}
+.hlv-card:nth-child(4){background:#f12c18;color:#fff;transform:rotate(2deg)}
+.hlv-card:nth-child(5){background:#29dbe5;color:#0a0806;transform:rotate(-1.5deg)}
+.hlv-card:nth-child(6){background:#00c37d;color:#0a0806;transform:rotate(1deg)}
+.hlv-card:nth-child(7){background:#fcc931;color:#1a1208;transform:rotate(-2.5deg)}
+.hlv-card:nth-child(8){background:#b400ff;color:#fff;transform:rotate(1.5deg)}
+.hlv-card:nth-child(6) .hlv-img{background:linear-gradient(135deg,#0a2a1a,#1a3a2a,#0a2a1a)}
+.hlv-card:nth-child(7) .hlv-img{background:linear-gradient(135deg,#2a1a0a,#3a2a1a,#2a1a0a)}
+.hlv-card:nth-child(8) .hlv-img{background:linear-gradient(135deg,#1a0a2a,#2a1a3a,#1a0a2a)}
+.hlv-badge{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-mono);font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--bl-red)}
+.hlv-badge .dot{width:5px;height:5px;border-radius:50%;background:var(--bl-red);animation:blink 1.2s ease-in-out infinite}
+/* Street signs on live cards */
+.hlv-sign{padding:4px 10px 3px;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-bottom:6px;display:inline-block;box-shadow:0 1px 3px rgba(0,0,0,0.4)}
+.hlv-sign-sub{display:block;font-size:7px;letter-spacing:.12em;margin-bottom:1px}
+.hlv-sign-london{background:#fcfbf5;color:#0a0806;border:1.5px solid #050505;font-family:'Inter',sans-serif;position:relative;padding-top:14px}
+.hlv-sign-london .hlv-sign-sub{position:absolute;top:2px;left:3px;right:3px;background:#c41818;color:#fff;padding:1px 0;text-align:center;font-size:6px}
+.hlv-sign-tokyo{background:#0f5c3a;color:#fff;font-family:'Staatliches',sans-serif;border:1.5px solid #0f5c3a;box-shadow:inset 0 0 0 1.5px #fff,0 1px 3px rgba(0,0,0,0.4)}
+.hlv-sign-nyc{background:#14532c;color:#fff;font-family:'Staatliches',sans-serif;border:1.5px solid #fff}
+.hlv-sign-la{background:#1a4a7c;color:#fff;font-family:'Inter',sans-serif;font-weight:600;border-radius:3px}
+.hlv-sign-jakarta{background:#fff;color:#0a0806;font-family:'Inter',sans-serif;font-weight:700;border:1.5px solid #1a5a8a}
+.hlv-sign-capetown{background:#fcfbf5;color:#b21818;border:2px solid #b21818;font-family:'Archivo Black',sans-serif;font-size:9px}
+.hlv-card h3{font-family:'Anton',sans-serif;font-size:22px;font-weight:400;letter-spacing:-.01em;text-transform:uppercase;line-height:0.9}
+.hlv-card .meta{font-family:var(--font-mono);font-size:9px;letter-spacing:.08em;opacity:0.7}
+.hlv-card .viewers{font-family:var(--font-mono);font-size:9px;opacity:0.6}
+
+@media(max-width:900px){
+  .hero-main{grid-template-columns:1fr;text-align:center}
+  .hero-cluster{height:320px;margin:0 auto;max-width:400px}
+  .lp-flyer{transform:scale(.7)!important}
+  .f-drift{left:20px;top:10px}.f-bass{right:0;top:30px}.f-tape{left:10px;bottom:60px}.f-bubble{right:20px;bottom:10px}
+}
+
+/* ============================================================
+   SECTION 3: TRENDING
+   ============================================================ */
+.trending{padding:100px 0 80px}
+.trending .sec-head{margin-bottom:48px}
+.trending .sec-label{font-family:var(--font-mono);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:8px}
+.trending h2{font-family:var(--font-display);font-size:clamp(32px,4vw,56px);font-weight:700;letter-spacing:-.03em;color:#fff!important}
+.trend-layout{display:grid;grid-template-columns:1fr 1fr;gap:32px;margin-bottom:48px}
+/* Featured flyer */
+.trend-feat{position:relative;display:flex;align-items:center;justify-content:center;min-height:420px}
+.tf-flyer{width:260px;height:360px;transform:rotate(-3deg);
+  background:linear-gradient(180deg,#faf4e1,#f1e8ce);color:#1a1208;
+  box-shadow:0 4px 12px rgba(0,0,0,.4),0 20px 50px rgba(0,0,0,.6);position:relative;overflow:hidden}
+.tf-flyer::before{content:'';position:absolute;inset:0;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.5' numOctaves='2'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.12 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  mix-blend-mode:multiply;opacity:.6;pointer-events:none;z-index:1}
+.tf-flyer .fc{position:relative;z-index:2;padding:20px 18px;height:100%;display:flex;flex-direction:column}
+.tf-flyer .kicker{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.15em;text-transform:uppercase;opacity:.8;margin-bottom:12px}
+.tf-flyer .title{font-family:'Anton',sans-serif;font-size:64px;line-height:.85;text-transform:uppercase;letter-spacing:-.01em}
+.tf-flyer .support{font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:500;line-height:1.4;margin-top:12px}
+.tf-flyer .foot{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.14em;text-transform:uppercase;margin-top:auto;padding-top:10px;border-top:1px solid currentColor;opacity:.85;display:flex;justify-content:space-between}
+/* Trend list */
+.trend-list{display:flex;flex-direction:column;gap:12px;justify-content:center}
+.tl-item{display:grid;grid-template-columns:60px 1fr auto;gap:16px;align-items:center;padding:16px;background:var(--surface-2);border:1px solid var(--rule);transition:all .2s;cursor:pointer}
+.tl-item:hover{border-color:var(--ink-faint);transform:translateX(4px)}
+.tl-paper{width:60px;height:80px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:6px;overflow:hidden;position:relative;box-shadow:0 2px 6px rgba(0,0,0,.4),0 8px 20px rgba(0,0,0,.5)}
+.tl-paper::before{content:'';position:absolute;inset:0;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.5' numOctaves='2'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.12 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  mix-blend-mode:multiply;opacity:.6;pointer-events:none;z-index:1}
+.tl-paper .t{font-size:10px;font-weight:700;line-height:1;color:#000}
+.tl-paper .a{font-family:var(--font-mono);font-size:6px;color:rgba(0,0,0,.6);text-transform:uppercase;letter-spacing:.1em;margin-top:3px}
+.tl-info h4{font-family:var(--font-display);font-size:16px;font-weight:600;color:#fff;letter-spacing:-.01em}
+.tl-info .tl-meta{font-family:var(--font-mono);font-size:9px;color:var(--ink-faint);letter-spacing:.1em;text-transform:uppercase;margin-top:4px;display:flex;gap:8px}
+.tl-stats{font-family:var(--font-mono);font-size:11px;color:var(--ink-dim);text-align:right;white-space:nowrap}
+/* Date badge for event flyers */
+.tl-date-badge{position:absolute;top:4px;right:4px;background:var(--bl-red);color:#fff;font-family:var(--font-mono);font-size:7px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 4px;line-height:1.2;text-align:center;z-index:3}
+/* Cassette mini */
+.tl-cassette{position:relative}
+.tl-cassette .tl-spool{position:absolute;width:14px;height:14px;border-radius:50%;background:radial-gradient(circle,#0a0806 30%,#2a1a10 33%,#0a0806 60%);top:50%;transform:translateY(-50%);z-index:3}
+.tl-cassette .tl-spool.sl{left:6px}
+.tl-cassette .tl-spool.sr{right:6px}
+/* Speech bubble mini */
+.tl-bubble-shape{position:absolute;inset:0;z-index:0}
+.tl-bubble-shape svg{width:100%;height:100%}
+.tl-bubble-inner{position:relative;z-index:2}
+/* Arcade mini */
+.tl-arcade{border-radius:4px 4px 0 0;position:relative}
+.tl-arcade .tl-screen{position:absolute;top:8px;left:8px;right:8px;bottom:30px;background:#000;border:2px solid #333;display:flex;align-items:center;justify-content:center}
+.tl-arcade .tl-screen span{font-family:'Press Start 2P',monospace;font-size:5px;color:#0f0;text-transform:uppercase}
+.tl-arcade .tl-stick{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);width:6px;height:10px;background:#333;border-radius:2px}
+/* T-shirt mini */
+.tl-tshirt{position:relative;clip-path:polygon(30% 0%, 70% 0%, 75% 12%, 100% 12%, 100% 30%, 85% 30%, 85% 100%, 15% 100%, 15% 30%, 0% 30%, 0% 12%, 25% 12%)}
+/* TV mini */
+.tl-tv{position:relative;border:3px solid #222;border-radius:6px}
+.tl-tv .tl-antenna{position:absolute;top:-8px;left:50%;transform:translateX(-50%);width:20px;height:8px}
+.tl-tv .tl-antenna::before,.tl-tv .tl-antenna::after{content:'';position:absolute;bottom:0;width:2px;height:8px;background:#222}
+.tl-tv .tl-antenna::before{left:4px;transform:rotate(-20deg)}
+.tl-tv .tl-antenna::after{right:4px;transform:rotate(20deg)}
+
+/* Scroll row */
+.trend-scroll{display:flex;gap:16px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.trend-scroll::-webkit-scrollbar{display:none}
+.ts-card{flex:0 0 140px;cursor:pointer;transition:transform .2s}
+.ts-card:hover{transform:translateY(-4px)}
+.ts-paper{width:100%;aspect-ratio:3/4;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:8px;margin-bottom:8px;box-shadow:0 2px 6px rgba(0,0,0,.4),0 10px 24px rgba(0,0,0,.5);position:relative;overflow:hidden}
+.ts-paper::before{content:'';position:absolute;inset:0;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.5' numOctaves='2'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.12 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  mix-blend-mode:multiply;opacity:.6;pointer-events:none;z-index:1}
+.ts-paper .t{font-size:11px;font-weight:700;line-height:1.05;color:#000;position:relative;z-index:2}
+.ts-paper .a{font-family:'JetBrains Mono',monospace;font-size:7px;color:rgba(0,0,0,.6);text-transform:uppercase;letter-spacing:.1em;margin-top:3px;position:relative;z-index:2}
+.ts-city{font-family:var(--font-mono);font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint)}
+.ts-stats{font-family:var(--font-mono);font-size:9px;color:var(--ink-dim);margin-top:2px}
+/* Scroll row date badge */
+.ts-date-badge{position:absolute;top:6px;right:6px;background:var(--bl-red);color:#fff;font-family:var(--font-mono);font-size:7px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 5px;line-height:1.2;text-align:center;z-index:3}
+/* Scroll cassette */
+.ts-cassette{border-radius:3px}
+.ts-spool{position:absolute;width:20px;height:20px;border-radius:50%;background:radial-gradient(circle,#0a0806 30%,#2a1a10 33%,#0a0806 60%);top:50%;transform:translateY(-50%);z-index:3;box-shadow:inset 0 0 0 1px rgba(255,255,255,.15)}
+.ts-spool.sl{left:12px}.ts-spool.sr{right:12px}
+/* Scroll bubble */
+.ts-bubble{background:none!important;box-shadow:none!important;overflow:visible!important}
+.ts-bubble svg{position:absolute;inset:0;width:100%;height:100%}
+.ts-bubble .t,.ts-bubble .a{position:relative;z-index:2}
+/* Scroll arcade */
+.ts-arcade{border-radius:6px 6px 0 0;border:2px solid #333}
+.ts-arcade-screen{position:absolute;top:8px;left:10px;right:10px;height:50%;background:#000;border:2px solid #444;display:flex;align-items:center;justify-content:center}
+.ts-arcade-screen span{font-family:'Press Start 2P',monospace;font-size:6px;color:#0f0}
+/* Scroll TV */
+.ts-tv{border:3px solid #333;border-radius:6px;position:relative}
+.ts-tv-antenna{position:absolute;top:-10px;left:50%;transform:translateX(-50%);width:24px;height:10px}
+.ts-tv-antenna::before,.ts-tv-antenna::after{content:'';position:absolute;bottom:0;width:2px;height:10px;background:#333}
+.ts-tv-antenna::before{left:4px;transform:rotate(-25deg)}
+.ts-tv-antenna::after{right:4px;transform:rotate(25deg)}
+.ts-sticker-flame,.ts-sticker-thumb{width:100%;aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:50%;font-size:42px;line-height:1;
+  filter:drop-shadow(0 3px 8px rgba(0,0,0,0.5))}
+.ts-sticker-flame{background:radial-gradient(circle at 50% 70%,#ffd84d,#ff6b0a 40%,#c41818);box-shadow:0 0 20px rgba(241,44,24,0.3)}
+.ts-sticker-thumb{background:linear-gradient(135deg,#ffd84d,#f59f1a);box-shadow:0 0 16px rgba(252,201,49,0.25)}
+.stk-label{display:block;font-family:var(--font-mono);font-size:8px;font-weight:700;letter-spacing:.12em;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.6);margin-top:4px;text-transform:uppercase}
+/* Scroll t-shirt */
+.ts-tshirt{clip-path:polygon(30% 0%, 70% 0%, 75% 15%, 100% 15%, 100% 32%, 82% 32%, 82% 100%, 18% 100%, 18% 32%, 0% 32%, 0% 15%, 25% 15%)}
+/* Album art overlay */
+.ts-album-art{position:absolute;inset:0;opacity:.3;z-index:0;background:repeating-linear-gradient(0deg,transparent 0 1px,rgba(0,0,0,.05) 1px 2px)}
+.ts-album-inner{position:relative;z-index:1}
+
+@media(max-width:900px){.trend-layout{grid-template-columns:1fr}.trend-feat{min-height:320px}}
+
+/* ============================================================
+   SECTION 4: CITIES
+   ============================================================ */
+.cities{padding:80px 0;position:relative}
+.cities::before{content:'';position:absolute;inset:0;z-index:-1;
+  background-image:repeating-linear-gradient(90deg,rgba(255,255,255,.015) 0 2px,transparent 2px 12px),repeating-linear-gradient(0deg,rgba(255,255,255,.015) 0 2px,transparent 2px 12px);
+  opacity:.5}
+.cities .sec-head{margin-bottom:48px}
+.cities .sec-label{font-family:var(--font-mono);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:8px}
+.cities h2{font-family:var(--font-display);font-size:clamp(32px,4vw,56px);font-weight:700;letter-spacing:-.03em;color:#fff!important}
+.city-rows{display:flex;flex-direction:column;gap:20px}
+.city-row{display:grid;gap:20px}
+.city-row.r1{grid-template-columns:1.5fr 1fr}
+.city-row.r2{grid-template-columns:1fr 1.5fr}
+.city-row.r3{grid-template-columns:1.5fr 1fr}
+.cy-card{position:relative;overflow:hidden;padding:36px 32px;display:flex;flex-direction:column;gap:10px;border:1px solid var(--rule);transition:transform .3s,box-shadow .3s;min-height:220px}
+.cy-card:hover{transform:translateY(-4px);box-shadow:0 20px 50px rgba(0,0,0,.5)}
+.cy-card::before{content:'';position:absolute;inset:0;pointer-events:none}
+.cy-card .cy-country{font-family:var(--font-mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,0.6)}
+.cy-card .cy-name{font-family:var(--font-display);font-size:clamp(32px,4vw,52px);font-weight:700;letter-spacing:-.03em;color:#fff;line-height:.9}
+.cy-card .cy-stats{font-family:var(--font-mono);font-size:10px;color:rgba(255,255,255,0.7);letter-spacing:.06em}
+.cy-card .cy-genres{display:flex;flex-wrap:wrap;gap:6px}
+.cy-card .genre{font-family:var(--font-mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;background:var(--ink-mute);color:var(--ink-mid);border-radius:2px}
+.cy-card .cy-radio{font-size:11px;color:rgba(255,255,255,0.65)}
+.cy-card .cy-enter{display:inline-flex;align-items:center;gap:8px;margin-top:auto;padding:10px 22px;font-family:var(--font-display);font-size:13px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:#fff;background:var(--bl-red);border:1px solid var(--bl-red);transition:all .15s;align-self:flex-start}
+.cy-card .cy-enter:hover{background:#ff3c25;border-color:#ff3c25}
+/* City textures — actual wall materials at low opacity */
+.cy-shoreditch{background:rgba(10,12,14,0.25)}
+.cy-shoreditch::before{
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='80' viewBox='0 0 160 80'><rect width='160' height='80' fill='%23ddd5bd'/><g stroke='%23888068' stroke-width='2' fill='none'><path d='M0 0 L160 0 M0 40 L160 40 M0 80 L160 80 M80 0 L80 40 M40 40 L40 80 M120 40 L120 80'/></g><g fill='%23e8e1cc' opacity='0.6'><rect x='2' y='2' width='76' height='36'/><rect x='82' y='2' width='76' height='36'/><rect x='-38' y='42' width='76' height='36'/><rect x='42' y='42' width='76' height='36'/><rect x='122' y='42' width='76' height='36'/></g></svg>");
+  background-size:160px 80px;opacity:.5}
+.cy-shimokitazawa{background:rgba(10,12,14,0.25)}
+.cy-shimokitazawa::before{
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='40' height='200' viewBox='0 0 40 200'><rect width='40' height='200' fill='%23a08060'/><g stroke='%23806040' stroke-width='0.5' fill='none'><path d='M5 0 L5 200 M12 0 L12 200 M18 0 L18 200 M25 0 L25 200 M32 0 L32 200 M37 0 L37 200'/></g><g stroke='%23c0a080' stroke-width='0.3' fill='none'><path d='M0 20 Q20 22 40 20 M0 55 Q20 53 40 55 M0 90 Q20 88 40 90 M0 130 Q20 132 40 130 M0 165 Q20 163 40 165'/></g></svg>");
+  background-size:40px 200px;opacity:.5}
+.cy-bushwick{background:rgba(10,12,14,0.25)}
+.cy-bushwick::before{
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='96' height='48' viewBox='0 0 96 48'><rect width='96' height='48' fill='%23883322'/><g stroke='%23553322' stroke-width='1' fill='none'><rect x='1' y='1' width='44' height='22' rx='1'/><rect x='49' y='1' width='46' height='22' rx='1'/><rect x='-22' y='25' width='46' height='22' rx='1'/><rect x='26' y='25' width='44' height='22' rx='1'/><rect x='74' y='25' width='44' height='22' rx='1'/></g><g fill='%23994433' opacity='0.5'><rect x='2' y='2' width='42' height='20'/><rect x='50' y='2' width='44' height='20'/><rect x='-21' y='26' width='44' height='20'/><rect x='27' y='26' width='42' height='20'/><rect x='75' y='26' width='42' height='20'/></g></svg>");
+  background-size:96px 48px;opacity:.5}
+.cy-echopark{background:rgba(10,12,14,0.25)}
+.cy-echopark::before{
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.9  0 0 0 0 0.75  0 0 0 0 0.6  0 0 0 0.5 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-size:200px 200px;opacity:.5}
+.cy-capetown{background:rgba(10,12,14,0.25)}
+.cy-capetown::before{
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='40' viewBox='0 0 20 40'><rect width='20' height='40' fill='%23999'/><g fill='%23aaa'><rect x='0' y='0' width='20' height='3'/><rect x='0' y='5' width='20' height='3'/><rect x='0' y='10' width='20' height='3'/><rect x='0' y='15' width='20' height='3'/><rect x='0' y='20' width='20' height='3'/><rect x='0' y='25' width='20' height='3'/><rect x='0' y='30' width='20' height='3'/><rect x='0' y='35' width='20' height='3'/></g><g stroke='%23777' stroke-width='0.5' fill='none'><path d='M0 4 L20 4 M0 9 L20 9 M0 14 L20 14 M0 19 L20 19 M0 24 L20 24 M0 29 L20 29 M0 34 L20 34 M0 39 L20 39'/></g></svg>");
+  background-size:20px 40px;opacity:.5}
+.cy-jakarta{background:rgba(10,12,14,0.25)}
+.cy-jakarta::before{
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.55  0 0 0 0 0.55  0 0 0 0 0.55  0 0 0 0.5 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-size:200px 200px;opacity:.5}
+/* Mini cluster in wide cards */
+.cy-cluster{position:absolute;right:24px;top:50%;transform:translateY(-50%);display:flex;gap:-20px;pointer-events:none}
+.cy-mini{width:56px;height:72px;border-radius:2px;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:4px;font-size:6px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.1em;color:#000;font-weight:700;text-align:center;line-height:1.1;box-shadow:0 2px 8px rgba(0,0,0,.4);flex-shrink:0}
+.cy-mini:nth-child(2){transform:rotate(8deg);margin-left:-12px}
+.cy-mini:nth-child(3){transform:rotate(-5deg);margin-left:-16px}
+@media(max-width:900px){.city-row{grid-template-columns:1fr!important}.cy-cluster{display:none}}
+
+/* ============================================================
+   SECTION 5: WALL RADIO
+   ============================================================ */
+.radio-section{padding:100px 0;margin:0 -9999px;padding-left:9999px;padding-right:9999px;position:relative;
+  background:var(--surface-1)}
+.radio-section::before{content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(241,44,24,.03),rgba(180,0,255,.03),rgba(41,219,229,.03),rgba(252,201,49,.03));
+  background-size:400% 400%;animation:radioGrad 12s ease-in-out infinite}
+@keyframes radioGrad{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+.radio-section .sec-label{font-family:var(--font-mono);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:8px}
+.radio-section h2{font-family:var(--font-display);font-size:clamp(36px,5vw,64px);font-weight:700;letter-spacing:-.03em;color:#fff!important;margin-bottom:8px;display:flex;align-items:center;gap:16px}
+.radio-icon{display:inline-flex;align-items:center;justify-content:center}
+.radio-icon svg{width:36px;height:36px;fill:none;stroke:#fff;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.radio-section .radio-sub{font-family:var(--font-body);font-size:16px;color:var(--ink-dim);margin-bottom:48px;max-width:560px}
+.radio-row{display:flex;gap:16px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:8px}
+.radio-row::-webkit-scrollbar{display:none}
+.rd-card{flex:0 0 200px;background:var(--surface-3);border:1px solid var(--rule);padding:20px;display:flex;flex-direction:column;gap:10px;transition:transform .2s,border-color .2s}
+.rd-card:hover{transform:translateY(-3px);border-color:var(--ink-faint)}
+.rd-city{font-family:var(--font-mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint)}
+.rd-art{width:100%;aspect-ratio:1;margin:4px 0;position:relative;overflow:hidden}
+.rd-art-inner{position:absolute;inset:0;background:linear-gradient(135deg,var(--c1),var(--c2));opacity:.8}
+.rd-track{font-size:12px;color:var(--ink-mid);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rd-listeners{font-family:var(--font-mono);font-size:10px;color:var(--ink-faint)}
+.eq-bars{display:flex;gap:2px;align-items:flex-end;height:14px}
+.eq-bars span{width:3px;border-radius:1px;animation:eq .8s ease-in-out infinite alternate}
+.eq-bars span:nth-child(2){animation-delay:.15s}
+.eq-bars span:nth-child(3){animation-delay:.3s}
+.eq-bars span:nth-child(4){animation-delay:.1s}
+@keyframes eq{0%{height:3px}100%{height:14px}}
+.rd-tune{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;font-family:var(--font-display);font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#fff;background:transparent;border:1px solid var(--rule-strong);transition:all .15s;margin-top:auto}
+.rd-tune:hover{background:var(--ink-mute);border-color:var(--ink-dim)}
+
+/* ============================================================
+   SECTION 6: YOUR WALL
+   ============================================================ */
+.your-wall{padding:80px 0}
+.your-wall .sec-label{font-family:var(--font-mono);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:8px}
+.your-wall h2{font-family:var(--font-display);font-size:clamp(32px,4vw,48px);font-weight:700;letter-spacing:-.03em;color:#fff!important;margin-bottom:32px}
+.yw-card{display:grid;grid-template-columns:auto 1fr auto;gap:32px;align-items:start;padding:36px;background:var(--surface-2);border:1px solid var(--rule)}
+.yw-avatar{width:64px;height:64px;border-radius:50%;background:var(--surface-4);border:2px solid var(--bl-red);display:grid;place-items:center;font-size:24px;color:var(--ink-mid)}
+.yw-info{display:flex;flex-direction:column;gap:12px}
+.yw-name{font-family:var(--font-display);font-size:20px;font-weight:600;color:#fff}
+.yw-activity{display:flex;flex-direction:column;gap:6px}
+.yw-activity p{font-size:13px;color:var(--ink-dim)}
+.yw-activity strong{color:var(--ink-high)}
+.yw-stats{font-family:var(--font-mono);font-size:11px;color:var(--ink-dim);letter-spacing:.06em}
+.yw-cta{align-self:center;padding:14px 28px;background:var(--surface-4);border:1px solid var(--rule-strong);color:#fff;font-family:var(--font-display);font-size:13px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;transition:all .15s;white-space:nowrap}
+.yw-cta:hover{background:var(--surface-3);border-color:var(--ink-dim)}
+@media(max-width:768px){.yw-card{grid-template-columns:1fr;text-align:center}.yw-avatar{margin:0 auto}.yw-cta{justify-self:center}}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+.ft{border-top:1px solid var(--rule);padding:48px 0;text-align:center}
+.ft-brand{font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:16px}
+.ft-links{display:flex;justify-content:center;gap:24px;margin-bottom:20px}
+.ft-links a{font-size:12px;color:var(--ink-dim);transition:color .15s}
+.ft-links a:hover{color:#fff}
+.ft-badges{font-family:var(--font-mono);font-size:10px;color:var(--ink-faint);letter-spacing:.08em}
+.ft-badges span{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border:1px solid var(--rule);margin:0 4px}
+
+/* ============================================================
+   TICKER ANIMATION
+   ============================================================ */
+@keyframes tickerPulse{0%,100%{opacity:.7}50%{opacity:1}}
+.ticker-live{animation:tickerPulse 2s ease-in-out infinite}
+</style>
+</head>
+<body>
+
+<!-- ======== TOPBAR ======== -->
+<header class="topbar">
+  <div class="tb-logo">
+    <div class="tb-mark"></div>
+    <span class="tb-name">FLYER</span>
+    <span class="tb-sub">by BandLab</span>
+  </div>
+  <nav class="tb-links">
+    <a href="#cities">Cities</a>
+    <a href="#radio">Radio</a>
+    <a href="#trending">Trending</a>
+    <a href="flyer-app.html" class="tb-cta">Enter the wall</a>
+  </nav>
+</header>
+
+<!-- ======== HERO (with LIVE NOW integrated) ======== -->
+<section class="hero">
+  <div class="wrap hero-main">
+    <div class="hero-left">
+      <div class="hero-wordmark">FLYER</div>
+      <h1 class="hero-tagline">What's happening on <em>the wall</em> right now</h1>
+      <div class="hero-ticker">
+        <span><strong class="ticker-live">24,786</strong> flyers</span>
+        <span class="sep">&middot;</span>
+        <span><strong class="ticker-live">890</strong> live events</span>
+        <span class="sep">&middot;</span>
+        <span><strong class="ticker-live">14,208</strong> listening</span>
+      </div>
+      <a href="flyer-app.html" class="hero-cta">Enter the wall &rarr;</a>
+    </div>
+    <div class="hero-cluster">
+      <!-- MIDNIGHT DRIFT — cream, s-gig, Anton -->
+      <div class="lp-flyer f-drift">
+        <div class="lp-c">
+          <div class="kicker">FRI 14 NOV &middot; WAREHOUSE 3</div>
+          <div class="title">MIDNIGHT DRIFT</div>
+          <div class="footer"><span>Half Moon</span><span>Shoreditch</span></div>
+        </div>
+      </div>
+      <!-- BASS CHURCH — red, s-type, Archivo Black -->
+      <div class="lp-flyer f-bass">
+        <div class="lp-c">
+          <div class="kicker">EVERY SUNDAY</div>
+          <div class="title">BASS CHURCH</div>
+          <div class="footer">Bushwick &middot; BK</div>
+        </div>
+      </div>
+      <!-- Late Night Tapes — cassette -->
+      <div class="lp-flyer f-tape">
+        <div class="spool l"></div>
+        <div class="spool r"></div>
+        <div class="lp-c">
+          <div class="kicker">SIDE A</div>
+          <div class="title">Late Night Tapes</div>
+          <div class="sub">mixed by loopweaver</div>
+        </div>
+      </div>
+      <!-- Flame sticker -->
+      <div class="lp-flyer f-flame">
+        <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%;">
+          <defs><radialGradient id="fg" cx="50%" cy="70%" r="60%"><stop offset="0" stop-color="#ffd84d"/><stop offset="0.4" stop-color="#ff6b0a"/><stop offset="1" stop-color="#c41818"/></radialGradient></defs>
+          <path d="M 50 6 C 56 22 74 28 68 48 C 64 42 60 40 56 42 C 62 56 82 60 78 80 C 74 94 60 98 50 98 C 38 98 22 92 22 76 C 22 60 38 56 38 44 C 42 50 46 50 50 46 C 48 32 40 24 50 6 Z" fill="url(#fg)" stroke="#2a0606" stroke-width="2.5" stroke-linejoin="round"/>
+          <path d="M 44 70 C 46 64 54 64 56 72 C 56 82 48 84 44 80 C 42 76 42 72 44 70 Z" fill="#fff5b0" opacity="0.7"/>
+        </svg>
+      </div>
+      <!-- Thumbs up sticker -->
+      <div class="lp-flyer f-thumb">
+        <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%;">
+          <defs><linearGradient id="tg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd84d"/><stop offset="1" stop-color="#f59f1a"/></linearGradient></defs>
+          <path d="M 45 8 L 35 14 L 30 24 L 28 36 L 28 42 L 14 42 L 8 48 L 8 86 L 14 92 L 62 92 L 72 86 L 86 52 L 86 44 L 80 38 L 62 38 L 66 20 L 58 10 Z" fill="url(#tg)" stroke="#1a0f00" stroke-width="2.5" stroke-linejoin="round"/>
+          <path d="M 14 48 L 28 48 L 28 86 L 14 86 Z" fill="none" stroke="#1a0f00" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <!-- Speech bubble -->
+      <div class="lp-flyer f-bubble">
+        <svg viewBox="0 0 200 190" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M14 2 Q2 2 2 14 L2 122 Q2 132 14 132 L50 132 L40 165 L82 132 L186 132 Q198 132 198 122 L198 14 Q198 2 186 2 Z" fill="#c4e835"/>
+        </svg>
+        <div class="lp-c">
+          <div class="title">who has the tape?</div>
+          <div class="sub">asking for a friend</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIVE NOW strip — compact horizontal scroll inside hero -->
+  <div class="hero-live" id="live">
+    <div class="hero-live-head">
+      <div class="hero-live-dot"></div>
+      <span>LIVE NOW</span>
+    </div>
+    <div class="hero-live-scroll">
+      <a href="flyer-app.html?city=shoreditch" class="hlv-card">
+        <div class="hlv-img">
+          <div class="hlv-sign hlv-sign-london"><span class="hlv-sign-sub">EC2A</span>Old Street</div>
+        </div>
+        <div class="hlv-body">
+          <span class="hlv-badge"><span class="dot"></span> LIVE</span>
+          <h3>Half Moon Club</h3>
+          <p class="meta">Shoreditch, London</p>
+          <p class="viewers">342 watching</p>
+        </div>
+      </a>
+      <a href="flyer-app.html?city=jakarta" class="hlv-card">
+        <div class="hlv-img">
+          <div class="hlv-sign hlv-sign-jakarta">Kemang</div>
+        </div>
+        <div class="hlv-body">
+          <span class="hlv-badge"><span class="dot"></span> LIVE</span>
+          <h3>Panggung Rakyat</h3>
+          <p class="meta">Jakarta, Indonesia</p>
+          <p class="viewers">891 watching</p>
+        </div>
+      </a>
+      <a href="flyer-app.html?city=shimokitazawa" class="hlv-card">
+        <div class="hlv-img">
+          <div class="hlv-sign hlv-sign-tokyo"><span class="hlv-sign-sub">下北沢</span>Kitazawa</div>
+        </div>
+        <div class="hlv-body">
+          <span class="hlv-badge"><span class="dot"></span> LIVE</span>
+          <h3>&#19979;&#21271;&#27810;SHELTER</h3>
+          <p class="meta">Shimokitazawa, Tokyo</p>
+          <p class="viewers">456 watching</p>
+        </div>
+      </a>
+      <a href="flyer-app.html?city=bushwick" class="hlv-card">
+        <div class="hlv-img">
+          <div class="hlv-sign hlv-sign-nyc">Wyckoff Ave</div>
+        </div>
+        <div class="hlv-body">
+          <span class="hlv-badge"><span class="dot"></span> LIVE</span>
+          <h3>The Lot Radio</h3>
+          <p class="meta">Bushwick, Brooklyn</p>
+          <p class="viewers">278 watching</p>
+        </div>
+      </a>
+      <a href="flyer-app.html?city=echopark" class="hlv-card">
+        <div class="hlv-img">
+          <div class="hlv-sign hlv-sign-la">Sunset Blvd</div>
+        </div>
+        <div class="hlv-body">
+          <span class="hlv-badge"><span class="dot"></span> LIVE</span>
+          <h3>Sunset Sessions</h3>
+          <p class="meta">Echo Park, LA</p>
+          <p class="viewers">164 watching</p>
+        </div>
+      </a>
+      <a href="flyer-app.html?city=capetown" class="hlv-card">
+        <div class="hlv-img">
+          <div class="hlv-sign hlv-sign-capetown">Long Street</div>
+        </div>
+        <div class="hlv-body">
+          <span class="hlv-badge"><span class="dot"></span> LIVE</span>
+          <h3>Aand Musiek</h3>
+          <p class="meta">Cape Town, SA</p>
+          <p class="viewers">203 watching</p>
+        </div>
+      </a>
+      <a href="flyer-app.html?city=shoreditch" class="hlv-card">
+        <div class="hlv-img">
+          <div class="hlv-sign hlv-sign-london"><span class="hlv-sign-sub">E2</span>Brick Lane</div>
+        </div>
+        <div class="hlv-body">
+          <span class="hlv-badge"><span class="dot"></span> LIVE</span>
+          <h3>Brixton Jungle</h3>
+          <p class="meta">Shoreditch, London</p>
+          <p class="viewers">189 watching</p>
+        </div>
+      </a>
+      <a href="flyer-app.html?city=shimokitazawa" class="hlv-card">
+        <div class="hlv-img">
+          <div class="hlv-sign hlv-sign-tokyo"><span class="hlv-sign-sub">代沢</span>Daizawa</div>
+        </div>
+        <div class="hlv-body">
+          <span class="hlv-badge"><span class="dot"></span> LIVE</span>
+          <h3>夜の音</h3>
+          <p class="meta">Shimokitazawa, Tokyo</p>
+          <p class="viewers">312 watching</p>
+        </div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ======== TRENDING ======== -->
+<section class="trending wrap" id="trending">
+  <div class="sec-head">
+    <p class="sec-label">Across all cities</p>
+    <h2>Trending on the wall</h2>
+  </div>
+  <div class="trend-layout">
+    <!-- Featured flyer: full render -->
+    <div class="trend-feat">
+      <div class="tf-flyer">
+        <div class="fc">
+          <div class="kicker">FRI 14 NOV &middot; WAREHOUSE 3</div>
+          <div class="title">MIDNIGHT DRIFT</div>
+          <div class="support">Half Moon &middot; Shoreditch</div>
+          <div class="foot"><span>&#9654; 2.4k</span><span>&#9829; 182</span></div>
+        </div>
+      </div>
+    </div>
+    <!-- Trend list — diverse flyer types -->
+    <div class="trend-list">
+      <!-- 1. Song flyer (rectangle) -->
+      <a href="flyer-app.html" class="tl-item">
+        <div class="tl-paper" style="background:#29dbe5"><span class="t" style="font-family:'Archivo Black',sans-serif">Sub Rosa</span><span class="a">BK Phantom</span></div>
+        <div class="tl-info"><h4>Sub Rosa</h4><div class="tl-meta"><span>Bushwick</span><span>SONG</span></div></div>
+        <div class="tl-stats">&#9654; 3.1k<br>&#9829; 241</div>
+      </a>
+      <!-- 2. Event flyer (with red date badge) -->
+      <a href="flyer-app.html" class="tl-item">
+        <div class="tl-paper" style="background:#fcc931"><span class="tl-date-badge">SAT<br>22</span><span class="t" style="font-family:'Anton',sans-serif;font-size:11px">BASS CHURCH</span><span class="a">Bushwick</span></div>
+        <div class="tl-info"><h4>Bass Church</h4><div class="tl-meta"><span>Bushwick</span><span>EVENT</span></div></div>
+        <div class="tl-stats">&#9654; 5.8k<br>&#9829; 412</div>
+      </a>
+      <!-- 3. Cassette/mixtape -->
+      <a href="flyer-app.html" class="tl-item">
+        <div class="tl-paper tl-cassette" style="background:linear-gradient(180deg,#d9c4a0,#c4b08a);height:50px;aspect-ratio:auto;width:60px;border-radius:2px"><div class="tl-spool sl"></div><div class="tl-spool sr"></div><span class="t" style="font-family:'Permanent Marker',cursive;font-size:8px;position:relative;z-index:4">Night Tapes</span><span class="a" style="position:relative;z-index:4">loopweaver</span></div>
+        <div class="tl-info"><h4>Late Night Tapes</h4><div class="tl-meta"><span>Shoreditch</span><span>MIXTAPE</span></div></div>
+        <div class="tl-stats">&#9654; 1.9k<br>&#9829; 98</div>
+      </a>
+      <!-- 4. Speech bubble -->
+      <a href="flyer-app.html" class="tl-item">
+        <div class="tl-paper" style="background:none;box-shadow:none;position:relative;overflow:visible"><div class="tl-bubble-shape"><svg viewBox="0 0 60 80" xmlns="http://www.w3.org/2000/svg"><path d="M5 4 Q2 4 2 7 L2 52 Q2 55 5 55 L15 55 L12 68 L25 55 L55 55 Q58 55 58 52 L58 7 Q58 4 55 4 Z" fill="#c4e835"/></svg></div><div class="tl-bubble-inner"><span class="t" style="font-family:'Permanent Marker',cursive;font-size:8px">who has the tape?</span></div></div>
+        <div class="tl-info"><h4>who has the tape?</h4><div class="tl-meta"><span>Shoreditch</span><span>MESSAGE</span></div></div>
+        <div class="tl-stats">&#9654; 890<br>&#9829; 63</div>
+      </a>
+    </div>
+  </div>
+  <!-- Horizontal scroll — varied flyer types -->
+  <div class="trend-scroll">
+    <!-- Song flyer -->
+    <a href="flyer-app.html" class="ts-card"><div class="ts-paper" style="background:#29dbe5"><span class="t" style="font-family:'Archivo Black',sans-serif">SUB ROSA</span><span class="a">BK Phantom</span></div><span class="ts-city">Bushwick</span><span class="ts-stats">&#9654; 3.1k &middot; &#9829; 241</span></a>
+    <!-- Event flyer with date badge -->
+    <a href="flyer-app.html" class="ts-card"><div class="ts-paper" style="background:#faf4e1"><span class="ts-date-badge">FRI<br>14</span><span class="t" style="font-family:'Anton',sans-serif;color:#1a1208">MIDNIGHT DRIFT</span><span class="a" style="color:rgba(0,0,0,.6)">Half Moon</span></div><span class="ts-city">Shoreditch</span><span class="ts-stats">&#9654; 2.4k &middot; &#9829; 182</span></a>
+    <!-- Cassette/mixtape -->
+    <a href="flyer-app.html" class="ts-card"><div class="ts-paper ts-cassette" style="background:linear-gradient(180deg,#d9c4a0,#c4b08a);aspect-ratio:5/3"><div class="ts-spool sl"></div><div class="ts-spool sr"></div><span class="t" style="font-family:'Permanent Marker',cursive;position:relative;z-index:4">Late Night Tapes</span><span class="a" style="position:relative;z-index:4">loopweaver</span></div><span class="ts-city">Shoreditch</span><span class="ts-stats">&#9654; 1.9k &middot; &#9829; 98</span></a>
+    <!-- Speech bubble -->
+    <a href="flyer-app.html" class="ts-card"><div class="ts-paper ts-bubble"><svg viewBox="0 0 140 186" xmlns="http://www.w3.org/2000/svg"><path d="M10 8 Q4 8 4 16 L4 130 Q4 138 10 138 L40 138 L32 168 L70 138 L130 138 Q136 138 136 130 L136 16 Q136 8 130 8 Z" fill="#c4e835"/></svg><span class="t" style="font-family:'Permanent Marker',cursive;color:#0a0806;position:relative;z-index:2">who has the tape?</span><span class="a" style="color:rgba(0,0,0,.5);position:relative;z-index:2">asking for a friend</span></div><span class="ts-city">Shoreditch</span><span class="ts-stats">&#9654; 890 &middot; &#9829; 63</span></a>
+    <!-- Arcade machine sticker -->
+    <a href="flyer-app.html" class="ts-card"><div class="ts-paper ts-arcade" style="background:#1a1a2e"><div class="ts-arcade-screen"><span>INSERT COIN</span></div><span class="t" style="font-family:'Press Start 2P',monospace;font-size:8px;color:#0f0;margin-top:auto;padding-bottom:10px;position:relative;z-index:2">PIXEL RAVE</span><span class="a" style="color:rgba(255,255,255,.5);position:relative;z-index:2">DRMCNT</span></div><span class="ts-city">Bushwick</span><span class="ts-stats">&#9654; 4.2k &middot; &#9829; 310</span></a>
+    <!-- Release with album art -->
+    <a href="flyer-app.html" class="ts-card"><div class="ts-paper" style="background:linear-gradient(135deg,#b400ff,#ff5c9a)"><div class="ts-album-art"></div><div class="ts-album-inner"><span class="t" style="font-family:'Abril Fatface',serif;color:#fff;font-size:13px">&#39080;&#12398;&#27468;</span><span class="a" style="color:rgba(255,255,255,.7)">Kaze</span><span class="a" style="color:rgba(255,255,255,.5);font-size:6px;margin-top:6px">12 TRACKS</span></div></div><span class="ts-city">Shimokitazawa</span><span class="ts-stats">&#9654; 1.2k &middot; &#9829; 77</span></a>
+    <!-- T-shirt merch -->
+    <a href="flyer-app.html" class="ts-card"><div class="ts-paper ts-tshirt" style="background:#111"><span class="t" style="font-family:'Bungee',cursive;color:var(--bl-red);font-size:9px;margin-top:20px">KOTA MATI</span><span class="a" style="color:rgba(255,255,255,.5)">Merch drop</span></div><span class="ts-city">Jakarta</span><span class="ts-stats">&#9654; 5.8k &middot; &#9829; 412</span></a>
+    <!-- Video/TV flyer -->
+    <a href="flyer-app.html" class="ts-card"><div class="ts-paper ts-tv" style="background:#222"><div class="ts-tv-antenna"></div><span class="t" style="font-family:'VT323',monospace;color:#0f0;font-size:14px;letter-spacing:.05em">LIVE SESSION</span><span class="a" style="color:rgba(255,255,255,.5)">Long Street Dub</span></div><span class="ts-city">Cape Town</span><span class="ts-stats">&#9654; 890 &middot; &#9829; 63</span></a>
+    <a href="flyer-app.html" class="ts-card"><div class="ts-sticker-flame">🔥<span class="stk-label">100K PLAYS</span></div><span class="ts-city">Global</span><span class="ts-stats">🔥 4.2k</span></a>
+    <a href="flyer-app.html" class="ts-card"><div class="ts-sticker-thumb">👍<span class="stk-label">ENDORSED</span></div><span class="ts-city">Global</span><span class="ts-stats">👍 1.8k</span></a>
+  </div>
+</section>
+
+<!-- ======== CITIES ======== -->
+<section class="cities wrap" id="cities">
+  <div class="sec-head">
+    <p class="sec-label">Explore</p>
+    <h2>Cities &amp; Scenes</h2>
+  </div>
+  <div class="city-rows">
+    <!-- Row 1 -->
+    <div class="city-row r1">
+      <div class="cy-card cy-shoreditch">
+        <span class="cy-country">United Kingdom</span>
+        <h3 class="cy-name">Shoreditch</h3>
+        <p class="cy-stats">3,421 flyers &middot; 14 live &middot; grime &middot; garage &middot; post-punk</p>
+        <p class="cy-radio"><span style="font-family:var(--font-mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;opacity:.6">RADIO</span> Now playing: Midnight Drift &mdash; Half Moon</p>
+        <a href="flyer-app.html?city=shoreditch" class="cy-enter">Enter &rarr;</a>
+        <div class="cy-cluster">
+          <div class="cy-mini" style="background:#fcc931;transform:rotate(-6deg)">Midnight<br>Drift</div>
+          <div class="cy-mini" style="background:#29dbe5;transform:rotate(8deg)">Grime<br>Lord</div>
+        </div>
+      </div>
+      <div class="cy-card cy-shimokitazawa">
+        <span class="cy-country">Japan</span>
+        <h3 class="cy-name">Shimokitazawa</h3>
+        <p class="cy-stats">2,890 flyers &middot; 9 live &middot; shoegaze &middot; city pop &middot; math rock</p>
+        <p class="cy-radio"><span style="font-family:var(--font-mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;opacity:.6">RADIO</span> Now playing: &#22812;&#12398;&#27874; &mdash; Kaze Collective</p>
+        <a href="flyer-app.html?city=shimokitazawa" class="cy-enter">Enter &rarr;</a>
+      </div>
+    </div>
+    <!-- Row 2 -->
+    <div class="city-row r2">
+      <div class="cy-card cy-bushwick">
+        <span class="cy-country">United States</span>
+        <h3 class="cy-name">Bushwick</h3>
+        <p class="cy-stats">5,102 flyers &middot; 22 live &middot; noise &middot; hyperpop &middot; drill</p>
+        <p class="cy-radio"><span style="font-family:var(--font-mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;opacity:.6">RADIO</span> Now playing: Sub Rosa &mdash; BK Phantom</p>
+        <a href="flyer-app.html?city=bushwick" class="cy-enter">Enter &rarr;</a>
+      </div>
+      <div class="cy-card cy-jakarta">
+        <span class="cy-country">Indonesia</span>
+        <h3 class="cy-name">Jakarta</h3>
+        <p class="cy-stats">7,773 flyers &middot; 28 live &middot; dangdut &middot; indie &middot; punk</p>
+        <p class="cy-radio"><span style="font-family:var(--font-mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;opacity:.6">RADIO</span> Now playing: Kota Mati &mdash; Ruang Bawah</p>
+        <a href="flyer-app.html?city=jakarta" class="cy-enter">Enter &rarr;</a>
+        <div class="cy-cluster">
+          <div class="cy-mini" style="background:var(--bl-red);color:#fff;transform:rotate(-4deg)">Suara<br>Malam</div>
+          <div class="cy-mini" style="background:#ff690d;transform:rotate(6deg)">Kota<br>Mati</div>
+          <div class="cy-mini" style="background:#fcc931;transform:rotate(-5deg)">Nada<br>Kota</div>
+        </div>
+      </div>
+    </div>
+    <!-- Row 3 -->
+    <div class="city-row r3">
+      <div class="cy-card cy-echopark">
+        <span class="cy-country">United States</span>
+        <h3 class="cy-name">Echo Park</h3>
+        <p class="cy-stats">3,780 flyers &middot; 11 live &middot; lo-fi &middot; psych &middot; bedroom pop</p>
+        <p class="cy-radio"><span style="font-family:var(--font-mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;opacity:.6">RADIO</span> Now playing: Golden Hour &mdash; Echo Daze</p>
+        <a href="flyer-app.html?city=echopark" class="cy-enter">Enter &rarr;</a>
+        <div class="cy-cluster">
+          <div class="cy-mini" style="background:#ff690d;transform:rotate(-3deg)">Sunset<br>Sermon</div>
+          <div class="cy-mini" style="background:#c4e835;transform:rotate(7deg)">Pastel<br>Fog</div>
+        </div>
+      </div>
+      <div class="cy-card cy-capetown">
+        <span class="cy-country">South Africa</span>
+        <h3 class="cy-name">Cape Town</h3>
+        <p class="cy-stats">1,820 flyers &middot; 6 live &middot; amapiano &middot; gqom &middot; jazz</p>
+        <p class="cy-radio"><span style="font-family:var(--font-mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;opacity:.6">RADIO</span> Now playing: Long Street Dub &mdash; Kasi Groove</p>
+        <a href="flyer-app.html?city=capetown" class="cy-enter">Enter &rarr;</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======== WALL RADIO ======== -->
+<section class="radio-section" id="radio">
+  <div class="wrap">
+    <p class="sec-label">Always live</p>
+    <h2><span class="radio-icon"><svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="12" width="26" height="17" rx="2"/><circle cx="12" cy="21" r="4"/><rect x="20" y="16" width="5" height="2" rx="1"/><rect x="20" y="20" width="5" height="2" rx="1"/><rect x="20" y="24" width="5" height="2" rx="1"/><path d="M10 12 L16 3"/><circle cx="16" cy="3" r="1.5" fill="#fff"/></svg></span> Wall Radio</h2>
+    <p class="radio-sub">Community playlists, always live. Submit tracks, vote, listen together.</p>
+    <div class="radio-row" id="radio-row"></div>
+  </div>
+</section>
+
+<!-- ======== YOUR WALL ======== -->
+<section class="your-wall wrap">
+  <p class="sec-label">Profile</p>
+  <h2>Your wall</h2>
+  <div class="yw-card">
+    <div class="yw-avatar">&#127925;</div>
+    <div class="yw-info">
+      <div class="yw-name">you</div>
+      <div class="yw-activity">
+        <p><strong>beatroot</strong> liked your flyer "Midnight Drift"</p>
+        <p><strong>loopweaver</strong> remixed Midnight Drift</p>
+      </div>
+      <div class="yw-stats">3 flyers posted &middot; 420 plays &middot; 28 reactions &middot; Following: Shoreditch, Bushwick</div>
+    </div>
+    <a href="flyer-app.html" class="yw-cta">Open your profile &rarr;</a>
+  </div>
+</section>
+
+<!-- ======== FOOTER ======== -->
+<footer class="ft wrap">
+  <p class="ft-brand">FLYER by BandLab &middot; Caldecott Music Group &middot; 2026</p>
+  <nav class="ft-links">
+    <a href="#">About</a>
+    <a href="#">Privacy</a>
+    <a href="#">Terms</a>
+    <a href="#">Contact</a>
+  </nav>
+  <p class="ft-badges">
+    <span>&#63743; App Store &mdash; Coming soon</span>
+    <span>&#9654; Google Play &mdash; Coming soon</span>
+  </p>
+</footer>
+
+<script>
+/* ---- Wall Radio stations ---- */
+const stations=[
+  {city:"Shoreditch",track:"Midnight Drift \u2014 Half Moon",c1:"#f12c18",c2:"#ff690d",listeners:1204},
+  {city:"Bushwick",track:"Sub Rosa \u2014 BK Phantom",c1:"#29dbe5",c2:"#2f93f6",listeners:892},
+  {city:"Shimokitazawa",track:"\u591c\u306e\u6ce2 \u2014 Kaze Collective",c1:"#b400ff",c2:"#ff5c9a",listeners:641},
+  {city:"Echo Park",track:"Golden Hour \u2014 Echo Daze",c1:"#fcc931",c2:"#ff690d",listeners:533},
+  {city:"Cape Town",track:"Long Street Dub \u2014 Kasi Groove",c1:"#00c37d",c2:"#29dbe5",listeners:387},
+  {city:"Jakarta",track:"Kota Mati \u2014 Ruang Bawah",c1:"#ff690d",c2:"#f12c18",listeners:1456}
+];
+const rr=document.getElementById("radio-row");
+stations.forEach(s=>{
+  const h=()=>Math.floor(Math.random()*10+4);
+  rr.innerHTML+=`<div class="rd-card">
+    <span class="rd-city">${s.city}</span>
+    <div class="rd-art"><div class="rd-art-inner" style="--c1:${s.c1};--c2:${s.c2}"></div></div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="eq-bars"><span style="height:${h()}px;background:${s.c1}"></span><span style="height:${h()}px;background:${s.c1}"></span><span style="height:${h()}px;background:${s.c1}"></span><span style="height:${h()}px;background:${s.c1}"></span></div>
+      <span class="rd-track">${s.track}</span>
+    </div>
+    <span class="rd-listeners">${s.listeners.toLocaleString()} listening</span>
+    <a href="flyer-app.html" class="rd-tune">Tune in &rarr;</a>
+  </div>`;
+});
+</script>
+</body>
+</html>

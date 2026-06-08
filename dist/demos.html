@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>StreamToys — Proof of Concepts</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #010101;
+    --surface: #0a0c0e;
+    --surface-2: #141618;
+    --ink: #ffffff;
+    --ink-mid: #c2d7f2;
+    --ink-dim: rgba(194,215,242,0.55);
+    --ink-faint: rgba(194,215,242,0.3);
+    --rule: rgba(194,215,242,0.1);
+    --red: #f12c18;
+    --cyan: #29dbe5;
+    --purple: #b400ff;
+    --yellow: #fcc931;
+    --green: #00c37d;
+    --orange: #ff690d;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', system-ui, sans-serif;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+  a { color: inherit; text-decoration: none; }
+
+  .page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 48px 40px 80px;
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding-bottom: 40px;
+    margin-bottom: 48px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .logo {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .logo-mark {
+    position: relative;
+    width: 28px; height: 24px;
+  }
+  .logo-mark::before, .logo-mark::after {
+    content: '';
+    position: absolute;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+  }
+  .logo-mark::before {
+    left: 0; top: 5px;
+    width: 14px; height: 18px;
+    transform: rotate(-7deg);
+    background: rgba(255,255,255,0.5);
+  }
+  .logo-mark::after {
+    right: 0; top: 0;
+    width: 16px; height: 20px;
+    transform: rotate(6deg);
+    background: var(--red);
+  }
+  .header-meta {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 300;
+    font-size: clamp(40px, 6vw, 72px);
+    line-height: 0.95;
+    letter-spacing: -0.035em;
+    margin-bottom: 20px;
+  }
+  h1 .accent { color: var(--red); font-weight: 500; }
+  .intro {
+    font-size: 17px;
+    line-height: 1.55;
+    color: var(--ink-dim);
+    max-width: 640px;
+    margin-bottom: 56px;
+  }
+
+  /* Grid */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: border-color 250ms ease, transform 250ms ease;
+  }
+  .card:hover {
+    border-color: rgba(194,215,242,0.25);
+    transform: translateY(-4px);
+  }
+
+  /* Thumbnail — CSS-generated visuals */
+  .thumb {
+    height: 280px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* FLYER wall thumb */
+  .thumb-flyer {
+    background:
+      repeating-linear-gradient(90deg,
+        rgba(0,0,0,0) 0, rgba(0,0,0,0.1) 1px, rgba(255,255,255,0.02) 2px,
+        rgba(0,0,0,0) 4px, rgba(0,0,0,0.06) 6px, rgba(255,255,255,0.01) 9px,
+        rgba(0,0,0,0) 14px),
+      linear-gradient(180deg, #42321f, #3d2818);
+  }
+  .thumb-flyer .mini-flyers {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 24px;
+    transform: rotate(-3deg);
+    max-width: 85%;
+  }
+  .mini-flyer {
+    padding: 10px 12px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
+    line-height: 1;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  }
+  .mf-1 { background: #faf4e1; color: #1a1208; transform: rotate(-4deg); font-size: 16px; padding: 14px 16px; }
+  .mf-2 { background: #f12c18; color: #fff; transform: rotate(3deg); }
+  .mf-3 { background: #050505; color: #f4eedd; transform: rotate(-2deg); font-size: 14px; padding: 12px 14px; }
+  .mf-4 { background: #fcc931; color: #1a1208; transform: rotate(5deg); }
+  .mf-5 { background: #29dbe5; color: #0a0806; transform: rotate(-1deg); }
+  .mf-6 { background: #b400ff; color: #fff; transform: rotate(4deg); font-size: 9px; }
+  .mf-7 { background: #c7a074; color: #1a1208; transform: rotate(-3deg); }
+  .mf-8 { background: #fff; color: #0a0806; transform: rotate(2deg); font-size: 13px; padding: 12px 14px; }
+
+  /* Classic dropcast thumb */
+  .thumb-classic {
+    background: linear-gradient(180deg, #1a0a2e, #0a0418);
+  }
+  .thumb-classic .blocks {
+    display: grid;
+    grid-template-columns: repeat(6, 32px);
+    grid-template-rows: repeat(5, 32px);
+    gap: 3px;
+    transform: rotate(-2deg);
+  }
+  .thumb-classic .block {
+    border-radius: 4px;
+    box-shadow: inset 0 -2px 0 rgba(0,0,0,0.3), 0 0 8px rgba(255,255,255,0.1);
+  }
+  .bc-r { background: #f12c18; }
+  .bc-c { background: #29dbe5; }
+  .bc-p { background: #b400ff; }
+  .bc-y { background: #fcc931; }
+  .bc-g { background: #00c37d; }
+  .bc-o { background: #ff690d; }
+  .bc-e { background: rgba(255,255,255,0.04); }
+
+  /* Collapse dropcast thumb */
+  .thumb-collapse {
+    background: linear-gradient(180deg, #0a1a2e, #050810);
+  }
+  .thumb-collapse .cols {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 200px;
+    padding: 0 32px;
+    transform: rotate(1deg);
+  }
+  .thumb-collapse .col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    justify-content: flex-end;
+  }
+  .thumb-collapse .col .blk {
+    height: 28px;
+    border-radius: 4px;
+    box-shadow: inset 0 -2px 0 rgba(0,0,0,0.3), 0 2px 6px rgba(0,0,0,0.3);
+  }
+
+  /* Biome concepts thumb */
+  .thumb-biome {
+    background: radial-gradient(circle at 50% 50%, #0a0518, #030108);
+  }
+  .thumb-biome .creatures {
+    display: flex;
+    gap: 32px;
+    align-items: center;
+  }
+  .creature {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    position: relative;
+    box-shadow: 0 0 30px rgba(255,255,255,0.1);
+  }
+  .creature::after {
+    content: '';
+    position: absolute;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle, #fff 30%, rgba(255,255,255,0.5) 45%, transparent 60%);
+  }
+  .cr-1 { background: radial-gradient(circle, #00f5d4, #0a9396); width: 70px; height: 70px; }
+  .cr-2 { background: radial-gradient(circle, #f72585, #b5179e); width: 48px; height: 48px; }
+  .cr-3 { background: radial-gradient(circle, #ffd60a, #e09f3e); width: 62px; height: 62px; }
+  .cr-4 { background: radial-gradient(circle, #4361ee, #3a0ca3); width: 44px; height: 44px; }
+
+  /* Card body */
+  .card-body {
+    padding: 28px 28px 24px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+  .card-kicker {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .card-kicker.red { color: var(--red); }
+  .card-kicker.cyan { color: var(--cyan); }
+  .card-kicker.purple { color: var(--purple); }
+  .card-kicker.yellow { color: var(--yellow); }
+
+  .card h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 26px;
+    letter-spacing: -0.02em;
+    margin-bottom: 10px;
+    line-height: 1.1;
+  }
+  .card p {
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--ink-dim);
+    margin-bottom: 20px;
+    flex: 1;
+  }
+  .card-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-mid);
+    transition: color 150ms ease;
+  }
+  .card:hover .card-link { color: var(--red); }
+  .card-link::after { content: '→'; }
+
+  /* Beat invaders bonus card */
+  .thumb-game {
+    background: linear-gradient(180deg, #0a1a0a, #010101);
+    flex-direction: column;
+    gap: 8px;
+  }
+  .game-invaders {
+    display: flex;
+    gap: 16px;
+    font-size: 28px;
+  }
+  .gi { text-shadow: 0 0 12px currentColor; }
+  .gi-r { color: #f12c18; }
+  .gi-c { color: #29dbe5; }
+  .gi-p { color: #b400ff; }
+  .gi-y { color: #fcc931; }
+  .game-ship {
+    margin-top: 24px;
+    width: 36px; height: 24px;
+    background: #29dbe5;
+    box-shadow: 0 0 20px rgba(41,219,229,0.5);
+    position: relative;
+  }
+  .game-ship::before {
+    content: '';
+    position: absolute;
+    left: 50%; top: -10px;
+    width: 4px; height: 12px;
+    background: #fcc931;
+    transform: translateX(-50%);
+  }
+
+  footer {
+    margin-top: 64px;
+    padding-top: 32px;
+    border-top: 1px solid var(--rule);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    text-align: center;
+  }
+
+  @media (max-width: 800px) {
+    .page { padding: 32px 20px 60px; }
+    .grid { grid-template-columns: 1fr; }
+    .thumb { height: 220px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <div class="logo">
+      <span class="logo-mark"></span>
+      StreamToys · BandLab
+    </div>
+    <div class="header-meta">Proof of Concepts · 2026</div>
+  </div>
+
+  <h1>Playable <span class="accent">prototypes.</span></h1>
+  <p class="intro">Working demos exploring music-driven game mechanics, social flyer walls, and generative creature ecosystems. Each is a self-contained HTML5 experience — click to play.</p>
+
+  <div class="grid">
+
+    <!-- FLYER WALL -->
+    <a class="card" href="soundgarden/flyer-wall.html">
+      <div class="thumb thumb-flyer">
+        <div class="mini-flyers">
+          <div class="mini-flyer mf-1">MIDNIGHT<br>DRIFT</div>
+          <div class="mini-flyer mf-2">808 HEAT</div>
+          <div class="mini-flyer mf-3">NEON<br>MARKET</div>
+          <div class="mini-flyer mf-4">FUTURE FUNK</div>
+          <div class="mini-flyer mf-5">CITY POP</div>
+          <div class="mini-flyer mf-6">DUB TAPES · 93</div>
+          <div class="mini-flyer mf-7">HALF MOON</div>
+          <div class="mini-flyer mf-8">GHOST<br>CHORUS</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-kicker red">FLYER by BandLab</div>
+        <h2>The Flyer Wall</h2>
+        <p>Infinite shared music wall mapped to real cities. Post flyers, swipe between districts, play embedded Spotify tracks, open arcade games. 6 launch cities, 60+ flyer types, tube map navigation.</p>
+        <span class="card-link">Open prototype</span>
+      </div>
+    </a>
+
+    <!-- BEAT INVADERS -->
+    <a class="card" href="soundgarden/beat-invaders.html">
+      <div class="thumb thumb-game">
+        <div class="game-invaders">
+          <span class="gi gi-r">♪</span>
+          <span class="gi gi-c">♫</span>
+          <span class="gi gi-p">♬</span>
+          <span class="gi gi-y">𝄞</span>
+          <span class="gi gi-r">♪</span>
+          <span class="gi gi-c">♫</span>
+        </div>
+        <div class="game-invaders" style="font-size:24px;">
+          <span class="gi gi-y">♬</span>
+          <span class="gi gi-p">♪</span>
+          <span class="gi gi-r">♫</span>
+          <span class="gi gi-c">𝄞</span>
+          <span class="gi gi-y">♪</span>
+          <span class="gi gi-p">♫</span>
+        </div>
+        <div class="game-ship"></div>
+      </div>
+      <div class="card-body">
+        <div class="card-kicker cyan">Arcade · HTML5 Game</div>
+        <h2>Beat Invaders</h2>
+        <p>Music-themed Space Invaders with powerups, boss battles, Galaga-style swarming, and combo system. Playable from inside FLYER arcade-machine flyers. Web Audio sound effects.</p>
+        <span class="card-link">Play game</span>
+      </div>
+    </a>
+
+    <!-- CLASSIC DROPCAST -->
+    <a class="card" href="classic.html">
+      <div class="thumb thumb-classic">
+        <div class="blocks">
+          <div class="block bc-e"></div><div class="block bc-e"></div><div class="block bc-r"></div><div class="block bc-r"></div><div class="block bc-e"></div><div class="block bc-e"></div>
+          <div class="block bc-e"></div><div class="block bc-c"></div><div class="block bc-r"></div><div class="block bc-p"></div><div class="block bc-e"></div><div class="block bc-e"></div>
+          <div class="block bc-y"></div><div class="block bc-c"></div><div class="block bc-c"></div><div class="block bc-p"></div><div class="block bc-g"></div><div class="block bc-e"></div>
+          <div class="block bc-y"></div><div class="block bc-o"></div><div class="block bc-c"></div><div class="block bc-p"></div><div class="block bc-g"></div><div class="block bc-r"></div>
+          <div class="block bc-y"></div><div class="block bc-o"></div><div class="block bc-o"></div><div class="block bc-g"></div><div class="block bc-g"></div><div class="block bc-r"></div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-kicker yellow">SongSugar · Classic</div>
+        <h2>Drop Cast — Classic</h2>
+        <p>Tetris-style music block game. Coloured music blocks fall into a grid — match colours to clear rows and build combos. PixiJS rendering with Tone.js audio engine. The original StreamToys game.</p>
+        <span class="card-link">Play game</span>
+      </div>
+    </a>
+
+    <!-- COLLAPSE DROPCAST -->
+    <a class="card" href="index.html">
+      <div class="thumb thumb-collapse">
+        <div class="cols">
+          <div class="col"><div class="blk" style="background:#f12c18;height:28px;"></div><div class="blk" style="background:#f12c18;height:28px;"></div><div class="blk" style="background:#29dbe5;height:28px;"></div></div>
+          <div class="col"><div class="blk" style="background:#b400ff;height:28px;"></div><div class="blk" style="background:#29dbe5;height:28px;"></div><div class="blk" style="background:#29dbe5;height:28px;"></div><div class="blk" style="background:#fcc931;height:28px;"></div></div>
+          <div class="col"><div class="blk" style="background:#fcc931;height:28px;"></div><div class="blk" style="background:#fcc931;height:28px;"></div></div>
+          <div class="col"><div class="blk" style="background:#00c37d;height:28px;"></div><div class="blk" style="background:#ff690d;height:28px;"></div><div class="blk" style="background:#ff690d;height:28px;"></div><div class="blk" style="background:#00c37d;height:28px;"></div><div class="blk" style="background:#b400ff;height:28px;"></div></div>
+          <div class="col"><div class="blk" style="background:#b400ff;height:28px;"></div><div class="blk" style="background:#f12c18;height:28px;"></div><div class="blk" style="background:#f12c18;height:28px;"></div></div>
+          <div class="col"><div class="blk" style="background:#29dbe5;height:28px;"></div><div class="blk" style="background:#fcc931;height:28px;"></div><div class="blk" style="background:#29dbe5;height:28px;"></div><div class="blk" style="background:#00c37d;height:28px;"></div></div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-kicker purple">SongSugar · Collapse</div>
+        <h2>Drop Cast — Collapse</h2>
+        <p>Tap-to-collapse puzzle variant. Tap clusters of matching colours to clear them — remaining blocks fall and shift. Chain reactions build score multipliers. Advanced controller with multiple game modes.</p>
+        <span class="card-link">Play game</span>
+      </div>
+    </a>
+
+    <!-- BIOME CONCEPTS -->
+    <a class="card" href="soundgarden/showcase.html" style="grid-column: 1 / -1;">
+      <div class="thumb thumb-biome">
+        <div class="creatures">
+          <div class="creature cr-1"></div>
+          <div class="creature cr-2"></div>
+          <div class="creature cr-3"></div>
+          <div class="creature cr-4"></div>
+          <div class="creature cr-1" style="width:50px;height:50px;"></div>
+          <div class="creature cr-2" style="width:40px;height:40px;"></div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="card-kicker" style="color:var(--green);">Soundgarden · Legacy Concept</div>
+        <h2>Biome Creature Concepts</h2>
+        <p>The original Soundgarden direction — bioluminescent creatures that grow from music, evolving across six musical biomes (Drift, Pulse, Fracture, Swing, Hush, Grid). Includes animated creature showcase, evolution stages, and design principles. Superseded by the FLYER wall direction but preserved as visual reference.</p>
+        <span class="card-link">View showcase</span>
+      </div>
+    </a>
+
+  </div>
+
+  <footer>StreamToys · BandLab · Proof of Concepts · 2026</footer>
+
+</div>
+</body>
+</html>

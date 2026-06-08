@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FLYER — Wall Manager Dashboard</title>
+<link rel="stylesheet" href="bandlab.css">
+<style>
+  body { display: flex; min-height: 100vh; overflow: hidden; }
+
+  /* ---- Sidebar ---- */
+  .sidebar { width: 240px; min-width: 240px; background: var(--surface-1); border-right: 1px solid var(--rule); display: flex; flex-direction: column; height: 100vh; position: fixed; left: 0; top: 0; z-index: 10; }
+  .sidebar-logo { padding: 24px 20px 20px; font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: -0.03em; color: var(--bl-red); }
+  .sidebar-logo span { color: var(--ink-dim); font-size: 11px; font-weight: 400; letter-spacing: 0.08em; display: block; margin-top: 2px; }
+  .sidebar-nav { flex: 1; padding: 8px 0; }
+  .sidebar-nav a { display: flex; align-items: center; gap: 12px; padding: 10px 20px; font-size: 13px; font-weight: 500; color: var(--ink-dim); transition: all 120ms; }
+  .sidebar-nav a:hover { background: var(--ink-mute); color: var(--ink); }
+  .sidebar-nav a.active { background: rgba(241,44,24,0.08); color: var(--bl-red); border-right: 2px solid var(--bl-red); }
+  .sidebar-nav a .icon { width: 20px; text-align: center; font-size: 14px; }
+  .sidebar-nav .sep { height: 1px; background: var(--rule); margin: 8px 20px; }
+  .sidebar-bottom { padding: 16px 20px; border-top: 1px solid var(--rule); display: flex; align-items: center; gap: 10px; }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--bl-purple); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #fff; }
+  .sidebar-bottom .meta { font-size: 12px; line-height: 1.3; }
+  .sidebar-bottom .meta .name { color: var(--ink); font-weight: 600; }
+  .sidebar-bottom .meta .role { color: var(--ink-faint); font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; }
+
+  /* ---- Main ---- */
+  .main { margin-left: 240px; flex: 1; height: 100vh; overflow-y: auto; }
+  .topbar { display: flex; align-items: center; gap: 12px; padding: 16px 28px; border-bottom: 1px solid var(--rule); background: var(--surface-1); position: sticky; top: 0; z-index: 5; }
+  .topbar select, .topbar .dropdown { background: var(--surface-3); color: var(--ink-mid); border: 1px solid var(--rule-strong); padding: 8px 14px; font-family: var(--font-body); font-size: 12px; font-weight: 500; border-radius: 0; cursor: pointer; appearance: none; -webkit-appearance: none; }
+  .topbar .spacer { flex: 1; }
+  .btn-create { display: inline-flex; align-items: center; gap: 8px; padding: 10px 22px; background: var(--bl-red); color: #fff; font-family: var(--font-display); font-size: 13px; font-weight: 600; border: none; cursor: pointer; transition: background 120ms; }
+  .btn-create:hover { background: #ff3c25; }
+
+  /* ---- Content ---- */
+  .content { padding: 28px; }
+  .page-title { font-family: var(--font-display); font-size: 20px; font-weight: 600; margin-bottom: 24px; letter-spacing: -0.02em; }
+
+  /* ---- Stat cards ---- */
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+  .stat-card { background: var(--surface-2); border: 1px solid var(--rule); padding: 20px; }
+  .stat-card .label { font-family: var(--font-mono); font-size: 9px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 8px; }
+  .stat-card .value { font-family: var(--font-mono); font-size: 28px; font-weight: 700; color: var(--ink); letter-spacing: -0.02em; }
+  .stat-card .delta { font-family: var(--font-mono); font-size: 11px; color: var(--bl-green); margin-top: 4px; }
+  .stat-card .delta.warn { color: var(--bl-orange); }
+
+  /* ---- Section ---- */
+  .section { margin-bottom: 28px; }
+  .section-head { font-family: var(--font-display); font-size: 15px; font-weight: 600; margin-bottom: 14px; letter-spacing: -0.01em; display: flex; align-items: center; gap: 10px; }
+  .section-head .count { font-family: var(--font-mono); font-size: 10px; background: var(--ink-mute); color: var(--ink-dim); padding: 2px 8px; border-radius: 2px; }
+
+  /* ---- Table ---- */
+  .tbl-wrap { overflow-x: auto; border: 1px solid var(--rule); }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { font-family: var(--font-mono); font-size: 9px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); text-align: left; padding: 10px 14px; background: var(--surface-2); border-bottom: 1px solid var(--rule); white-space: nowrap; }
+  td { padding: 12px 14px; border-bottom: 1px solid var(--rule); color: var(--ink-mid); vertical-align: middle; }
+  td.mono { font-family: var(--font-mono); font-size: 12px; }
+  tr:hover td { background: var(--surface-2); }
+
+  /* ---- Badges ---- */
+  .badge { display: inline-block; padding: 2px 8px; font-family: var(--font-mono); font-size: 9px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; border-radius: 2px; }
+  .badge.active { background: rgba(0,195,125,0.12); color: var(--bl-green); }
+  .badge.paused { background: rgba(252,201,49,0.12); color: var(--bl-yellow); }
+  .badge.ended { background: rgba(241,44,24,0.12); color: var(--bl-red); }
+
+  /* ---- Progress bar ---- */
+  .prog { width: 80px; height: 4px; background: var(--ink-mute); border-radius: 2px; display: inline-block; vertical-align: middle; margin-left: 6px; }
+  .prog .fill { height: 100%; border-radius: 2px; background: var(--bl-green); }
+
+  /* ---- Action btns ---- */
+  .actions { display: flex; gap: 6px; }
+  .act { padding: 4px 10px; font-family: var(--font-mono); font-size: 9px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-dim); background: var(--surface-3); border: 1px solid var(--rule); cursor: pointer; transition: all 120ms; }
+  .act:hover { color: var(--ink); border-color: var(--ink-dim); }
+
+  /* ---- Moderation list ---- */
+  .mod-list { display: flex; flex-direction: column; gap: 1px; }
+  .mod-item { display: flex; align-items: center; gap: 14px; padding: 12px 16px; background: var(--surface-2); border: 1px solid var(--rule); font-size: 12px; color: var(--ink-mid); }
+  .mod-item .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .mod-item .dot.flag { background: var(--bl-orange); }
+  .mod-item .dot.spam { background: var(--bl-red); }
+  .mod-item .dot.dup { background: var(--bl-yellow); }
+  .mod-item .time { margin-left: auto; font-family: var(--font-mono); font-size: 10px; color: var(--ink-faint); white-space: nowrap; }
+  .mod-item .act { margin-left: 8px; }
+
+  /* ---- Radio stats ---- */
+  .radio-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .radio-card { background: var(--surface-2); border: 1px solid var(--rule); padding: 16px; }
+  .radio-card .label { font-family: var(--font-mono); font-size: 9px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 6px; }
+  .radio-card .val { font-family: var(--font-mono); font-size: 22px; font-weight: 700; color: var(--ink); }
+  .radio-card .sub { font-size: 11px; color: var(--ink-dim); margin-top: 4px; }
+
+  /* ---- Tab panels (hidden by default) ---- */
+  .panel { display: none; }
+  .panel.visible { display: block; }
+
+  /* ---- Form mockup ---- */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 720px; }
+  .form-grid.full { grid-template-columns: 1fr; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font-family: var(--font-mono); font-size: 9px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); }
+  .field input, .field select, .field textarea { background: var(--surface-3); color: var(--ink); border: 1px solid var(--rule-strong); padding: 10px 14px; font-family: var(--font-body); font-size: 13px; }
+  .field textarea { min-height: 80px; resize: vertical; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { padding: 5px 12px; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em; background: var(--ink-mute); color: var(--ink-mid); cursor: pointer; border: 1px solid transparent; }
+  .chip.sel { background: rgba(241,44,24,0.12); color: var(--bl-red); border-color: var(--bl-red); }
+  .checks { display: flex; flex-wrap: wrap; gap: 8px; }
+  .checks label { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-mid); cursor: pointer; }
+  .checks input[type="checkbox"] { accent-color: var(--bl-red); }
+
+  /* ---- Game section ---- */
+  .game-card { background: var(--surface-2); border: 1px solid var(--rule); padding: 20px; margin-bottom: 16px; display: flex; gap: 20px; }
+  .game-card .info { flex: 1; }
+  .game-card .info h3 { font-family: var(--font-display); font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+  .game-card .info .meta-row { display: flex; gap: 16px; font-size: 11px; color: var(--ink-dim); margin-bottom: 10px; }
+  .leaderboard { font-size: 12px; }
+  .leaderboard .entry { display: flex; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--rule); color: var(--ink-mid); }
+  .leaderboard .rank { font-family: var(--font-mono); font-weight: 600; width: 24px; color: var(--bl-yellow); }
+  .upload-zone { border: 2px dashed var(--rule-strong); padding: 40px; text-align: center; color: var(--ink-faint); font-size: 13px; cursor: pointer; }
+  .upload-zone:hover { border-color: var(--ink-dim); color: var(--ink-dim); }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-logo">FLYER <span>by BandLab</span></div>
+  <nav class="sidebar-nav" id="nav">
+    <a href="#" class="active" data-tab="overview"><span class="icon">&#x1F4CA;</span> Overview</a>
+    <a href="#" data-tab="promo"><span class="icon">&#x1F4E2;</span> Promo Campaigns</a>
+    <a href="#" data-tab="games"><span class="icon">&#x1F3AE;</span> Games</a>
+    <a href="#" data-tab="video"><span class="icon">&#x1F4FA;</span> Video</a>
+    <a href="#" data-tab="merch"><span class="icon">&#x1F455;</span> Merch</a>
+    <div class="sep"></div>
+    <a href="#" data-tab="mod"><span class="icon">&#x1F6E1;</span> Moderation</a>
+    <a href="#" data-tab="analytics"><span class="icon">&#x1F4C8;</span> Analytics</a>
+    <a href="#" data-tab="settings"><span class="icon">&#x2699;</span> Settings</a>
+    <div class="sep"></div>
+    <a href="flyer-app.html"><span class="icon">&#x2190;</span> Back to Flyer App</a>
+  </nav>
+  <div class="sidebar-bottom">
+    <div class="avatar">A</div>
+    <div class="meta"><div class="name">Admin</div><div class="role">Wall Manager</div></div>
+  </div>
+</aside>
+
+<!-- Main -->
+<div class="main">
+  <div class="topbar">
+    <select class="dropdown"><option>Shoreditch / London</option><option>Bushwick / NYC</option><option>Jakarta</option><option>All Cities</option></select>
+    <select class="dropdown"><option>All sub-locations</option><option>Brick Lane</option><option>Old Street</option></select>
+    <select class="dropdown"><option>Last 7 days</option><option>Last 30 days</option><option>This month</option><option>All time</option></select>
+    <div class="spacer"></div>
+    <button class="btn-create">+ Create campaign</button>
+  </div>
+
+  <div class="content">
+
+    <!-- ========== OVERVIEW ========== -->
+    <div class="panel visible" id="overview">
+      <div class="page-title">Overview</div>
+
+      <div class="stats-row">
+        <div class="stat-card"><div class="label">Total Flyers</div><div class="value">24,786</div><div class="delta">+12% &#8593;</div></div>
+        <div class="stat-card"><div class="label">Active Campaigns</div><div class="value">8</div><div class="delta">+2 this week</div></div>
+        <div class="stat-card"><div class="label">Revenue This Week</div><div class="value">$4,280</div><div class="delta">+8% &#8593;</div></div>
+        <div class="stat-card"><div class="label">Moderation Queue</div><div class="value">3</div><div class="delta warn">Pending review</div></div>
+      </div>
+
+      <div class="section">
+        <div class="section-head">Active Campaigns <span class="count">5</span></div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Campaign</th><th>Type</th><th>City</th><th>Status</th><th>Budget</th><th>Spent</th><th>Impressions</th><th>Clicks</th><th>CTR</th><th></th></tr></thead>
+            <tbody>
+              <tr>
+                <td><strong>BandLab Studio AI</strong></td><td>Promo</td><td>All cities</td>
+                <td><span class="badge active">Active</span></td>
+                <td class="mono">$2,000</td>
+                <td class="mono">$1,560 <div class="prog"><div class="fill" style="width:78%"></div></div></td>
+                <td class="mono">12,400</td><td class="mono">340</td><td class="mono">2.7%</td>
+                <td><div class="actions"><button class="act">Edit</button><button class="act">Pause</button><button class="act">Analytics</button></div></td>
+              </tr>
+              <tr>
+                <td><strong>NME Great Escape</strong></td><td>Video</td><td>Shoreditch</td>
+                <td><span class="badge active">Active</span></td>
+                <td class="mono">$800</td>
+                <td class="mono">$224 <div class="prog"><div class="fill" style="width:28%"></div></div></td>
+                <td class="mono">8,200</td><td class="mono">180</td><td class="mono">2.2%</td>
+                <td><div class="actions"><button class="act">Edit</button><button class="act">Pause</button><button class="act">Analytics</button></div></td>
+              </tr>
+              <tr>
+                <td><strong>Beat Invaders S3</strong></td><td>Game</td><td>Global</td>
+                <td><span class="badge active">Active</span></td>
+                <td class="mono">&mdash;</td><td class="mono">&mdash;</td>
+                <td class="mono">342 players</td><td class="mono">&mdash;</td><td class="mono">&mdash;</td>
+                <td><div class="actions"><button class="act">Edit</button><button class="act">Pause</button><button class="act">Analytics</button></div></td>
+              </tr>
+              <tr>
+                <td><strong>Midnight Drift Merch</strong></td><td>Merch</td><td>Shoreditch</td>
+                <td><span class="badge active">Active</span></td>
+                <td class="mono">&mdash;</td><td class="mono">&mdash;</td>
+                <td class="mono">1,200 views</td><td class="mono">89 sales</td><td class="mono">$2,492</td>
+                <td><div class="actions"><button class="act">Edit</button><button class="act">Pause</button><button class="act">Analytics</button></div></td>
+              </tr>
+              <tr>
+                <td><strong>Panggung Rakyat Live</strong></td><td>Video</td><td>Jakarta</td>
+                <td><span class="badge ended">Ended</span></td>
+                <td class="mono">$500</td>
+                <td class="mono">$500 <div class="prog"><div class="fill" style="width:100%;background:var(--bl-red)"></div></div></td>
+                <td class="mono">15,800</td><td class="mono">891</td><td class="mono">5.6%</td>
+                <td><div class="actions"><button class="act">Edit</button><button class="act" disabled>Pause</button><button class="act">Analytics</button></div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-head">Recent Moderation <span class="count">3</span></div>
+        <div class="mod-list">
+          <div class="mod-item"><span class="dot flag"></span> Flagged: inappropriate content on flyer <strong>&lsquo;XYZ&rsquo;</strong> &mdash; Bushwick <span class="time">2h ago</span> <button class="act">Review</button></div>
+          <div class="mod-item"><span class="dot spam"></span> Report: spam flyer <strong>&lsquo;Buy followers&rsquo;</strong> &mdash; Jakarta <span class="time">5h ago</span> <button class="act">Review</button></div>
+          <div class="mod-item"><span class="dot dup"></span> Auto-flagged: duplicate content &mdash; Shoreditch <span class="time">8h ago</span> <button class="act">Dismiss</button></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-head">Wall Radio</div>
+        <div class="radio-grid">
+          <div class="radio-card"><div class="label">Stations Active</div><div class="val">6</div></div>
+          <div class="radio-card"><div class="label">Total Listeners</div><div class="val">14,208</div></div>
+          <div class="radio-card"><div class="label">Tracks This Week</div><div class="val">890</div></div>
+          <div class="radio-card"><div class="label">Top Station</div><div class="val">Jakarta</div><div class="sub">891 listeners</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== PROMO CAMPAIGNS ========== -->
+    <div class="panel" id="promo">
+      <div class="page-title">Promo Campaigns</div>
+      <div class="section-head" style="margin-bottom:20px">Create New Promo</div>
+      <div class="form-grid">
+        <div class="field"><label>Campaign Name</label><input type="text" placeholder="e.g. Summer Beat Drop"></div>
+        <div class="field"><label>Budget ($)</label><input type="number" placeholder="500"></div>
+        <div class="field"><label>Flyer Title</label><input type="text" placeholder="Headline text on the flyer"></div>
+        <div class="field"><label>CTA Text</label><input type="text" placeholder="e.g. Listen Now"></div>
+        <div class="field"><label>CTA Link</label><input type="url" placeholder="https://bandlab.com/..."></div>
+        <div class="field"><label>Paper Style</label>
+          <select><option>Default white</option><option>Neon gradient</option><option>Torn edges</option><option>Vintage</option></select>
+        </div>
+        <div class="field"><label>Start Date</label><input type="date" value="2026-04-15"></div>
+        <div class="field"><label>End Date</label><input type="date" value="2026-04-30"></div>
+      </div>
+      <div class="form-grid full" style="margin-top:16px">
+        <div class="field"><label>Target Cities</label>
+          <div class="checks">
+            <label><input type="checkbox" checked> Shoreditch</label>
+            <label><input type="checkbox" checked> Bushwick</label>
+            <label><input type="checkbox"> Jakarta</label>
+            <label><input type="checkbox"> Lagos</label>
+            <label><input type="checkbox"> Tokyo</label>
+            <label><input type="checkbox"> Berlin</label>
+          </div>
+        </div>
+        <div class="field"><label>Target Genres</label>
+          <div class="chips">
+            <span class="chip sel">Hip-Hop</span><span class="chip sel">Electronic</span><span class="chip">Rock</span><span class="chip">R&B</span><span class="chip">Pop</span><span class="chip">Jazz</span><span class="chip">Afrobeat</span><span class="chip">Lo-Fi</span>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:24px"><button class="btn-create">Create Promo Campaign</button></div>
+    </div>
+
+    <!-- ========== GAMES ========== -->
+    <div class="panel" id="games">
+      <div class="page-title">Games</div>
+      <div class="game-card">
+        <div class="info">
+          <h3>Beat Invaders S3</h3>
+          <div class="meta-row"><span class="badge active">Active</span> <span>342 players</span> <span>Season ends Apr 30</span></div>
+          <div style="margin-bottom:10px"><strong style="font-size:11px;color:var(--ink-faint)">Prize Config:</strong> <span style="font-size:12px;color:var(--ink-mid)">1st &mdash; $500 BandLab credit &bull; 2nd &mdash; $200 &bull; 3rd &mdash; $100</span></div>
+          <div class="section-head" style="font-size:12px">Leaderboard</div>
+          <div class="leaderboard">
+            <div class="entry"><span class="rank">1</span><span>dj_nova_89</span><span class="mono" style="margin-left:auto">1,284,500</span></div>
+            <div class="entry"><span class="rank">2</span><span>beatsmith_jkt</span><span class="mono" style="margin-left:auto">1,102,300</span></div>
+            <div class="entry"><span class="rank">3</span><span>neon.pulse</span><span class="mono" style="margin-left:auto">987,100</span></div>
+            <div class="entry"><span class="rank">4</span><span>lofi_witch</span><span class="mono" style="margin-left:auto">854,200</span></div>
+            <div class="entry"><span class="rank">5</span><span>crate_digger</span><span class="mono" style="margin-left:auto">791,800</span></div>
+          </div>
+          <div style="margin-top:12px"><button class="act">Edit Season</button> <button class="act">Export Leaderboard</button> <button class="act">End Season</button></div>
+        </div>
+      </div>
+      <div class="section-head" style="margin-top:24px">Submit New Game</div>
+      <div class="upload-zone">Drop game bundle (.zip) here or click to browse<br><span style="font-size:11px;color:var(--ink-faint)">Max 50MB &bull; HTML5 games only</span></div>
+    </div>
+
+    <!-- ========== Placeholder panels ========== -->
+    <div class="panel" id="video"><div class="page-title">Video</div><p style="color:var(--ink-dim)">Video campaign management coming soon.</p></div>
+    <div class="panel" id="merch"><div class="page-title">Merch</div><p style="color:var(--ink-dim)">Merch storefront management coming soon.</p></div>
+    <div class="panel" id="mod"><div class="page-title">Moderation</div><p style="color:var(--ink-dim)">Full moderation queue coming soon.</p></div>
+    <div class="panel" id="analytics"><div class="page-title">Analytics</div><p style="color:var(--ink-dim)">Analytics dashboard coming soon.</p></div>
+    <div class="panel" id="settings"><div class="page-title">Settings</div><p style="color:var(--ink-dim)">Wall manager settings coming soon.</p></div>
+
+  </div>
+</div>
+
+<script>
+  // Tab switching
+  document.querySelectorAll('#nav a[data-tab]').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      document.querySelectorAll('#nav a').forEach(n => n.classList.remove('active'));
+      a.classList.add('active');
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('visible'));
+      const t = document.getElementById(a.dataset.tab);
+      if (t) t.classList.add('visible');
+    });
+  });
+  // Genre chip toggle
+  document.querySelectorAll('.chip').forEach(c => {
+    c.addEventListener('click', () => c.classList.toggle('sel'));
+  });
+</script>
+</body>
+</html>

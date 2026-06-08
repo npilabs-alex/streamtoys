@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pixel Shoreditch — v0</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { height:100%; overflow:hidden; background:#000; font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif; }
+#game { position:fixed; inset:0; background:#0a0612; overflow:hidden; cursor:default; }
+#bg {
+  position:absolute; left:0; top:0;
+  image-rendering:pixelated; image-rendering:-moz-crisp-edges; image-rendering:crisp-edges;
+}
+#flyer-layer { position:absolute; inset:0; pointer-events:none; }
+.flyer {
+  position:absolute; width:140px; height:200px;
+  background:linear-gradient(180deg, #f4e8d4, #e8d8b8);
+  color:#1a1208; font-family:'Courier New', 'Menlo', monospace;
+  padding:14px 12px;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.6), 0 2px 4px rgba(0,0,0,0.5);
+  cursor:pointer; pointer-events:auto;
+  transition: transform 0.2s, box-shadow 0.2s;
+  transform-origin: 50% 30%;
+}
+.flyer:hover, .flyer.near {
+  transform: translateY(-3px) scale(1.04) rotate(var(--r, 0deg)) !important;
+  box-shadow: 0 14px 30px rgba(255,200,80,0.35), 0 4px 8px rgba(0,0,0,0.5);
+  z-index:5;
+}
+.flyer .kicker {
+  font-size:8.5px; letter-spacing:0.1em; color:#8a3818;
+  text-transform:uppercase; font-weight:700;
+  border-bottom:1px solid #c8a878; padding-bottom:5px; margin-bottom:8px;
+  line-height:1.2;
+}
+.flyer .title {
+  font-size:21px; font-weight:900; line-height:0.92; letter-spacing:-0.02em;
+  margin-bottom:9px; color:#0a0408;
+}
+.flyer .support {
+  font-size:9.5px; line-height:1.35; color:#3a2818;
+}
+.flyer .ft {
+  position:absolute; bottom:12px; left:12px; right:12px;
+  display:flex; justify-content:space-between;
+  font-size:9px; color:#5a3818;
+  border-top:1px dashed #8a6048; padding-top:5px;
+  font-weight:700;
+}
+.flyer .tape {
+  position:absolute; width:34px; height:14px;
+  background:rgba(255,250,220,0.5);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  pointer-events:none;
+}
+.flyer .tape.tl { top:-6px; left:-10px; transform:rotate(-18deg); }
+.flyer .tape.tr { top:-7px; right:-7px; transform:rotate(14deg); }
+
+#hud {
+  position:absolute; top:16px; left:0; right:0; padding:0 20px;
+  display:flex; justify-content:space-between; align-items:center;
+  color:white; pointer-events:none; font-size:13px;
+  z-index:10;
+}
+.location {
+  background:rgba(0,0,0,0.55); padding:7px 14px; border-radius:8px;
+  font-weight:700; letter-spacing:0.02em;
+  border:1px solid rgba(255,255,255,0.08);
+  backdrop-filter: blur(8px);
+}
+.location em { font-style:normal; color:#f0c060; }
+.location .sub { color:rgba(255,255,255,0.45); font-weight:400; font-size:11px; margin-left:6px; }
+.controls {
+  background:rgba(0,0,0,0.55); padding:7px 14px; border-radius:8px;
+  font-size:11px; color:rgba(255,255,255,0.7);
+  border:1px solid rgba(255,255,255,0.08);
+  backdrop-filter: blur(8px);
+}
+.controls kbd {
+  background:rgba(255,255,255,0.12); padding:2px 6px; border-radius:3px;
+  font-family:inherit; font-size:10px; margin:0 1px;
+  border:1px solid rgba(255,255,255,0.15);
+  color:#f0c060; font-weight:700;
+}
+
+#bubble {
+  position:absolute;
+  background:white; color:#1a1018;
+  padding:8px 13px; border-radius:14px;
+  font-size:13px; font-weight:600;
+  pointer-events:none; z-index:8;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.5);
+  white-space:nowrap;
+  opacity:0;
+  transition: opacity 0.18s;
+}
+#bubble.show { opacity:1; }
+#bubble::after {
+  content:''; position:absolute; bottom:-7px; left:50%; margin-left:-6px;
+  width:0; height:0;
+  border-left:6px solid transparent; border-right:6px solid transparent;
+  border-top:7px solid white;
+}
+
+#hint {
+  position:absolute; left:50%; bottom:32px; transform:translateX(-50%);
+  background:rgba(0,0,0,0.6); color:rgba(255,255,255,0.85);
+  padding:9px 18px; border-radius:18px;
+  font-size:12px; letter-spacing:0.02em;
+  border:1px solid rgba(255,255,255,0.1);
+  backdrop-filter: blur(8px);
+  pointer-events:none; z-index:9;
+  opacity:0; transition:opacity 0.3s;
+}
+#hint.show { opacity:1; }
+#hint kbd {
+  background:rgba(240,192,96,0.2); color:#f0c060;
+  padding:2px 7px; border-radius:4px;
+  font-family:-apple-system,system-ui,sans-serif; font-size:11px; font-weight:700;
+  border:1px solid rgba(240,192,96,0.3);
+}
+
+#flyer-modal {
+  position:fixed; inset:0;
+  background:rgba(0,0,0,0.78);
+  display:none; align-items:center; justify-content:center;
+  z-index:100; backdrop-filter: blur(4px);
+}
+#flyer-modal.show { display:flex; }
+#flyer-modal-content {
+  background:linear-gradient(180deg,#f4e8d4,#e8d8b8); color:#1a1208;
+  width:min(440px,92vw); padding:36px 32px;
+  border-radius:6px;
+  font-family:'Courier New','Menlo',monospace;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.9), 0 0 0 1px rgba(0,0,0,0.3);
+  position:relative;
+  animation: pop 0.25s ease-out;
+}
+@keyframes pop { from { transform:scale(0.92); opacity:0; } to { transform:scale(1); opacity:1; } }
+.modal-close {
+  position:absolute; top:10px; right:14px;
+  background:none; border:none; font-size:24px; color:#5a3818;
+  cursor:pointer; font-family:inherit; line-height:1;
+}
+</style>
+</head>
+<body>
+<div id="game">
+  <canvas id="bg" width="480" height="270"></canvas>
+  <div id="flyer-layer"></div>
+  <div id="bubble"></div>
+  <div id="hud">
+    <div class="location"><em>Shoreditch</em> / London <span class="sub">· 14,208 flyers tonight</span></div>
+    <div class="controls">
+      <kbd>A</kbd><kbd>D</kbd> walk · <kbd>E</kbd> read flyer · <kbd>SPACE</kbd> chat
+    </div>
+  </div>
+  <div id="hint"></div>
+  <div id="flyer-modal" onclick="closeModal(event)">
+    <div id="flyer-modal-content"></div>
+  </div>
+</div>
+<script>
+// ── CONSTANTS ────────────────────────────────────────────────────────────
+const W = 480, H = 270;
+const WORLD_W = 2400;
+const GROUND_Y = 240;
+const CHAR_W = 32, CHAR_H = 48;
+const CHAR_Y = GROUND_Y - CHAR_H + 2;
+const WALK_SPEED = 1.4;
+
+// ── STATE ────────────────────────────────────────────────────────────────
+const state = {
+  charX: 240, cameraX: 0,
+  facing: 1, walking: false,
+  bubbleShow: 0, nearFlyer: null,
+  time: 0, hintShown: false,
+};
+
+// Reuse the flyers from soundgarden/flyer-wall.html
+const FLYERS = [
+  { x: 380,  kicker:'FRI 14 NOV · WAREHOUSE 3', title:'MIDNIGHT<br>DRIFT',     support:'w/ HALE MOON · PAPER SEA · ZNG',           footer:['£8 ADV','22:00'], rot:-3.5 },
+  { x: 680,  kicker:'808 HEAT — SIDE A',          title:'BASS<br>CHURCH',       support:'brooklyn ※ weekly',                        footer:['FREE','LATE'], rot:2.5 },
+  { x: 980,  kicker:'NO ENCORE',                  title:'SCARED OF<br>HORSES',  support:'+ burn the menu<br>+ glass vowel<br>+ dial-up', footer:['SAT 18.01','£5'], rot:-2 },
+  { x: 1280, kicker:'A LISTENING SESSION',        title:'PIANO<br>ROOMS',       support:'nocturnes for an<br>empty church',         footer:['SUN','£10'], rot:3.5 },
+  { x: 1580, kicker:'SYNTHWAVE / THURS',          title:'NEON<br>MARKET',       support:'every thursday · Lift 5',                  footer:['£6','21:30'], rot:-2.5 },
+  { x: 1880, kicker:'INDUSTRIAL · BREAKCORE',     title:'CHURCH<br>OF NOISE',   support:'an unholy racket',                         footer:['DEC 5','£12'], rot:2 },
+];
+
+const CHAT_LINES = [
+  'gonna check out midnight drift fri',
+  'wheres bass church?',
+  'shoreditch is dead tonight',
+  'piano rooms sounds sick',
+  'yo who pinned this',
+  'london ❤️',
+  'is breakcore back??',
+  '*sips beer*',
+];
+
+// ── CANVAS SETUP ─────────────────────────────────────────────────────────
+const canvas = document.getElementById('bg');
+const ctx = canvas.getContext('2d');
+ctx.imageSmoothingEnabled = false;
+
+function fit() {
+  const aspect = W/H;
+  const ww = window.innerWidth, wh = window.innerHeight;
+  let cw, ch, cl, ct;
+  if (ww/wh > aspect) {
+    ch = wh; cw = wh * aspect;
+    cl = (ww - cw)/2; ct = 0;
+  } else {
+    cw = ww; ch = ww / aspect;
+    cl = 0; ct = (wh - ch)/2;
+  }
+  canvas.style.width = cw+'px';
+  canvas.style.height = ch+'px';
+  canvas.style.left = cl+'px';
+  canvas.style.top = ct+'px';
+}
+window.addEventListener('resize', fit);
+fit();
+
+// ── DRAW HELPERS ─────────────────────────────────────────────────────────
+function rect(x, y, w, h, c) { ctx.fillStyle=c; ctx.fillRect(x|0, y|0, w|0, h|0); }
+function px(x, y, c) { ctx.fillStyle=c; ctx.fillRect(x|0, y|0, 1, 1); }
+
+// ── PRE-RENDER LAYERS (cached canvases) ──────────────────────────────────
+function makeSky() {
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const x = c.getContext('2d');
+  const g = x.createLinearGradient(0,0,0,180);
+  g.addColorStop(0, '#0a0820');
+  g.addColorStop(0.35, '#1a0d2e');
+  g.addColorStop(0.7, '#3a1a2e');
+  g.addColorStop(1, '#5a2820');
+  x.fillStyle = g; x.fillRect(0, 0, W, 180);
+  // stars
+  for (let i = 0; i < 60; i++) {
+    const sx = (i * 137) % W;
+    const sy = (i * 71) % 90;
+    const br = (i * 13) % 3;
+    x.fillStyle = br === 0 ? '#ffffff' : br === 1 ? '#c8c0e8' : '#80a8c0';
+    x.fillRect(sx, sy, 1, 1);
+  }
+  // moon
+  const mx = W - 70, my = 22;
+  x.fillStyle = '#f0e8c0';
+  x.fillRect(mx, my, 16, 16);
+  x.fillStyle = '#0a0820';
+  x.fillRect(mx + 9, my, 7, 16);
+  x.fillStyle = '#e8d8a0';
+  x.fillRect(mx, my, 1, 1); x.fillRect(mx, my+15, 1, 1);
+  x.fillRect(mx+8, my, 1, 1); x.fillRect(mx+8, my+15, 1, 1);
+  // moon glow
+  x.fillStyle = 'rgba(240,232,192,0.08)';
+  x.fillRect(mx-6, my-6, 28, 28);
+  return c;
+}
+
+function makeFar() {
+  const w = W * 2;
+  const c = document.createElement('canvas'); c.width = w; c.height = H;
+  const x = c.getContext('2d');
+  let cx = 0;
+  while (cx < w) {
+    const bw = 10 + Math.floor(((cx * 13) % 100) * 0.3);
+    const bh = 30 + Math.floor(((cx * 37) % 100) * 0.6);
+    x.fillStyle = '#1a0e1f';
+    x.fillRect(cx, 140 - bh, bw, bh + 20);
+    // lit windows
+    for (let wx = cx + 2; wx < cx + bw - 1; wx += 3) {
+      for (let wy = 140 - bh + 4; wy < 132; wy += 4) {
+        const r = ((wx * 19 + wy * 7) % 100);
+        if (r < 22) {
+          x.fillStyle = r < 11 ? '#e8a040' : '#80c0e8';
+          x.fillRect(wx, wy, 1, 1);
+        }
+      }
+    }
+    cx += bw + 1;
+  }
+  return c;
+}
+
+function makeMid() {
+  const w = WORLD_W + W;
+  const c = document.createElement('canvas'); c.width = w; c.height = H;
+  const x = c.getContext('2d');
+  let cx = 0, idx = 0;
+  while (cx < w) {
+    const bw = 35 + ((idx * 73) % 50);
+    const bh = 70 + ((idx * 47) % 80);
+    const tone = ['#231828', '#2a1f2e', '#1f1a25'][idx % 3];
+    x.fillStyle = tone;
+    x.fillRect(cx, 170 - bh, bw, bh + 70);
+    x.fillStyle = '#100810';
+    x.fillRect(cx, 170 - bh, bw, 1);
+    x.fillRect(cx, 170 - bh, 1, bh);
+    x.fillStyle = '#3a2e3a';
+    x.fillRect(cx + bw - 1, 170 - bh, 1, bh);
+    // Windows
+    for (let wx = cx + 3; wx < cx + bw - 3; wx += 5) {
+      for (let wy = 170 - bh + 5; wy < 165; wy += 6) {
+        const r = ((wx * 23 + wy * 11) % 100);
+        const lit = r < 38;
+        x.fillStyle = lit ? '#e8b840' : '#1a1010';
+        x.fillRect(wx, wy, 2, 2);
+        if (lit && r < 18) { x.fillStyle = '#ffe890'; x.fillRect(wx, wy, 1, 1); }
+      }
+    }
+    // Neon sign on some buildings
+    if (idx % 4 === 1) {
+      const sy = 170 - bh + 15;
+      const color = ['#ff3060', '#30e8a0', '#60a0ff', '#ffa030'][idx % 4];
+      x.fillStyle = color;
+      x.fillRect(cx + 5, sy, bw - 10, 3);
+      x.globalAlpha = 0.4;
+      x.fillRect(cx + 3, sy - 1, bw - 6, 5);
+      x.globalAlpha = 1;
+    }
+    cx += bw + 1;
+    idx++;
+  }
+  return c;
+}
+
+function makeWall() {
+  const c = document.createElement('canvas'); c.width = WORLD_W; c.height = H;
+  const x = c.getContext('2d');
+  const wallTop = 110, wallBot = GROUND_Y - 2;
+  x.fillStyle = '#5a2618';
+  x.fillRect(0, wallTop, WORLD_W, wallBot - wallTop);
+  const brickW = 14, brickH = 6;
+  let row = 0;
+  for (let by = wallTop + 1; by < wallBot; by += brickH + 1) {
+    const off = (row % 2 === 0) ? 0 : (brickW + 1) / 2;
+    for (let bx = -brickW + off; bx < WORLD_W; bx += brickW + 1) {
+      const r = ((bx * 13 + by * 7) % 100) / 100;
+      let color;
+      if (r < 0.12) color = '#3a1408';
+      else if (r < 0.35) color = '#52201a';
+      else if (r < 0.7) color = '#6a2c1c';
+      else color = '#7a3a24';
+      x.fillStyle = color;
+      x.fillRect(bx, by, brickW, brickH);
+      // Top highlight on some bricks
+      if (r > 0.85) {
+        x.fillStyle = '#8a4a30';
+        x.fillRect(bx, by, brickW, 1);
+      }
+    }
+    x.fillStyle = '#2a0e08';
+    x.fillRect(0, by + brickH, WORLD_W, 1);
+    row++;
+  }
+  // weathering / staining
+  for (let i = 0; i < 100; i++) {
+    const sx = (i * 173) % WORLD_W;
+    const sy = wallTop + (i * 97) % (wallBot - wallTop);
+    x.fillStyle = 'rgba(20,8,4,0.35)';
+    x.fillRect(sx, sy, 3 + (i % 5), 1);
+  }
+  // dark streaks (rain stains)
+  for (let i = 0; i < 30; i++) {
+    const sx = (i * 263) % WORLD_W;
+    x.fillStyle = 'rgba(10,4,2,0.25)';
+    x.fillRect(sx, wallTop, 1, wallBot - wallTop);
+  }
+  // cap
+  x.fillStyle = '#2a1008';
+  x.fillRect(0, wallTop - 1, WORLD_W, 1);
+  x.fillStyle = '#7a3e2a';
+  x.fillRect(0, wallTop, WORLD_W, 1);
+  // graffiti tag patches (occasional)
+  for (let i = 0; i < 8; i++) {
+    const sx = (i * 311 + 150) % (WORLD_W - 60);
+    const sy = wallTop + 30 + ((i * 41) % 60);
+    const colors = ['#e83060', '#30c0e8', '#a0e030', '#f0a030'];
+    const col = colors[i % colors.length];
+    x.fillStyle = col;
+    // crude tag shape
+    for (let j = 0; j < 5; j++) {
+      x.fillRect(sx + j * 3, sy + (j % 2 === 0 ? 0 : 2), 2 + (j % 2), 4);
+    }
+  }
+  return c;
+}
+
+function makeGround() {
+  const gh = H - GROUND_Y + 4;
+  const c = document.createElement('canvas'); c.width = WORLD_W; c.height = gh;
+  const x = c.getContext('2d');
+  x.fillStyle = '#3a3438';
+  x.fillRect(0, 0, WORLD_W, gh);
+  // curb top
+  x.fillStyle = '#1a1418';
+  x.fillRect(0, 0, WORLD_W, 1);
+  x.fillStyle = '#4e484e';
+  x.fillRect(0, 1, WORLD_W, 1);
+  // paving tiles
+  for (let lx = 0; lx < WORLD_W; lx += 22) {
+    x.fillStyle = '#2a2428';
+    x.fillRect(lx, 2, 1, gh - 2);
+  }
+  // cracks + flecks
+  for (let i = 0; i < 80; i++) {
+    const cx = (i * 287) % WORLD_W;
+    x.fillStyle = '#1a1418';
+    x.fillRect(cx, 5 + (i % 12), 3 + (i % 3), 1);
+  }
+  // wet puddle reflection
+  for (let i = 0; i < 5; i++) {
+    const cx = (i * 463 + 200) % WORLD_W;
+    x.fillStyle = 'rgba(120,140,180,0.18)';
+    x.fillRect(cx, 14, 40, 4);
+    x.fillStyle = 'rgba(180,200,240,0.1)';
+    x.fillRect(cx + 5, 15, 30, 1);
+  }
+  return c;
+}
+
+// ── FOREGROUND OBJECTS ───────────────────────────────────────────────────
+function drawLamppost(cx, y) {
+  if (cx < -20 || cx > W + 20) return;
+  rect(cx, y - 64, 2, 64, '#1a0e10');
+  rect(cx - 5, y - 70, 12, 8, '#1a0e10');
+  rect(cx - 4, y - 68, 10, 4, '#fff0a0');
+  rect(cx - 3, y - 67, 8, 2, '#ffffff');
+  rect(cx - 3, y, 8, 3, '#1a0e10');
+  rect(cx - 4, y + 2, 10, 1, '#000');
+  // warm glow on the wall + ground
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.fillStyle = 'rgba(255,180,90,0.06)';
+  ctx.fillRect(cx - 60, y - 80, 120, 90);
+  ctx.fillStyle = 'rgba(255,200,100,0.08)';
+  ctx.fillRect(cx - 30, y - 70, 60, 78);
+  ctx.fillStyle = 'rgba(255,220,140,0.12)';
+  ctx.fillRect(cx - 14, y - 64, 28, 70);
+  ctx.globalCompositeOperation = 'source-over';
+}
+
+function drawTrashBin(cx, y) {
+  if (cx < -20 || cx > W + 20) return;
+  rect(cx, y - 16, 18, 16, '#2a2628');
+  rect(cx + 12, y - 16, 6, 16, '#1a1618');
+  rect(cx - 1, y - 17, 20, 2, '#1a1618');
+  rect(cx, y - 17, 18, 1, '#3a3638');
+  // graffiti sticker
+  rect(cx + 3, y - 10, 7, 4, '#e8d840');
+  rect(cx + 4, y - 9, 2, 1, '#1a1208');
+  rect(cx + 7, y - 9, 2, 1, '#1a1208');
+}
+
+function drawPoster(cx, y, col1, col2) {
+  if (cx < -10 || cx > W + 10) return;
+  rect(cx, y, 7, 9, col1);
+  rect(cx + 1, y + 1, 5, 3, col2);
+  rect(cx + 1, y + 5, 5, 1, '#1a0e10');
+  rect(cx + 1, y + 7, 3, 1, '#1a0e10');
+}
+
+// ── CHARACTER ────────────────────────────────────────────────────────────
+function drawChar(x, y, frame, faceLeft) {
+  const O = '#1a0e1a';
+  const skin = { base:'#e8c098', shade:'#c08858', dark:'#6a4028' };
+  const hair = { base:'#7a4830', shade:'#4a2818' };
+  const shirt = { base:'#9a2030', shade:'#5a0a18' };
+  const pants = { base:'#3a3868', shade:'#1a1838' };
+  const shoes = { base:'#1a1a22', shade:'#000000' };
+  const bobY = frame === 1 || frame === 3 ? -1 : 0;
+
+  ctx.save();
+  if (faceLeft) {
+    ctx.translate(x + CHAR_W, y);
+    ctx.scale(-1, 1);
+  } else {
+    ctx.translate(x, y);
+  }
+  const oy = bobY;
+
+  // HEAD (body bobs)
+  rect(10, 4 + oy, 12, 14, skin.base);
+  rect(18, 7 + oy, 4, 9, skin.shade);
+  rect(9, 5 + oy, 1, 12, O);
+  rect(22, 5 + oy, 1, 12, O);
+  rect(10, 4 + oy, 12, 1, O);
+  rect(11, 18 + oy, 10, 1, O);
+  px(10, 5 + oy, O); px(21, 5 + oy, O);
+  // Hair
+  rect(10, 4 + oy, 12, 3, hair.base);
+  rect(10, 6 + oy, 12, 1, hair.shade);
+  px(9, 5 + oy, hair.base); px(22, 5 + oy, hair.base);
+  px(9, 6 + oy, hair.shade); px(22, 6 + oy, hair.shade);
+  rect(10, 3 + oy, 12, 1, O);
+  px(9, 4 + oy, O); px(22, 4 + oy, O);
+  // Eyes
+  px(12, 11 + oy, O); px(13, 11 + oy, '#ffffff');
+  px(17, 11 + oy, O); px(18, 11 + oy, '#ffffff');
+  px(12, 10 + oy, skin.dark); px(17, 10 + oy, skin.dark);
+  // Nose / mouth
+  px(15, 13 + oy, skin.shade); px(16, 13 + oy, skin.shade);
+  px(14, 15 + oy, O); px(15, 15 + oy, O); px(16, 15 + oy, O); px(17, 15 + oy, O);
+  // BODY (also bobs)
+  rect(9, 20 + oy, 14, 12, shirt.base);
+  rect(18, 21 + oy, 4, 10, shirt.shade);
+  rect(8, 20 + oy, 1, 12, O); rect(23, 20 + oy, 1, 12, O);
+  rect(9, 19 + oy, 14, 1, O); rect(9, 32 + oy, 14, 1, O);
+  // collar
+  rect(14, 20 + oy, 4, 1, skin.shade);
+  px(15, 21 + oy, skin.dark); px(16, 21 + oy, skin.dark);
+  // ARMS
+  rect(6, 20 + oy, 2, 10, shirt.base);
+  rect(24, 20 + oy, 2, 10, shirt.shade);
+  rect(5, 21 + oy, 1, 10, O); rect(26, 21 + oy, 1, 10, O);
+  rect(5, 20 + oy, 1, 1, O); rect(26, 20 + oy, 1, 1, O);
+  rect(6, 19 + oy, 2, 1, O); rect(24, 19 + oy, 2, 1, O);
+  rect(6, 31 + oy, 2, 2, skin.base);
+  rect(24, 31 + oy, 2, 2, skin.shade);
+  rect(5, 31 + oy, 1, 2, O); rect(8, 31 + oy, 1, 2, O);
+  rect(23, 31 + oy, 1, 2, O); rect(26, 31 + oy, 1, 2, O);
+  rect(6, 33 + oy, 2, 1, O); rect(24, 33 + oy, 2, 1, O);
+  // LEGS — bottom planted (shoes at fixed y=43), top bobs with body
+  // Effectively legs stretch when char bobs up
+  const legTop = 32 + oy;
+  rect(10, legTop, 5, 43 - legTop, pants.base);
+  rect(17, legTop, 5, 43 - legTop, pants.base);
+  rect(13, legTop + 1, 2, 42 - legTop, pants.shade);
+  rect(20, legTop + 1, 2, 42 - legTop, pants.shade);
+  rect(9, legTop + 1, 1, 43 - legTop - 1, O);
+  rect(15, legTop + 1, 1, 43 - legTop - 1, O);
+  rect(16, legTop + 1, 1, 43 - legTop - 1, O);
+  rect(22, legTop + 1, 1, 43 - legTop - 1, O);
+  rect(10, legTop, 5, 1, O);
+  rect(17, legTop, 5, 1, O);
+  // SHOES (planted)
+  rect(9, 43, 7, 3, shoes.base);
+  rect(16, 43, 7, 3, shoes.base);
+  rect(9, 45, 7, 1, shoes.shade);
+  rect(16, 45, 7, 1, shoes.shade);
+  rect(8, 43, 1, 3, O); rect(15, 43, 1, 3, O);
+  rect(16, 43, 1, 3, O); rect(23, 43, 1, 3, O);
+  rect(9, 46, 7, 1, O); rect(16, 46, 7, 1, O);
+
+  ctx.restore();
+}
+
+// ── NPC (a sitting figure) ───────────────────────────────────────────────
+function drawNPC(cx, y) {
+  if (cx < -30 || cx > W + 30) return;
+  const O = '#1a0e1a';
+  const skin = '#c8956a', skinD = '#6a4028';
+  const hat = '#1a1828', hatH = '#3a3850';
+  const coat = '#2a4830', coatD = '#102818';
+  // Sitting on the curb — knees up
+  // Head
+  rect(cx + 4, y - 30, 10, 11, skin);
+  rect(cx + 11, y - 27, 3, 7, skinD);
+  rect(cx + 3, y - 29, 1, 10, O);
+  rect(cx + 14, y - 29, 1, 10, O);
+  rect(cx + 4, y - 30, 10, 1, O);
+  // Beanie
+  rect(cx + 3, y - 32, 12, 4, hat);
+  rect(cx + 4, y - 31, 10, 1, hatH);
+  rect(cx + 3, y - 33, 12, 1, O);
+  // Eyes
+  px(cx + 7, y - 24, O); px(cx + 10, y - 24, O);
+  // Body (hunched)
+  rect(cx + 2, y - 19, 14, 10, coat);
+  rect(cx + 12, y - 18, 4, 8, coatD);
+  rect(cx + 1, y - 19, 1, 11, O);
+  rect(cx + 16, y - 19, 1, 11, O);
+  rect(cx + 2, y - 20, 14, 1, O);
+  // Knees folded up
+  rect(cx + 5, y - 12, 4, 12, '#1a1838');
+  rect(cx + 10, y - 10, 4, 10, '#1a1838');
+  rect(cx + 5, y - 1, 5, 2, '#000');
+  rect(cx + 10, y - 1, 5, 2, '#000');
+}
+
+// ── CACHE ────────────────────────────────────────────────────────────────
+let skyCache, farCache, midCache, wallCache, groundCache;
+
+function init() {
+  skyCache = makeSky();
+  farCache = makeFar();
+  midCache = makeMid();
+  wallCache = makeWall();
+  groundCache = makeGround();
+  spawnFlyers();
+  showHint('Use <kbd>A</kbd> <kbd>D</kbd> to walk down the wall · <kbd>E</kbd> reads a nearby flyer', 6000);
+}
+
+// ── RENDER ───────────────────────────────────────────────────────────────
+function render() {
+  ctx.clearRect(0, 0, W, H);
+
+  // Sky — fixed
+  ctx.drawImage(skyCache, 0, 0);
+
+  // Far skyline — parallax 0.15, tiled
+  const farPar = state.cameraX * 0.15;
+  const fx = -(farPar % farCache.width);
+  ctx.drawImage(farCache, fx, 0);
+  ctx.drawImage(farCache, fx + farCache.width, 0);
+
+  // Mid buildings — parallax 0.45, clipped
+  const midOff = Math.max(0, Math.min(midCache.width - W, state.cameraX * 0.45));
+  ctx.drawImage(midCache, midOff, 0, W, H, 0, 0, W, H);
+
+  // Wall — parallax 1.0
+  ctx.drawImage(wallCache, state.cameraX, 0, W, H, 0, 0, W, H);
+
+  // Ground — parallax 1.0
+  ctx.drawImage(groundCache, state.cameraX, 0, W, groundCache.height, 0, GROUND_Y - 4, W, groundCache.height);
+
+  // NPCs on the wall side
+  drawNPC(820 - state.cameraX, GROUND_Y - 2);
+  drawNPC(1520 - state.cameraX, GROUND_Y - 2);
+
+  // Character
+  const screenCharX = state.charX - state.cameraX;
+  let frame = 0;
+  if (state.walking) {
+    const t = Math.floor(state.time / 6) % 4;
+    frame = t;
+  }
+  drawChar(screenCharX, CHAR_Y, frame, state.facing < 0);
+
+  // Foreground litter — small posters on the ground
+  for (let i = 0; i < 12; i++) {
+    const wx = (i * 197 + 80) % WORLD_W;
+    const colA = ['#e83060','#30c0e8','#a0e030','#f0a030'][i%4];
+    drawPoster(wx - state.cameraX, GROUND_Y + 1, colA, '#1a0e10');
+  }
+
+  // Trash bins
+  drawTrashBin(550 - state.cameraX, GROUND_Y - 2);
+  drawTrashBin(1750 - state.cameraX, GROUND_Y - 2);
+
+  // Lampposts (in front of character — creates depth)
+  const lampPositions = [180, 620, 1080, 1480, 1920, 2280];
+  for (const lx of lampPositions) {
+    drawLamppost(lx - state.cameraX, GROUND_Y - 4);
+  }
+
+  // Night vignette
+  ctx.fillStyle = 'rgba(0,0,20,0.18)';
+  ctx.fillRect(0, 0, W, 40);
+  ctx.fillStyle = 'rgba(0,0,8,0.3)';
+  ctx.fillRect(0, H - 30, W, 30);
+}
+
+// ── FLYERS ───────────────────────────────────────────────────────────────
+const flyerEls = [];
+function spawnFlyers() {
+  const layer = document.getElementById('flyer-layer');
+  FLYERS.forEach((f, i) => {
+    const el = document.createElement('div');
+    el.className = 'flyer';
+    el.style.setProperty('--r', f.rot + 'deg');
+    el.innerHTML = `
+      <div class="tape tl"></div>
+      <div class="tape tr"></div>
+      <div class="kicker">${f.kicker}</div>
+      <div class="title">${f.title}</div>
+      <div class="support">${f.support}</div>
+      <div class="ft"><span>${f.footer[0]}</span><span>${f.footer[1]}</span></div>
+    `;
+    el.addEventListener('click', () => openFlyer(i));
+    layer.appendChild(el);
+    flyerEls.push(el);
+  });
+}
+
+function positionFlyers() {
+  const r = canvas.getBoundingClientRect();
+  const scale = r.width / W;
+  let near = null;
+  flyerEls.forEach((el, i) => {
+    const f = FLYERS[i];
+    const wx = f.x - state.cameraX;
+    // anchor near top of wall area
+    const wy = 122;
+    const sx = r.left + wx * scale;
+    const sy = r.top + wy * scale;
+    el.style.left = (sx - 70) + 'px';
+    el.style.top = sy + 'px';
+    el.style.transform = `rotate(${f.rot}deg)`;
+    const visible = wx > -160 && wx < W + 160;
+    el.style.display = visible ? 'block' : 'none';
+    const dx = Math.abs(f.x - state.charX);
+    if (dx < 70) { el.classList.add('near'); near = i; }
+    else el.classList.remove('near');
+  });
+  state.nearFlyer = near;
+}
+
+function openFlyer(i) {
+  const f = FLYERS[i];
+  const m = document.getElementById('flyer-modal');
+  const c = document.getElementById('flyer-modal-content');
+  c.innerHTML = `
+    <button class="modal-close" onclick="closeModal({target:{id:'flyer-modal'}})">×</button>
+    <div style="font-size:12px;letter-spacing:0.12em;color:#8a3818;text-transform:uppercase;font-weight:700;margin-bottom:18px;border-bottom:1px solid #c8a878;padding-bottom:12px;">${f.kicker}</div>
+    <div style="font-size:48px;font-weight:900;line-height:0.92;letter-spacing:-0.025em;margin-bottom:22px;color:#0a0408;">${f.title}</div>
+    <div style="font-size:14px;line-height:1.45;color:#3a2818;margin-bottom:28px;">${f.support}</div>
+    <div style="display:flex;justify-content:space-between;font-size:13px;color:#5a3818;border-top:1px dashed #8a6048;padding-top:14px;font-weight:700;">
+      <span>${f.footer[0]}</span><span>${f.footer[1]}</span>
+    </div>
+    <div style="text-align:center;font-size:11px;color:#8a6848;margin-top:18px;font-family:-apple-system,system-ui,sans-serif;letter-spacing:0.04em;">tap outside or ESC to close · <span style="color:#3a2818;font-weight:700;">RSVP →</span></div>
+  `;
+  m.classList.add('show');
+}
+function closeModal(e) {
+  if (e.target.id === 'flyer-modal' || e.target.id === 'flyer-modal') {
+    document.getElementById('flyer-modal').classList.remove('show');
+  }
+}
+window.closeModal = closeModal;
+window.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.getElementById('flyer-modal').classList.remove('show');
+});
+
+// ── BUBBLE ───────────────────────────────────────────────────────────────
+const bubble = document.getElementById('bubble');
+function showBubble(text) {
+  state.bubbleShow = 200;
+  bubble.textContent = text;
+  bubble.classList.add('show');
+}
+function positionBubble() {
+  if (state.bubbleShow > 0) {
+    state.bubbleShow--;
+    if (state.bubbleShow <= 0) { bubble.classList.remove('show'); return; }
+    const r = canvas.getBoundingClientRect();
+    const scale = r.width / W;
+    const screenCharX = state.charX - state.cameraX;
+    const sx = r.left + screenCharX * scale + (CHAR_W * scale) / 2;
+    const sy = r.top + CHAR_Y * scale - 12;
+    bubble.style.left = (sx - bubble.offsetWidth / 2) + 'px';
+    bubble.style.top = (sy - bubble.offsetHeight) + 'px';
+  }
+}
+
+// ── HINT ─────────────────────────────────────────────────────────────────
+const hintEl = document.getElementById('hint');
+function showHint(html, ms) {
+  hintEl.innerHTML = html;
+  hintEl.classList.add('show');
+  clearTimeout(showHint._t);
+  showHint._t = setTimeout(() => hintEl.classList.remove('show'), ms);
+}
+
+// ── INPUT ────────────────────────────────────────────────────────────────
+const keys = {};
+window.addEventListener('keydown', e => {
+  keys[e.key.toLowerCase()] = true;
+  if (e.key === ' ') {
+    e.preventDefault();
+    showBubble(CHAT_LINES[Math.floor(Math.random() * CHAT_LINES.length)]);
+  }
+  if (e.key.toLowerCase() === 'e' && state.nearFlyer !== null) {
+    openFlyer(state.nearFlyer);
+  }
+});
+window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+
+// ── LOOP ─────────────────────────────────────────────────────────────────
+function tick() {
+  state.time++;
+  let dx = 0;
+  if (keys['a'] || keys['arrowleft']) dx = -1;
+  if (keys['d'] || keys['arrowright']) dx = 1;
+  state.walking = dx !== 0;
+  if (dx !== 0) {
+    state.facing = dx > 0 ? 1 : -1;
+    state.charX += dx * WALK_SPEED;
+    state.charX = Math.max(40, Math.min(WORLD_W - 40, state.charX));
+  }
+  const target = state.charX - W / 2;
+  state.cameraX += (target - state.cameraX) * 0.12;
+  state.cameraX = Math.max(0, Math.min(WORLD_W - W, state.cameraX));
+  render();
+  positionFlyers();
+  positionBubble();
+  requestAnimationFrame(tick);
+}
+
+init();
+tick();
+</script>
+</body>
+</html>

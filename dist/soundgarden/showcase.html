@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Soundgarden — Visual Direction</title>
+<link rel="stylesheet" href="bandlab.css" />
+<style>
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 0 56px; }
+
+  /* Ambient bg behind hero */
+  #ambient-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+
+  /* ---- HERO ---- */
+  .hero {
+    min-height: 100vh;
+    position: relative; z-index: 2;
+    display: flex; flex-direction: column; justify-content: space-between;
+    padding: 40px 0 80px;
+  }
+  .topbar {
+    display: flex; justify-content: space-between; align-items: center;
+    font-family: var(--font-mono);
+    font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+  .topbar .logo {
+    display: flex; align-items: center; gap: 10px;
+    font-family: var(--font-display);
+    font-size: 16px; font-weight: 600; letter-spacing: -0.01em;
+    color: var(--ink);
+    text-transform: none;
+  }
+  .topbar .logo::before {
+    content: ''; width: 10px; height: 10px;
+    background: var(--bl-red);
+    display: inline-block;
+  }
+  .topbar .logo span { color: var(--ink-dim); font-weight: 400; margin-left: 8px; }
+
+  .hero-main { max-width: 1100px; }
+  .hero-kicker {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-family: var(--font-mono);
+    font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--bl-red);
+    margin-bottom: 40px;
+  }
+  .hero-kicker::before {
+    content: ''; width: 28px; height: 1px; background: var(--bl-red);
+  }
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(56px, 8.5vw, 140px);
+    line-height: 0.9; letter-spacing: -0.035em;
+    color: var(--ink);
+    margin-bottom: 40px;
+  }
+  h1 .accent { color: var(--bl-red); }
+  .hero-sub {
+    font-family: var(--font-body);
+    font-size: clamp(17px, 1.4vw, 20px);
+    line-height: 1.55;
+    color: var(--ink-mid);
+    max-width: 720px;
+    font-weight: 400;
+  }
+
+  .hero-meta {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 48px;
+    padding-top: 48px; margin-top: 64px;
+    border-top: 1px solid var(--rule);
+  }
+  .hero-meta .k {
+    font-family: var(--font-mono);
+    font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 10px;
+  }
+  .hero-meta .v {
+    font-family: var(--font-display);
+    font-size: 19px; font-weight: 500;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+
+  /* ---- SECTIONS ---- */
+  .section {
+    padding: 140px 0;
+    border-top: 1px solid var(--rule);
+    position: relative; z-index: 2;
+    background: var(--surface-0);
+  }
+  .section-kicker {
+    display: flex; align-items: center; gap: 16px;
+    font-family: var(--font-mono);
+    font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 32px;
+  }
+  .section-kicker::before {
+    content: ''; width: 40px; height: 1px; background: var(--ink-faint);
+  }
+  .section-title {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(40px, 5.2vw, 80px);
+    line-height: 0.96; letter-spacing: -0.03em;
+    max-width: 1000px; margin-bottom: 36px;
+    color: var(--ink);
+  }
+  .section-title .accent { color: var(--bl-red); }
+  .section-intro {
+    font-size: 18px; line-height: 1.55;
+    color: var(--ink-mid);
+    max-width: 720px;
+  }
+
+  /* ---- PRINCIPLES ---- */
+  .principles {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    margin-top: 80px;
+  }
+  .principle {
+    background: var(--surface-0);
+    padding: 44px 32px 40px;
+  }
+  .principle .num {
+    font-family: var(--font-mono);
+    font-size: 10px; color: var(--bl-red);
+    letter-spacing: 0.16em; margin-bottom: 24px;
+    font-weight: 500;
+  }
+  .principle h3 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 22px; line-height: 1.15;
+    letter-spacing: -0.015em;
+    margin-bottom: 14px;
+    color: var(--ink);
+  }
+  .principle p {
+    font-size: 13px; line-height: 1.65;
+    color: var(--ink-dim);
+  }
+
+  /* ---- BIOME ---- */
+  .biome {
+    padding: 120px 0;
+    border-top: 1px solid var(--rule);
+    position: relative;
+    background: var(--surface-0);
+  }
+  .biome-inner {
+    display: grid; grid-template-columns: 360px 1fr; gap: 72px;
+    align-items: start;
+  }
+  .biome-meta { position: sticky; top: 56px; }
+  .biome-index {
+    font-family: var(--font-mono);
+    font-size: 10px; letter-spacing: 0.18em;
+    color: var(--ink-faint);
+    margin-bottom: 20px;
+    font-weight: 500;
+  }
+  .biome-name {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 72px; line-height: 0.9;
+    letter-spacing: -0.035em;
+    margin-bottom: 6px;
+    color: var(--ink);
+  }
+  .biome-subname {
+    font-family: var(--font-mono);
+    font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 24px;
+  }
+  .biome-genre {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase;
+    padding: 5px 11px;
+    border: 1px solid currentColor;
+    margin-bottom: 28px;
+    font-weight: 500;
+  }
+  .biome-desc {
+    font-size: 15px; line-height: 1.6;
+    color: var(--ink-dim);
+    margin-bottom: 32px;
+  }
+  .palette {
+    display: flex; gap: 4px; margin-bottom: 28px;
+  }
+  .palette span {
+    width: 36px; height: 36px;
+    border: 1px solid var(--rule);
+  }
+  .biome-attrs {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    line-height: 1.95;
+    color: var(--ink-faint);
+    letter-spacing: 0.05em;
+  }
+  .biome-attrs strong {
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  .biome-canvas-wrap { position: relative; }
+  .biome-canvas {
+    width: 100%; aspect-ratio: 16 / 10;
+    display: block;
+    background: var(--surface-0);
+  }
+  .canvas-labels {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    margin-top: 16px;
+  }
+  .canvas-labels span {
+    text-align: center;
+    padding-top: 14px;
+    border-top: 1px solid var(--rule);
+    font-family: var(--font-mono);
+    font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--ink-faint);
+    position: relative;
+    font-weight: 500;
+  }
+  .canvas-labels span::before {
+    content: ''; position: absolute; top: -1px; left: 50%;
+    width: 20px; height: 1px; background: var(--bl-red);
+    transform: translateX(-50%);
+  }
+
+  /* ---- EVOLUTION ---- */
+  .evo-grid {
+    display: grid; grid-template-columns: 1fr; gap: 1px;
+    background: var(--rule);
+    border: 1px solid var(--rule);
+    margin-top: 80px;
+  }
+  .evo-card {
+    background: var(--surface-0);
+    padding: 56px 56px;
+    display: grid; grid-template-columns: 280px 1fr;
+    gap: 56px; align-items: center;
+  }
+  .evo-card canvas {
+    width: 100%; aspect-ratio: 4 / 1.2;
+    display: block;
+  }
+  .evo-card h4 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 28px; line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin-bottom: 14px;
+    color: var(--ink);
+  }
+  .evo-card h4 .accent { color: var(--bl-red); }
+  .evo-card p {
+    font-size: 14px; line-height: 1.6;
+    color: var(--ink-dim);
+  }
+
+  /* ---- QUESTIONS ---- */
+  .questions { margin-top: 80px; }
+  .q {
+    display: grid; grid-template-columns: 80px 1fr 2fr;
+    gap: 40px; padding: 36px 0;
+    border-top: 1px solid var(--rule);
+    align-items: start;
+  }
+  .q:last-child { border-bottom: 1px solid var(--rule); }
+  .q-num {
+    font-family: var(--font-mono);
+    font-size: 10px; letter-spacing: 0.18em;
+    color: var(--bl-red);
+    padding-top: 6px;
+    font-weight: 500;
+  }
+  .q-title {
+    font-family: var(--font-display);
+    font-size: 22px; font-weight: 500; line-height: 1.2;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+  .q-title .accent { color: var(--bl-red); }
+  .q-body {
+    font-size: 14px; line-height: 1.65;
+    color: var(--ink-dim);
+  }
+
+  /* ---- FOOTER ---- */
+  footer {
+    padding: 140px 0 80px;
+    border-top: 1px solid var(--rule);
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--ink-faint);
+    background: var(--surface-0);
+    position: relative; z-index: 2;
+  }
+  footer .big {
+    font-family: var(--font-display);
+    font-size: clamp(40px, 5.2vw, 76px);
+    font-weight: 500;
+    letter-spacing: -0.03em;
+    text-transform: none;
+    color: var(--ink);
+    margin-bottom: 28px;
+    line-height: 0.95;
+  }
+  footer .big .accent { color: var(--bl-red); }
+
+  @media (max-width: 1000px) {
+    .wrap { padding: 0 24px; }
+    .hero-meta { grid-template-columns: repeat(2, 1fr); gap: 24px; }
+    .biome-inner { grid-template-columns: 1fr; gap: 40px; }
+    .biome-meta { position: static; }
+    .biome-name { font-size: 56px; }
+    .principles { grid-template-columns: repeat(2, 1fr); }
+    .evo-card { grid-template-columns: 1fr; gap: 32px; padding: 40px 32px; }
+    .q { grid-template-columns: 1fr; gap: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="ambient-bg"></canvas>
+
+<section class="hero">
+  <div class="wrap">
+    <div class="topbar">
+      <div class="logo">Soundgarden <span>by BandLab</span></div>
+      <div>v0.4 · Visual Direction · 2026</div>
+    </div>
+  </div>
+  <div class="wrap hero-main">
+    <div class="hero-kicker">A Design Bible in Progress</div>
+    <h1>Every song is<br/>a <span class="accent">creature with eyes</span>.</h1>
+    <p class="hero-sub">Soundgarden is an infinite, Mercator-projected canvas where every song grows into a living thing — watching, breathing, and becoming more itself each time someone listens. This page is a sketch of what those creatures look like and the six worlds they grow inside.</p>
+  </div>
+  <div class="wrap">
+    <div class="hero-meta">
+      <div><div class="k">Projection</div><div class="v">Mercator · 2.5D</div></div>
+      <div><div class="k">Seed Source</div><div class="v">Charts + AI agents</div></div>
+      <div><div class="k">Regions</div><div class="v">Six musical states</div></div>
+      <div><div class="k">Status</div><div class="v">Exploration v0.4</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-kicker">First Principles</div>
+    <h2 class="section-title">Four things we won't compromise <span class="accent">on.</span></h2>
+    <p class="section-intro">Everything else is a moving target. These are the load-bearing ones.</p>
+
+    <div class="principles">
+      <div class="principle">
+        <div class="num">01</div>
+        <h3>They look back at you.</h3>
+        <p>Every creature has eyes. Not decoration — the primary read. Eyes track your cursor, blink, drift, sleep. A single glance at the canvas should feel like being watched by a hundred quiet beings.</p>
+      </div>
+      <div class="principle">
+        <div class="num">02</div>
+        <h3>The visual is the music.</h3>
+        <p>Complexity is composition complexity. Size is reach. Tentacles are collaborators. Pulse is tempo. You don't need to hear a creature to know how it sounds — you can read it like sheet music made of light.</p>
+      </div>
+      <div class="principle">
+        <div class="num">03</div>
+        <h3>One cosmos, six states.</h3>
+        <p>No jungles. No reefs. Soundgarden is a single dark canvas, and each region is a musical state of being — Drift, Pulse, Fracture, Swing, Hush, Grid. Biomes are moods, not ecosystems.</p>
+      </div>
+      <div class="principle">
+        <div class="num">04</div>
+        <h3>Born in real places.</h3>
+        <p>The canvas is a Mercator projection of Earth. Lagos sounds like Lagos because Lagos is there. Chart-seeded organisms are the wild flora; user-planted ones are cultivated guests. Real coordinates, real cultures, real colour.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-kicker">Part One / The Six States</div>
+    <h2 class="section-title">Six <span class="accent">states of music,</span> not six places.</h2>
+    <p class="section-intro">Each state is a mood the world can be in — a way music exists. Every state below shows two creature archetypes across four life stages: <strong style="color:var(--ink)">seed · sprout · bloom · ancient</strong>.</p>
+  </div>
+</section>
+
+<div id="biomes"></div>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-kicker">Part Two / A Life in Four Moments</div>
+    <h2 class="section-title">A creature is a <span class="accent">chronicle.</span></h2>
+    <p class="section-intro">Stage is not scale. A seed has one closed eye. A sprout opens one eye and grows a tentative limb. A bloom is at peak life. An ancient is lopsided, many-eyed, surrounded by offspring, half-fossilised and twice as bright.</p>
+
+    <div class="evo-grid">
+      <div class="evo-card">
+        <div>
+          <h4>Growth by <span class="accent">engagement</span></h4>
+          <p>New contributors add limbs. Plays open new eyes. Forks introduce asymmetric mutations that never go away. An ancient is a record of everyone who ever touched it.</p>
+        </div>
+        <canvas id="evo-a" width="1400" height="420"></canvas>
+      </div>
+      <div class="evo-card">
+        <div>
+          <h4>Decay &amp; <span class="accent">legacy</span></h4>
+          <p>Dormancy dims the body but the silhouette remains. Creatures that outlive their contributors fossilise into mycelium — permanent ground features that shape what grows nearby.</p>
+        </div>
+        <canvas id="evo-b" width="1400" height="420"></canvas>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-kicker">Part Three / Open Questions</div>
+    <h2 class="section-title">The things we still need to <span class="accent">decide.</span></h2>
+    <p class="section-intro">Not blockers. Fork points. Each one opens a different version of the product.</p>
+
+    <div class="questions">
+      <div class="q">
+        <div class="q-num">Q.01</div>
+        <div class="q-title">How do <span class="accent">wild</span> and <span class="accent">cultivated</span> creatures differ at a glance?</div>
+        <div class="q-body">Chart-seeded organisms could have a distinct eye shape — slit pupils, or multiple rings of iris — marking them as grown, not planted. Cultivated ones show the hand of their maker. Or the difference is metadata only.</div>
+      </div>
+      <div class="q">
+        <div class="q-num">Q.02</div>
+        <div class="q-title">Is the globe a <span class="accent">portal</span>, or a persistent second view?</div>
+        <div class="q-body">Option A: globe is the landing screen and vanishes once you dive in. Option B: a mini-globe always floats in the corner, spinning, with live activity pips. B is more alive but adds chrome.</div>
+      </div>
+      <div class="q">
+        <div class="q-num">Q.03</div>
+        <div class="q-title">Does the garden make <span class="accent">sound</span> on its own?</div>
+        <div class="q-body">If every creature is music, the canvas is technically a symphony. Do we render ambient audio from nearby organisms (risk: cacophony)? Or is the world silent until you focus on a single creature?</div>
+      </div>
+      <div class="q">
+        <div class="q-num">Q.04</div>
+        <div class="q-title">"Now Boarding" — literal split-flap, or just the <span class="accent">pattern?</span></div>
+        <div class="q-body">A departure board on the landing page is a beautiful image. But it's also a specific aesthetic that might fight the canvas. Do we commit to the literal board, or keep only the interaction — jump to trending regions?</div>
+      </div>
+      <div class="q">
+        <div class="q-num">Q.05</div>
+        <div class="q-title">Do <span class="accent">cultural palettes</span> change anatomy, or just colour?</div>
+        <div class="q-body">Tinting Reykjavík cool and Lagos warm is easy and probably good. Letting regions have entirely different creature anatomies is harder, riskier, and potentially far more interesting.</div>
+      </div>
+      <div class="q">
+        <div class="q-num">Q.06</div>
+        <div class="q-title">What does an eye do when it's <span class="accent">bored?</span></div>
+        <div class="q-body">Cursor tracking is obvious. But what about idle behaviour? Do eyes close? Drift? Watch each other? This is a small question with enormous consequences for how alive the canvas feels.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="big">Plant something.<br/>See <span class="accent">what grows back.</span></div>
+    <div>Soundgarden · BandLab · Draft 2026-04-14 · v0.4</div>
+  </div>
+</footer>
+
+<script src="creatures.js"></script>
+<script>
+const container = document.getElementById('biomes');
+BIOMES.forEach(b => {
+  const section = document.createElement('section');
+  section.className = 'biome';
+  section.innerHTML = `
+    <div class="wrap">
+      <div class="biome-inner">
+        <div class="biome-meta">
+          <div class="biome-index">${b.index}</div>
+          <div class="biome-name">${b.name}</div>
+          <div class="biome-subname">${b.subname}</div>
+          <div class="biome-genre" style="color:${b.genreColor}">${b.genre}</div>
+          <div class="biome-desc">${b.desc}</div>
+          <div class="palette">
+            ${b.archetypes.map(a => `<span style="background:${a.palette.primary}"></span><span style="background:${a.palette.secondary}"></span>`).join('')}
+          </div>
+          <div class="biome-attrs">
+            motion&nbsp;·&nbsp;<strong>${b.attrs.motion}</strong><br/>
+            blink&nbsp;·&nbsp;<strong>${b.attrs.blink}</strong><br/>
+            gaze&nbsp;·&nbsp;<strong>${b.attrs.gaze}</strong>
+          </div>
+        </div>
+        <div class="biome-canvas-wrap">
+          <canvas class="biome-canvas" id="canvas-${b.id}" width="1400" height="875"></canvas>
+          <div class="canvas-labels">
+            <span>Seed</span><span>Sprout</span><span>Bloom</span><span>Ancient</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  container.appendChild(section);
+});
+
+function setupBiomeCanvas(biome) {
+  const canvas = document.getElementById('canvas-' + biome.id);
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const colW = W / 4;
+  const rowH = H / 2;
+  const start = performance.now();
+  let running = false;
+
+  function render() {
+    if (!running) return;
+    const t = (performance.now() - start) / 1000;
+    drawCosmicBg(ctx, W, H, biome, t);
+    ctx.strokeStyle = 'rgba(194,215,242,0.06)';
+    ctx.lineWidth = 1;
+    for (let c = 1; c < 4; c++) {
+      ctx.beginPath();
+      ctx.moveTo(c*colW, 40); ctx.lineTo(c*colW, H-40); ctx.stroke();
+    }
+    for (let row = 0; row < 2; row++) {
+      for (let col = 0; col < 4; col++) {
+        const cx = col * colW + colW/2;
+        const cy = row * rowH + rowH/2;
+        drawCreature(ctx, cx, cy, biome.archetypes[row], col, biome, t, row * 13 + col * 7 + 1);
+      }
+    }
+    requestAnimationFrame(render);
+  }
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting && !running) { running = true; render(); }
+      else if (!e.isIntersecting) { running = false; }
+    });
+  }, { threshold: 0.05 });
+  io.observe(canvas);
+}
+BIOMES.forEach(setupBiomeCanvas);
+
+function setupEvoCanvas(id, biome, archetype) {
+  const canvas = document.getElementById(id);
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const start = performance.now();
+  let running = false;
+  function loop() {
+    if (!running) return;
+    const t = (performance.now() - start) / 1000;
+    drawCosmicBg(ctx, W, H, biome, t);
+    for (let i = 0; i < 4; i++) {
+      const cx = (i+0.5) * (W/4);
+      const cy = H/2 + 20;
+      drawCreature(ctx, cx, cy, archetype, i, biome, t, i*3 + 2);
+    }
+    requestAnimationFrame(loop);
+  }
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting && !running) { running = true; loop(); }
+      else if (!e.isIntersecting) { running = false; }
+    });
+  }, { threshold: 0.05 });
+  io.observe(canvas);
+}
+setupEvoCanvas('evo-a', BIOMES[0], BIOMES[0].archetypes[0]);
+setupEvoCanvas('evo-b', BIOMES[2], BIOMES[2].archetypes[0]);
+
+// Ambient bg behind hero
+(function() {
+  const c = document.getElementById('ambient-bg');
+  const ctx = c.getContext('2d');
+  function fit() {
+    c.width = window.innerWidth;
+    c.height = Math.max(window.innerHeight, 900);
+  }
+  fit();
+  window.addEventListener('resize', fit);
+  const ghost = { tint: { r: 241, g: 44, b: 24, strength: 0.035 } };
+  function loop() {
+    drawCosmicBg(ctx, c.width, c.height, ghost, 0);
+    requestAnimationFrame(loop);
+  }
+  loop();
+})();
+</script>
+</body>
+</html>

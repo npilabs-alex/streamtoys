@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pixel Sprites — Views & Walk Cycles</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background:linear-gradient(135deg,#1a1428 0%,#2a1f3e 50%,#1e1832 100%);
+  color:white; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  min-height:100vh; padding:24px;
+}
+h1 { font-size:22px; font-weight:800; margin-bottom:6px; letter-spacing:-0.01em; }
+.sub { font-size:12px; color:rgba(255,255,255,0.45); margin-bottom:24px; }
+h2 { font-size:10px; letter-spacing:0.14em; color:rgba(255,255,255,0.5); margin-bottom:14px; font-weight:700; }
+.panel { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); padding:20px; border-radius:14px; margin-bottom:18px; }
+canvas.spr {
+  image-rendering:pixelated;
+  image-rendering:-moz-crisp-edges;
+  image-rendering:crisp-edges;
+  background:#2a2438; border-radius:6px;
+}
+.editor { display:grid; grid-template-columns:auto 1fr; gap:28px; align-items:start; }
+@media(max-width:880px){ .editor{grid-template-columns:1fr;} }
+.preview { display:flex; flex-direction:column; align-items:center; gap:10px; }
+.preview-name { font-size:11px; color:rgba(255,255,255,0.55); }
+.controls { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; }
+.ctrl { display:flex; flex-direction:column; gap:7px; }
+.ctrl-name { font-size:10px; letter-spacing:0.1em; color:rgba(255,255,255,0.4); font-weight:600; }
+.swatches { display:flex; gap:5px; flex-wrap:wrap; }
+.swatch { width:24px; height:24px; border-radius:50%; cursor:pointer; border:2px solid rgba(255,255,255,0.15); transition:all 0.12s; flex-shrink:0; }
+.swatch.active { border-color:#e8143c; transform:scale(1.15); box-shadow:0 0 0 2px rgba(232,20,60,0.2); }
+.swatch:hover { border-color:rgba(255,255,255,0.4); }
+.style-btns { display:flex; gap:5px; flex-wrap:wrap; }
+.style-btn { background:rgba(255,255,255,0.06); color:rgba(255,255,255,0.7); border:1px solid rgba(255,255,255,0.1); padding:5px 10px; border-radius:6px; font-size:11px; font-weight:600; cursor:pointer; font-family:inherit; }
+.style-btn.active { background:#e8143c; border-color:#e8143c; color:white; }
+
+.views { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-top:6px; }
+@media(max-width:760px){ .views{grid-template-columns:repeat(2,1fr);} }
+.view { display:flex; flex-direction:column; align-items:center; gap:8px; }
+.view canvas { background:#2a2438; padding:6px; border-radius:6px; }
+.view-label { font-size:11px; color:rgba(255,255,255,0.6); font-weight:600; letter-spacing:0.04em; }
+.view-sub { font-size:9px; color:rgba(255,255,255,0.3); letter-spacing:0.05em; text-transform:uppercase; margin-top:-4px; }
+
+.toggle {
+  display:inline-flex; background:rgba(0,0,0,0.3); border-radius:8px; padding:3px;
+  margin-top:8px; border:1px solid rgba(255,255,255,0.08);
+}
+.toggle-btn {
+  background:transparent; border:none; color:rgba(255,255,255,0.6);
+  padding:7px 16px; font-size:11px; font-weight:700; cursor:pointer;
+  border-radius:6px; font-family:inherit; letter-spacing:0.04em;
+}
+.toggle-btn.active { background:#e8143c; color:white; }
+
+.sheet { display:flex; gap:6px; flex-wrap:wrap; align-items:flex-start; }
+.sheet-row { display:flex; gap:4px; align-items:center; }
+.sheet-label { font-size:10px; color:rgba(255,255,255,0.45); width:54px; }
+
+/* Snapchat-Maps-style map preview */
+.map {
+  position:relative; width:100%; aspect-ratio: 16/9; max-height:420px;
+  background:#1a1626; border-radius:12px; overflow:hidden;
+  border:1px solid rgba(255,255,255,0.08);
+}
+.map .ground {
+  position:absolute; inset:0;
+  background:
+    radial-gradient(ellipse at 30% 40%, rgba(80,60,40,0.4), transparent 60%),
+    radial-gradient(ellipse at 70% 70%, rgba(60,40,80,0.3), transparent 60%),
+    linear-gradient(180deg, #232038, #1a1832);
+}
+.map .road {
+  position:absolute; height:18px; background:#2a2638;
+  border-top:1px solid #181628; border-bottom:1px solid #181628;
+}
+.map .road .dash {
+  position:absolute; top:50%; transform:translateY(-50%);
+  height:2px; width:14px; background:#5a5868; margin-left:10px;
+}
+.map-char {
+  position:absolute;
+  transform: translate(-50%, -100%);
+}
+.map-char canvas { display:block; }
+.map-pin {
+  position:absolute; top:100%; left:50%; transform:translate(-50%,-2px);
+  background:rgba(232,20,60,0.9); color:white;
+  padding:2px 7px; border-radius:8px;
+  font-size:9px; font-weight:700; letter-spacing:0.04em;
+  white-space:nowrap;
+  box-shadow:0 2px 6px rgba(0,0,0,0.4);
+}
+
+button.action {
+  background:#e8143c; color:white; border:none; padding:9px 16px;
+  border-radius:8px; font-size:12px; font-weight:600; cursor:pointer;
+  margin-top:8px; font-family:inherit;
+}
+button.action:hover { background:#ff2050; }
+</style>
+</head>
+<body>
+<h1>🎨 Pixel sprites — views &amp; walk cycles</h1>
+<div class="sub">Same character, four directions. Toggle walking to animate. All procedural, no spritesheet on disk.</div>
+
+<div class="panel">
+  <h2>CHARACTER EDITOR</h2>
+  <div class="editor">
+    <div class="preview">
+      <canvas class="spr" id="hero-front" width="32" height="48" style="width:192px;height:288px;padding:8px"></canvas>
+      <div class="preview-name" id="hero-name">Default</div>
+      <div class="toggle">
+        <button class="toggle-btn active" data-mode="stand" onclick="setMode('stand')">STAND</button>
+        <button class="toggle-btn" data-mode="walk" onclick="setMode('walk')">WALK</button>
+      </div>
+    </div>
+    <div class="controls" id="controls"></div>
+  </div>
+</div>
+
+<div class="panel">
+  <h2>ALL FOUR DIRECTIONS</h2>
+  <div class="views" id="views">
+    <div class="view">
+      <canvas class="spr" id="v-front"  width="32" height="48" style="width:160px;height:240px"></canvas>
+      <div class="view-label">FRONT</div>
+      <div class="view-sub">south · symmetric</div>
+    </div>
+    <div class="view">
+      <canvas class="spr" id="v-side-r" width="32" height="48" style="width:160px;height:240px"></canvas>
+      <div class="view-label">SIDE →</div>
+      <div class="view-sub">east · profile</div>
+    </div>
+    <div class="view">
+      <canvas class="spr" id="v-back"   width="32" height="48" style="width:160px;height:240px"></canvas>
+      <div class="view-label">BACK</div>
+      <div class="view-sub">north · no face</div>
+    </div>
+    <div class="view">
+      <canvas class="spr" id="v-side-l" width="32" height="48" style="width:160px;height:240px"></canvas>
+      <div class="view-label">← SIDE</div>
+      <div class="view-sub">west · mirrored</div>
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <h2>SPRITESHEET — 16 FRAMES (4 dirs × 4 walk frames)</h2>
+  <div id="sheet">
+    <div class="sheet-row"><div class="sheet-label">FRONT</div>  <div id="sheet-front"  class="sheet"></div></div>
+    <div style="height:6px"></div>
+    <div class="sheet-row"><div class="sheet-label">SIDE →</div> <div id="sheet-side-r" class="sheet"></div></div>
+    <div style="height:6px"></div>
+    <div class="sheet-row"><div class="sheet-label">BACK</div>   <div id="sheet-back"   class="sheet"></div></div>
+    <div style="height:6px"></div>
+    <div class="sheet-row"><div class="sheet-label">← SIDE</div> <div id="sheet-side-l" class="sheet"></div></div>
+  </div>
+</div>
+
+<div class="panel">
+  <h2>SNAPCHAT-MAPS STYLE PREVIEW</h2>
+  <div class="map" id="map">
+    <div class="ground"></div>
+  </div>
+  <button class="action" onclick="rebuildMap()">🎲 Re-roll the city</button>
+</div>
+
+<script>
+// ── PALETTES ──
+const SKIN_TONES = [
+  { name:'Fair',   base:'#f6dcb6', shade:'#dfa97a', dark:'#8f5a3c' },
+  { name:'Light',  base:'#e8c098', shade:'#c08858', dark:'#6a4028' },
+  { name:'Olive',  base:'#c8956a', shade:'#9a6840', dark:'#5a3818' },
+  { name:'Tan',    base:'#a06840', shade:'#6a4020', dark:'#3a1808' },
+  { name:'Brown',  base:'#7a4828', shade:'#4a2818', dark:'#1a0804' },
+  { name:'Deep',   base:'#523018', shade:'#321808', dark:'#180a02' },
+];
+const HAIR_COLORS = [
+  { name:'Black',  base:'#3a2412', shade:'#1a1008' },
+  { name:'Brown',  base:'#7a4830', shade:'#4a2818' },
+  { name:'Blonde', base:'#e8b860', shade:'#8a6018' },
+  { name:'Red',    base:'#c83820', shade:'#681810' },
+  { name:'Gray',   base:'#aaaaaa', shade:'#666666' },
+  { name:'Mint',   base:'#80d0a8', shade:'#308050' },
+  { name:'Purple', base:'#a050c0', shade:'#601080' },
+  { name:'Pink',   base:'#f098c0', shade:'#a04068' },
+];
+const HAIR_STYLES = ['Short','Long','Bun','Bald'];
+const SHIRT_COLORS = [
+  { name:'Navy',    base:'#3a5f95', shade:'#1a3868' },
+  { name:'Crimson', base:'#9a2030', shade:'#5a0a18' },
+  { name:'Forest',  base:'#2a8050', shade:'#103820' },
+  { name:'Sun',     base:'#e8a020', shade:'#a86810' },
+  { name:'Onyx',    base:'#2a2a30', shade:'#0a0a10' },
+  { name:'Snow',    base:'#e8e8e8', shade:'#888888' },
+  { name:'Violet',  base:'#8050d0', shade:'#401890' },
+  { name:'Teal',    base:'#208a98', shade:'#084050' },
+];
+const PANTS_COLORS = [
+  { name:'Indigo',  base:'#3a3868', shade:'#1a1838' },
+  { name:'Black',   base:'#1a1a22', shade:'#000000' },
+  { name:'Khaki',   base:'#a89060', shade:'#685a30' },
+  { name:'Gray',    base:'#555560', shade:'#2a2a35' },
+  { name:'Olive',   base:'#5a6028', shade:'#2a3010' },
+];
+const SHOE_COLORS = [
+  { name:'Black',   base:'#1a1a22', shade:'#000000' },
+  { name:'White',   base:'#e8e8e8', shade:'#888888' },
+  { name:'Red',     base:'#c8202a', shade:'#681010' },
+  { name:'Brown',   base:'#6a3818', shade:'#3a1808' },
+];
+const O = '#1a0e1a';
+
+// ── DRAW HELPERS ──
+function px(ctx,x,y,c){ ctx.fillStyle=c; ctx.fillRect(x|0,y|0,1,1); }
+function rect(ctx,x,y,w,h,c){ ctx.fillStyle=c; ctx.fillRect(x|0,y|0,w|0,h|0); }
+
+// ════════════════════════════════════════════════════════════════════════
+// FRONT VIEW
+// ════════════════════════════════════════════════════════════════════════
+function drawFront(ctx, opts, frame=0) {
+  ctx.clearRect(0,0,32,48);
+  const skin = opts.skin, hair = opts.hair, shirt = opts.shirt, pants = opts.pants, shoes = opts.shoes;
+  const hairStyle = opts.hairStyle ?? 0;
+  const bob = (frame===1 || frame===3) ? -1 : 0;
+
+  // HEAD
+  rect(ctx,10,4+bob,12,14,skin.base);
+  rect(ctx,18,7+bob,4,9,skin.shade);
+  rect(ctx,9,5+bob,1,12,O); rect(ctx,22,5+bob,1,12,O);
+  rect(ctx,10,4+bob,12,1,O); rect(ctx,11,18+bob,10,1,O);
+  px(ctx,10,5+bob,O); px(ctx,21,5+bob,O);
+  // Ears
+  px(ctx,9,11+bob,skin.shade); px(ctx,22,11+bob,skin.shade);
+  px(ctx,8,11+bob,O); px(ctx,23,11+bob,O);
+  // HAIR
+  if (hairStyle !== 3) {
+    const H = hair.base, HS = hair.shade;
+    if (hairStyle === 0) { // short
+      rect(ctx,10,4+bob,12,3,H);
+      rect(ctx,10,6+bob,12,1,HS);
+      px(ctx,9,5+bob,H); px(ctx,22,5+bob,H);
+      px(ctx,9,6+bob,HS); px(ctx,22,6+bob,HS);
+      rect(ctx,10,3+bob,12,1,O);
+    } else if (hairStyle === 1) { // long
+      rect(ctx,9,4+bob,14,4,H);
+      rect(ctx,9,8+bob,2,9,H); rect(ctx,21,8+bob,2,9,H);
+      rect(ctx,10,7+bob,12,1,HS);
+      rect(ctx,9,3+bob,14,1,O);
+      rect(ctx,8,5+bob,1,12,O); rect(ctx,23,5+bob,1,12,O);
+    } else if (hairStyle === 2) { // bun
+      rect(ctx,10,4+bob,12,3,H);
+      rect(ctx,10,6+bob,12,1,HS);
+      rect(ctx,13,1+bob,6,3,H);
+      rect(ctx,14,0+bob,4,1,H);
+      rect(ctx,13,3+bob,6,1,HS);
+      rect(ctx,10,3+bob,12,1,O);
+      px(ctx,13,0+bob,O); px(ctx,18,0+bob,O);
+      rect(ctx,12,1+bob,1,3,O); rect(ctx,19,1+bob,1,3,O);
+    }
+  }
+  // Eyes
+  px(ctx,12,11+bob,O); px(ctx,13,11+bob,'#ffffff');
+  px(ctx,17,11+bob,O); px(ctx,18,11+bob,'#ffffff');
+  px(ctx,12,10+bob,skin.dark); px(ctx,17,10+bob,skin.dark);
+  // Nose
+  px(ctx,15,13+bob,skin.shade); px(ctx,16,13+bob,skin.shade);
+  // Mouth
+  px(ctx,14,15+bob,O); px(ctx,15,15+bob,O); px(ctx,16,15+bob,O); px(ctx,17,15+bob,O);
+
+  // BODY
+  rect(ctx,9,20+bob,14,12,shirt.base);
+  rect(ctx,18,21+bob,4,10,shirt.shade);
+  rect(ctx,8,20+bob,1,12,O); rect(ctx,23,20+bob,1,12,O);
+  rect(ctx,9,19+bob,14,1,O); rect(ctx,9,32+bob,14,1,O);
+  rect(ctx,14,20+bob,4,1,skin.shade);
+
+  // ARMS (with walk swing in front view = subtle)
+  const lArmDx = frame===1 ? -1 : (frame===3 ? 1 : 0);
+  const rArmDx = -lArmDx;
+  rect(ctx,6+lArmDx,20+bob,2,10,shirt.base);
+  rect(ctx,24+rArmDx,20+bob,2,10,shirt.shade);
+  rect(ctx,5+lArmDx,21+bob,1,10,O); rect(ctx,26+rArmDx,21+bob,1,10,O);
+  rect(ctx,6+lArmDx,19+bob,2,1,O); rect(ctx,24+rArmDx,19+bob,2,1,O);
+  // Hands
+  rect(ctx,6+lArmDx,31+bob,2,2,skin.base);
+  rect(ctx,24+rArmDx,31+bob,2,2,skin.shade);
+  rect(ctx,5+lArmDx,31+bob,1,2,O); rect(ctx,8+lArmDx,31+bob,1,2,O);
+  rect(ctx,23+rArmDx,31+bob,1,2,O); rect(ctx,26+rArmDx,31+bob,1,2,O);
+  rect(ctx,6+lArmDx,33+bob,2,1,O); rect(ctx,24+rArmDx,33+bob,2,1,O);
+
+  // LEGS — bottom planted, top moves with body
+  const legTop = 32 + bob;
+  const legH = 43 - legTop;
+  rect(ctx,10,legTop,5,legH,pants.base);
+  rect(ctx,17,legTop,5,legH,pants.base);
+  rect(ctx,13,legTop+1,2,legH-1,pants.shade);
+  rect(ctx,20,legTop+1,2,legH-1,pants.shade);
+  rect(ctx,9,legTop+1,1,legH-1,O); rect(ctx,15,legTop+1,1,legH-1,O);
+  rect(ctx,16,legTop+1,1,legH-1,O); rect(ctx,22,legTop+1,1,legH-1,O);
+  rect(ctx,10,legTop,5,1,O); rect(ctx,17,legTop,5,1,O);
+
+  // SHOES
+  rect(ctx,9,43,7,3,shoes.base); rect(ctx,16,43,7,3,shoes.base);
+  rect(ctx,9,45,7,1,shoes.shade); rect(ctx,16,45,7,1,shoes.shade);
+  rect(ctx,8,43,1,3,O); rect(ctx,15,43,1,3,O);
+  rect(ctx,16,43,1,3,O); rect(ctx,23,43,1,3,O);
+  rect(ctx,9,46,7,1,O); rect(ctx,16,46,7,1,O);
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// BACK VIEW
+// ════════════════════════════════════════════════════════════════════════
+function drawBack(ctx, opts, frame=0) {
+  ctx.clearRect(0,0,32,48);
+  const skin = opts.skin, hair = opts.hair, shirt = opts.shirt, pants = opts.pants, shoes = opts.shoes;
+  const hairStyle = opts.hairStyle ?? 0;
+  const bob = (frame===1 || frame===3) ? -1 : 0;
+
+  // HEAD - back of head, more hair, no face features
+  // Base skin (the back-of-neck/ears showing)
+  rect(ctx,10,4+bob,12,14,skin.shade);
+  rect(ctx,9,5+bob,1,12,O); rect(ctx,22,5+bob,1,12,O);
+  rect(ctx,10,4+bob,12,1,O); rect(ctx,11,18+bob,10,1,O);
+  px(ctx,10,5+bob,O); px(ctx,21,5+bob,O);
+  // Ears (from behind)
+  px(ctx,9,11+bob,skin.dark); px(ctx,22,11+bob,skin.dark);
+  px(ctx,8,11+bob,O); px(ctx,23,11+bob,O);
+
+  // HAIR — covers most of head from back
+  if (hairStyle !== 3) {
+    const H = hair.base, HS = hair.shade;
+    if (hairStyle === 0) { // short — covers top 2/3 of head
+      rect(ctx,10,4+bob,12,9,H);
+      rect(ctx,10,12+bob,12,1,HS);
+      // Texture lines on the back of the head
+      px(ctx,12,6+bob,HS); px(ctx,15,5+bob,HS); px(ctx,18,7+bob,HS); px(ctx,20,5+bob,HS);
+      px(ctx,9,5+bob,H); px(ctx,22,5+bob,H);
+      px(ctx,9,6+bob,HS); px(ctx,22,6+bob,HS);
+      rect(ctx,10,3+bob,12,1,O);
+    } else if (hairStyle === 1) { // long — flows down past shoulders
+      rect(ctx,9,4+bob,14,4,H);
+      rect(ctx,9,8+bob,14,12,H);    // covers neck and shoulders too
+      rect(ctx,10,18+bob,12,2,HS);   // shaded under
+      // Side outline
+      rect(ctx,8,5+bob,1,14,O);
+      rect(ctx,23,5+bob,1,14,O);
+      rect(ctx,9,3+bob,14,1,O);
+      rect(ctx,9,20+bob,14,1,O);
+      // Vertical hair texture
+      for(let hx=10; hx<22; hx+=3) { rect(ctx,hx,6+bob,1,12,HS); }
+    } else if (hairStyle === 2) { // bun — visible bun at top, short hair below
+      rect(ctx,10,4+bob,12,9,H);
+      rect(ctx,10,12+bob,12,1,HS);
+      // bun
+      rect(ctx,13,1+bob,6,3,H);
+      rect(ctx,14,0+bob,4,1,H);
+      rect(ctx,13,3+bob,6,1,HS);
+      // bun outline + texture
+      px(ctx,13,0+bob,O); px(ctx,18,0+bob,O);
+      rect(ctx,12,1+bob,1,3,O); rect(ctx,19,1+bob,1,3,O);
+      px(ctx,15,2+bob,HS); px(ctx,16,2+bob,HS);
+      rect(ctx,10,3+bob,12,1,O);
+      px(ctx,9,5+bob,H); px(ctx,22,5+bob,H);
+      px(ctx,9,6+bob,HS); px(ctx,22,6+bob,HS);
+    }
+  }
+  // Subtle head shape shading
+  rect(ctx,10,17+bob,12,1,skin.dark);  // neck shadow
+
+  // BODY (back) — same silhouette as front, no collar v
+  rect(ctx,9,20+bob,14,12,shirt.base);
+  rect(ctx,18,21+bob,4,10,shirt.shade);
+  rect(ctx,8,20+bob,1,12,O); rect(ctx,23,20+bob,1,12,O);
+  rect(ctx,9,19+bob,14,1,O); rect(ctx,9,32+bob,14,1,O);
+  // back-of-shirt vertical seam
+  px(ctx,15,21+bob,shirt.shade); px(ctx,15,24+bob,shirt.shade); px(ctx,15,27+bob,shirt.shade);
+  px(ctx,16,21+bob,shirt.shade); px(ctx,16,24+bob,shirt.shade); px(ctx,16,27+bob,shirt.shade);
+  // collar band (top of shirt as seen from back)
+  rect(ctx,13,20+bob,6,1,shirt.shade);
+
+  // ARMS (back view — flipped swing direction relative to front)
+  const lArmDx = frame===1 ? 1 : (frame===3 ? -1 : 0);
+  const rArmDx = -lArmDx;
+  rect(ctx,6+lArmDx,20+bob,2,10,shirt.base);
+  rect(ctx,24+rArmDx,20+bob,2,10,shirt.shade);
+  rect(ctx,5+lArmDx,21+bob,1,10,O); rect(ctx,26+rArmDx,21+bob,1,10,O);
+  rect(ctx,6+lArmDx,19+bob,2,1,O); rect(ctx,24+rArmDx,19+bob,2,1,O);
+  // Hands (back of hand — fully shaded)
+  rect(ctx,6+lArmDx,31+bob,2,2,skin.shade);
+  rect(ctx,24+rArmDx,31+bob,2,2,skin.dark);
+  rect(ctx,5+lArmDx,31+bob,1,2,O); rect(ctx,8+lArmDx,31+bob,1,2,O);
+  rect(ctx,23+rArmDx,31+bob,1,2,O); rect(ctx,26+rArmDx,31+bob,1,2,O);
+  rect(ctx,6+lArmDx,33+bob,2,1,O); rect(ctx,24+rArmDx,33+bob,2,1,O);
+
+  // LEGS (same as front but seam down middle)
+  const legTop = 32 + bob;
+  const legH = 43 - legTop;
+  rect(ctx,10,legTop,5,legH,pants.base);
+  rect(ctx,17,legTop,5,legH,pants.base);
+  rect(ctx,13,legTop+1,2,legH-1,pants.shade);
+  rect(ctx,20,legTop+1,2,legH-1,pants.shade);
+  rect(ctx,9,legTop+1,1,legH-1,O); rect(ctx,15,legTop+1,1,legH-1,O);
+  rect(ctx,16,legTop+1,1,legH-1,O); rect(ctx,22,legTop+1,1,legH-1,O);
+  rect(ctx,10,legTop,5,1,O); rect(ctx,17,legTop,5,1,O);
+
+  // SHOES — back of heels
+  rect(ctx,9,43,7,3,shoes.shade); rect(ctx,16,43,7,3,shoes.shade);
+  rect(ctx,9,43,7,1,shoes.base); rect(ctx,16,43,7,1,shoes.base);
+  rect(ctx,8,43,1,3,O); rect(ctx,15,43,1,3,O);
+  rect(ctx,16,43,1,3,O); rect(ctx,23,43,1,3,O);
+  rect(ctx,9,46,7,1,O); rect(ctx,16,46,7,1,O);
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// SIDE VIEW (facing right — mirror for left)
+// ════════════════════════════════════════════════════════════════════════
+function drawSide(ctx, opts, frame=0) {
+  ctx.clearRect(0,0,32,48);
+  const skin = opts.skin, hair = opts.hair, shirt = opts.shirt, pants = opts.pants, shoes = opts.shoes;
+  const hairStyle = opts.hairStyle ?? 0;
+  const bob = (frame===1 || frame===3) ? -1 : 0;
+
+  // HEAD — profile facing right. Char roughly fits x=8..21
+  // Skull silhouette (skin) — back of head at left, forehead/nose at right
+  rect(ctx,11,5+bob,9,12,skin.base);     // main face block
+  rect(ctx,12,4+bob,7,1,skin.base);      // top
+  rect(ctx,13,17+bob,5,1,skin.base);     // chin
+  // Nose protrusion (key profile feature)
+  px(ctx,20,11+bob,skin.base);
+  px(ctx,20,12+bob,skin.base);
+  px(ctx,20,13+bob,skin.shade);
+  // Cheek shade
+  rect(ctx,17,9+bob,3,7,skin.shade);
+  px(ctx,18,10+bob,skin.base);
+  // Outline
+  rect(ctx,12,3+bob,7,1,O);              // top
+  px(ctx,11,4+bob,O); px(ctx,19,4+bob,O);
+  rect(ctx,10,5+bob,1,12,O);             // back of head (covered by hair anyway)
+  // right profile: forehead → nose → mouth → chin
+  px(ctx,19,5+bob,O); px(ctx,19,6+bob,O); px(ctx,19,7+bob,O);
+  px(ctx,20,8+bob,O); px(ctx,20,9+bob,O); px(ctx,20,10+bob,O);
+  px(ctx,21,11+bob,O); px(ctx,21,12+bob,O); px(ctx,21,13+bob,O); // nose tip
+  px(ctx,20,14+bob,O); // under nose
+  px(ctx,19,15+bob,O); // mouth
+  px(ctx,19,16+bob,O); // chin start
+  px(ctx,18,17+bob,O); // chin
+  rect(ctx,13,18+bob,5,1,O);             // bottom of chin
+  px(ctx,12,17+bob,O);                   // back of jaw
+
+  // Eye (single, looking right)
+  px(ctx,18,11+bob,O);
+  // Eyebrow hint
+  px(ctx,17,10+bob,O); px(ctx,18,10+bob,skin.dark);
+  // Mouth
+  px(ctx,18,15+bob,O);
+  // Ear (visible as a small bump on the side facing camera — for right-facing, ear is on far side, not visible)
+  // For right-facing profile, ear is on the LEFT side of face from viewer (back of head). Hair will cover.
+
+  // HAIR (right-facing profile)
+  if (hairStyle !== 3) {
+    const H = hair.base, HS = hair.shade;
+    if (hairStyle === 0) { // short
+      rect(ctx,11,4+bob,8,3,H);
+      rect(ctx,11,6+bob,8,1,HS);
+      rect(ctx,11,3+bob,8,1,O);
+      // back of head dome (slight)
+      px(ctx,10,5+bob,H); px(ctx,10,6+bob,HS); px(ctx,10,7+bob,HS);
+      px(ctx,9,5+bob,O); px(ctx,9,6+bob,O); px(ctx,9,7+bob,O);
+      // sideburn
+      px(ctx,11,8+bob,HS);
+    } else if (hairStyle === 1) { // long — flows down back of neck
+      rect(ctx,10,4+bob,9,4,H);
+      rect(ctx,10,8+bob,3,12,H);   // long strand down back
+      rect(ctx,10,7+bob,9,1,HS);
+      rect(ctx,11,3+bob,8,1,O);
+      px(ctx,10,4+bob,O);
+      rect(ctx,9,5+bob,1,15,O);    // back outline
+      rect(ctx,10,20+bob,3,1,O);
+      // texture
+      px(ctx,11,10+bob,HS); px(ctx,11,14+bob,HS); px(ctx,11,18+bob,HS);
+    } else if (hairStyle === 2) { // bun (side view — bun on back-top)
+      rect(ctx,11,4+bob,8,3,H);
+      rect(ctx,11,6+bob,8,1,HS);
+      // bun on back of head (top-left in profile)
+      rect(ctx,9,2+bob,5,4,H);
+      rect(ctx,9,5+bob,5,1,HS);
+      rect(ctx,11,3+bob,8,1,O);
+      rect(ctx,9,1+bob,5,1,O);
+      px(ctx,8,2+bob,O); px(ctx,8,3+bob,O); px(ctx,8,4+bob,O); px(ctx,8,5+bob,O);
+      px(ctx,14,2+bob,O); px(ctx,14,3+bob,O); px(ctx,14,4+bob,O); px(ctx,14,5+bob,O);
+      px(ctx,10,5+bob,H); px(ctx,10,6+bob,HS);
+    }
+  }
+
+  // NECK
+  rect(ctx,14,18+bob,3,2,skin.shade);
+  px(ctx,13,18+bob,O); px(ctx,17,18+bob,O);
+
+  // BODY (side view — narrower than front, ~8 wide)
+  rect(ctx,12,20+bob,8,12,shirt.base);
+  // Belly side highlight (front-facing = right)
+  rect(ctx,18,21+bob,2,10,shirt.shade);
+  // Back shade
+  px(ctx,12,21+bob,shirt.shade);
+  // Outline
+  rect(ctx,11,20+bob,1,12,O); rect(ctx,20,20+bob,1,12,O);
+  rect(ctx,12,19+bob,8,1,O); rect(ctx,12,32+bob,8,1,O);
+
+  // ARM (in side view — one arm visible, swings front/back)
+  // arm swing offsets by frame
+  let armDx = 0;
+  if (frame === 1) armDx = 2;          // swung forward
+  else if (frame === 3) armDx = -2;    // swung back
+  const armX = 15 + armDx;
+  rect(ctx,armX,20+bob,2,9,shirt.base);
+  rect(ctx,armX-1,21+bob,1,9,O);
+  rect(ctx,armX+2,21+bob,1,9,O);
+  rect(ctx,armX,19+bob,2,1,O);
+  // Hand
+  rect(ctx,armX,29+bob,2,2,skin.base);
+  rect(ctx,armX-1,29+bob,1,2,O); rect(ctx,armX+2,29+bob,1,2,O);
+  rect(ctx,armX,31+bob,2,1,O);
+
+  // LEGS (side view) — two legs offset by walk frame
+  // frame 0: both together (passing)
+  // frame 1: front leg forward, back leg back
+  // frame 2: together
+  // frame 3: opposite
+  let frontFoot, backFoot;
+  if (frame === 0 || frame === 2) {
+    frontFoot = 16; backFoot = 13;
+  } else if (frame === 1) {
+    frontFoot = 19; backFoot = 10;  // legs spread
+  } else { // frame 3
+    frontFoot = 13; backFoot = 16;  // crossed/passed
+  }
+
+  // BACK leg first (drawn first so front leg overlays)
+  rect(ctx,backFoot,32+bob,4,11-bob,pants.shade);
+  rect(ctx,backFoot+1,33+bob,2,10-bob,pants.base);
+  rect(ctx,backFoot,32+bob,4,1,O);
+  rect(ctx,backFoot,32+bob,1,11-bob,O);
+  rect(ctx,backFoot+3,32+bob,1,11-bob,O);
+  // back shoe
+  rect(ctx,backFoot-1,43,6,3,shoes.shade);
+  rect(ctx,backFoot-1,43,6,1,shoes.base);
+  rect(ctx,backFoot-2,43,1,3,O); rect(ctx,backFoot+4,43,1,3,O);
+  rect(ctx,backFoot-1,46,6,1,O);
+
+  // FRONT leg
+  rect(ctx,frontFoot,32+bob,4,11-bob,pants.base);
+  rect(ctx,frontFoot+2,33+bob,2,10-bob,pants.shade);
+  rect(ctx,frontFoot,32+bob,4,1,O);
+  rect(ctx,frontFoot-1,32+bob,1,11-bob,O);
+  rect(ctx,frontFoot+4,32+bob,1,11-bob,O);
+  // front shoe
+  rect(ctx,frontFoot,43,7,3,shoes.base);
+  rect(ctx,frontFoot,45,7,1,shoes.shade);
+  // Toe tip
+  rect(ctx,frontFoot+6,43,1,3,shoes.shade);
+  rect(ctx,frontFoot-1,43,1,3,O); rect(ctx,frontFoot+7,43,1,3,O);
+  rect(ctx,frontFoot,46,7,1,O);
+}
+
+// Mirrored side (facing left)
+function drawSideLeft(ctx, opts, frame=0) {
+  ctx.save();
+  ctx.translate(32, 0);
+  ctx.scale(-1, 1);
+  drawSide(ctx, opts, frame);
+  ctx.restore();
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// UI
+// ════════════════════════════════════════════════════════════════════════
+const current = { skin:2, hair:1, hairStyle:0, shirt:0, pants:0, shoes:0 };
+let mode = 'stand';
+let animFrame = 0;
+let lastFrameTime = 0;
+
+function paramsFromState() {
+  return {
+    skin: SKIN_TONES[current.skin],
+    hair: HAIR_COLORS[current.hair],
+    hairStyle: current.hairStyle,
+    shirt: SHIRT_COLORS[current.shirt],
+    pants: PANTS_COLORS[current.pants],
+    shoes: SHOE_COLORS[current.shoes],
+  };
+}
+
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll('.toggle-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === m);
+  });
+}
+window.setMode = setMode;
+
+function refreshAll() {
+  const p = paramsFromState();
+  const f = mode === 'walk' ? animFrame : 0;
+  drawFront(document.getElementById('hero-front').getContext('2d'), p, f);
+  drawFront(document.getElementById('v-front').getContext('2d'), p, f);
+  drawSide(document.getElementById('v-side-r').getContext('2d'), p, f);
+  drawBack(document.getElementById('v-back').getContext('2d'), p, f);
+  drawSideLeft(document.getElementById('v-side-l').getContext('2d'), p, f);
+  document.getElementById('hero-name').textContent =
+    `${SKIN_TONES[current.skin].name} · ${HAIR_STYLES[current.hairStyle]} ${HAIR_COLORS[current.hair].name} · ${SHIRT_COLORS[current.shirt].name}`;
+}
+
+function buildSheet() {
+  const p = paramsFromState();
+  const targets = [
+    ['sheet-front',  drawFront],
+    ['sheet-side-r', drawSide],
+    ['sheet-back',   drawBack],
+    ['sheet-side-l', drawSideLeft],
+  ];
+  targets.forEach(([id, fn]) => {
+    const el = document.getElementById(id);
+    el.innerHTML = '';
+    for(let f=0; f<4; f++) {
+      const c = document.createElement('canvas');
+      c.className = 'spr';
+      c.width = 32; c.height = 48;
+      c.style.width = '64px'; c.style.height = '96px'; c.style.padding = '4px';
+      el.appendChild(c);
+      fn(c.getContext('2d'), p, f);
+    }
+  });
+}
+
+function buildControls() {
+  const c = document.getElementById('controls');
+  c.innerHTML = '';
+  function ctrlGroup(label, items, currentIdx, onPick, colorPicker=true) {
+    const wrap = document.createElement('div'); wrap.className='ctrl';
+    const n = document.createElement('div'); n.className='ctrl-name'; n.textContent=label;
+    wrap.appendChild(n);
+    const sw = document.createElement('div'); sw.className = colorPicker ? 'swatches' : 'style-btns';
+    items.forEach((it,i)=>{
+      const e = document.createElement('div');
+      if(colorPicker) {
+        e.className = 'swatch' + (i===currentIdx?' active':'');
+        e.style.background = it.base;
+        e.title = it.name;
+      } else {
+        e.className = 'style-btn' + (i===currentIdx?' active':'');
+        e.textContent = it;
+      }
+      e.addEventListener('click', ()=>{ onPick(i); buildControls(); refreshAll(); buildSheet(); rebuildMap(); });
+      sw.appendChild(e);
+    });
+    wrap.appendChild(sw);
+    c.appendChild(wrap);
+  }
+  ctrlGroup('SKIN', SKIN_TONES, current.skin, i=>current.skin=i);
+  ctrlGroup('HAIR STYLE', HAIR_STYLES, current.hairStyle, i=>current.hairStyle=i, false);
+  ctrlGroup('HAIR COLOR', HAIR_COLORS, current.hair, i=>current.hair=i);
+  ctrlGroup('SHIRT', SHIRT_COLORS, current.shirt, i=>current.shirt=i);
+  ctrlGroup('PANTS', PANTS_COLORS, current.pants, i=>current.pants=i);
+  ctrlGroup('SHOES', SHOE_COLORS, current.shoes, i=>current.shoes=i);
+}
+
+// ── ANIMATION LOOP ──
+function animLoop(t) {
+  if (mode === 'walk') {
+    if (t - lastFrameTime > 140) {
+      animFrame = (animFrame + 1) % 4;
+      lastFrameTime = t;
+      refreshAll();
+    }
+  }
+  requestAnimationFrame(animLoop);
+}
+
+// ── SNAPCHAT MAP PREVIEW ──
+function randInt(n){ return Math.floor(Math.random()*n); }
+function randomChar() {
+  return {
+    skin: SKIN_TONES[randInt(SKIN_TONES.length)],
+    hair: HAIR_COLORS[randInt(HAIR_COLORS.length)],
+    hairStyle: randInt(HAIR_STYLES.length),
+    shirt: SHIRT_COLORS[randInt(SHIRT_COLORS.length)],
+    pants: PANTS_COLORS[randInt(PANTS_COLORS.length)],
+    shoes: SHOE_COLORS[randInt(SHOE_COLORS.length)],
+  };
+}
+const LOCATIONS = [
+  {name:'Shoreditch', x:'22%', y:'34%'},
+  {name:'Camden',     x:'48%', y:'22%'},
+  {name:'Peckham',    x:'62%', y:'68%'},
+  {name:'Hackney',    x:'34%', y:'58%'},
+  {name:'Brixton',    x:'78%', y:'48%'},
+  {name:'Soho',       x:'14%', y:'72%'},
+];
+const VIEWS = [drawFront, drawSide, drawBack, drawSideLeft];
+
+function rebuildMap() {
+  const m = document.getElementById('map');
+  // wipe existing chars
+  m.querySelectorAll('.map-char, .road').forEach(e => e.remove());
+  // ground keep
+  // Add roads
+  const r1 = document.createElement('div'); r1.className='road';
+  r1.style.left='0'; r1.style.right='0'; r1.style.top='50%';
+  r1.innerHTML='<div class="dash" style="left:10%"></div><div class="dash" style="left:30%"></div><div class="dash" style="left:50%"></div><div class="dash" style="left:70%"></div><div class="dash" style="left:90%"></div>';
+  m.appendChild(r1);
+  const r2 = document.createElement('div'); r2.className='road';
+  r2.style.top='0'; r2.style.bottom='0'; r2.style.left='50%'; r2.style.width='18px'; r2.style.height='auto';
+  r2.style.borderTop='none'; r2.style.borderBottom='none';
+  r2.style.borderLeft='1px solid #181628'; r2.style.borderRight='1px solid #181628';
+  m.appendChild(r2);
+  // Add chars at locations
+  LOCATIONS.forEach((loc, i) => {
+    const ch = document.createElement('div'); ch.className='map-char';
+    ch.style.left = loc.x; ch.style.top = loc.y;
+    const c = document.createElement('canvas');
+    c.width = 32; c.height = 48;
+    c.style.width = '64px'; c.style.height = '96px';
+    c.style.imageRendering = 'pixelated';
+    c.style.filter = 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))';
+    ch.appendChild(c);
+    const viewFn = VIEWS[i % VIEWS.length];
+    const params = i === 0 ? paramsFromState() : randomChar();
+    viewFn(c.getContext('2d'), params, randInt(4));
+    const pin = document.createElement('div'); pin.className='map-pin';
+    pin.textContent = loc.name;
+    ch.appendChild(pin);
+    m.appendChild(ch);
+  });
+}
+
+// ── INIT ──
+buildControls();
+refreshAll();
+buildSheet();
+rebuildMap();
+requestAnimationFrame(animLoop);
+</script>
+</body>
+</html>

@@ -1,0 +1,818 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Soundgarden — The Wall</title>
+<link rel="stylesheet" href="bandlab.css" />
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&family=Abril+Fatface&family=Bebas+Neue&family=Bungee&family=Caveat:wght@400;700&family=Monoton&family=Permanent+Marker&family=Press+Start+2P&family=Rubik+Mono+One&family=Unica+One&family=Syne:wght@400;700;800&family=Shrikhand&family=Staatliches&display=swap" rel="stylesheet">
+<style>
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    background: #0a0806;
+  }
+
+  /* ---- TOP BAR ---- */
+  .topbar {
+    position: fixed; top: 0; left: 0; right: 0;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 20px 32px;
+    background: linear-gradient(180deg, rgba(1,1,1,0.85), rgba(1,1,1,0));
+    z-index: 100;
+    pointer-events: none;
+  }
+  .topbar > * { pointer-events: auto; }
+  .logo {
+    display: flex; align-items: center; gap: 12px;
+    font-family: var(--font-display);
+    font-size: 16px; font-weight: 600; letter-spacing: -0.005em;
+    color: var(--ink);
+  }
+  .logo::before { content: ''; width: 10px; height: 10px; background: var(--bl-red); }
+  .logo span {
+    margin-left: 10px; font-weight: 400; color: var(--ink-faint);
+    font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .location {
+    font-family: var(--font-display);
+    font-size: 22px; font-weight: 500;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+  }
+  .location em { font-style: normal; color: var(--bl-red); }
+  .location-sub {
+    font-family: var(--font-mono);
+    font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-top: 3px;
+    text-align: center;
+    font-weight: 500;
+  }
+  .post-btn {
+    padding: 12px 22px;
+    background: var(--bl-red);
+    color: #fff;
+    font-family: var(--font-display);
+    font-size: 13px; font-weight: 600;
+    letter-spacing: 0.04em; text-transform: uppercase;
+    cursor: pointer;
+    border: 0;
+    display: inline-flex; align-items: center; gap: 10px;
+  }
+  .post-btn::before { content: '+'; font-size: 20px; font-weight: 400; line-height: 1; }
+  .post-btn:hover { background: #ff3c25; }
+
+  /* ---- WALL ---- */
+  .wall {
+    position: fixed; inset: 0;
+    overflow: hidden;
+    /* plywood base */
+    background:
+      /* soft vignette */
+      radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(0,0,0,0.35) 80%, rgba(0,0,0,0.65) 100%),
+      /* vertical wood grain streaks */
+      repeating-linear-gradient(90deg,
+        rgba(0,0,0,0) 0,
+        rgba(0,0,0,0.08) 1px,
+        rgba(255,255,255,0.015) 2px,
+        rgba(0,0,0,0) 4px,
+        rgba(0,0,0,0.05) 6px,
+        rgba(255,255,255,0.01) 9px,
+        rgba(0,0,0,0) 14px),
+      /* plank divisions */
+      repeating-linear-gradient(90deg,
+        rgba(0,0,0,0) 0,
+        rgba(0,0,0,0) 240px,
+        rgba(0,0,0,0.4) 241px,
+        rgba(0,0,0,0.1) 243px,
+        rgba(0,0,0,0) 246px),
+      /* base plywood colour */
+      linear-gradient(180deg, #5a3f28, #4a3220 50%, #3d2818);
+    background-blend-mode: normal;
+  }
+  .wall::before {
+    /* noise grain overlay via SVG data URI */
+    content: '';
+    position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.6  0 0 0 0 0.45  0 0 0 0 0.3  0 0 0 0.28 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    mix-blend-mode: overlay;
+    opacity: 0.7;
+    pointer-events: none;
+  }
+  .wall::after {
+    /* bigger mottled stains */
+    content: '';
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(ellipse 400px 200px at 15% 85%, rgba(0,0,0,0.35), transparent 60%),
+      radial-gradient(ellipse 300px 150px at 85% 20%, rgba(0,0,0,0.25), transparent 60%),
+      radial-gradient(ellipse 200px 200px at 60% 50%, rgba(255,255,255,0.03), transparent 60%),
+      radial-gradient(circle 60px at 22% 30%, rgba(241,44,24,0.25), transparent 70%),
+      radial-gradient(circle 40px at 72% 75%, rgba(41,219,229,0.18), transparent 70%),
+      radial-gradient(circle 80px at 8% 60%, rgba(255,255,255,0.06), transparent 70%);
+    pointer-events: none;
+  }
+
+  /* paint strokes on the wall */
+  .wall-marks {
+    position: absolute; inset: 0;
+    pointer-events: none;
+  }
+  .wall-marks svg { position: absolute; }
+
+  /* masking tape scraps on the wall (empty tape pieces from old posters) */
+  .tape-scrap {
+    position: absolute;
+    width: 44px; height: 16px;
+    background: rgba(245,235,200,0.55);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.4), inset 0 0 8px rgba(0,0,0,0.08);
+    border-left: 1px solid rgba(0,0,0,0.1);
+    border-right: 1px solid rgba(0,0,0,0.1);
+    pointer-events: none;
+  }
+
+  /* staples / pin marks */
+  .pin-mark {
+    position: absolute;
+    width: 2px; height: 5px;
+    background: #2a1810;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.6);
+    pointer-events: none;
+  }
+
+  /* ---- FLYER BASE ---- */
+  .flyer {
+    position: absolute;
+    left: var(--x); top: var(--y);
+    width: var(--w); height: var(--h);
+    transform: translate(-50%, -50%) rotate(var(--rot));
+    box-shadow:
+      0 1px 2px rgba(0,0,0,0.4),
+      0 6px 14px rgba(0,0,0,0.55),
+      0 20px 36px rgba(0,0,0,0.35);
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                z-index 0s 0.35s;
+    cursor: pointer;
+    overflow: hidden;
+    will-change: transform;
+  }
+  .flyer.age-light { filter: sepia(0.12) saturate(0.95); }
+  .flyer.age-mid   { filter: sepia(0.22) saturate(0.85) brightness(0.92); }
+  .flyer.age-heavy { filter: sepia(0.35) saturate(0.72) brightness(0.85); }
+
+  .flyer:hover {
+    transform: translate(-50%, -50%) rotate(0deg) scale(1.12);
+    z-index: 200 !important;
+    box-shadow:
+      0 2px 4px rgba(0,0,0,0.5),
+      0 24px 50px rgba(0,0,0,0.7),
+      0 60px 120px rgba(241,44,24,0.25);
+    filter: none;
+    transition-delay: 0s;
+  }
+
+  /* ---- PAPER TEXTURES ---- */
+  .paper-cream { background: linear-gradient(180deg, #faf4e1 0%, #f1e8ce 100%); color: #1a1208; }
+  .paper-white { background: #ffffff; color: #0a0806; }
+  .paper-kraft { background: linear-gradient(180deg, #c7a074 0%, #a9845a 100%); color: #1a1208; }
+  .paper-black { background: #050505; color: #f4eedd; }
+  .paper-red   { background: var(--bl-red); color: #fff; }
+  .paper-yellow{ background: var(--bl-yellow); color: #1a1208; }
+  .paper-blue  { background: var(--bl-blue); color: #fff; }
+  .paper-cyan  { background: var(--bl-cyan); color: #0a0806; }
+  .paper-purple{ background: var(--bl-purple); color: #fff; }
+  .paper-orange{ background: var(--bl-orange); color: #0a0806; }
+  .paper-riso-rb {
+    background:
+      radial-gradient(circle at 30% 40%, rgba(47,147,246,0.9) 0, transparent 60%),
+      radial-gradient(circle at 70% 65%, rgba(241,44,24,0.92) 0, transparent 65%),
+      #f4eedd;
+    color: #0a0806;
+  }
+  .paper-photocopy {
+    background: #f6f3e8;
+    color: #050505;
+    filter: contrast(1.25);
+  }
+  .paper-newsprint {
+    background: linear-gradient(180deg, #e9e0c8 0%, #d6cba8 100%);
+    color: #1a1208;
+  }
+
+  .flyer::before {
+    /* subtle paper texture */
+    content: '';
+    position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.5' numOctaves='2'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.12 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    mix-blend-mode: multiply;
+    opacity: 0.6;
+    pointer-events: none;
+  }
+
+  /* ---- CURLED CORNER ---- */
+  .flyer.curl-br {
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 26px), calc(100% - 26px) 100%, 0 100%);
+  }
+  .flyer.curl-br::after {
+    content: '';
+    position: absolute;
+    right: -2px; bottom: -2px;
+    width: 42px; height: 42px;
+    background:
+      linear-gradient(135deg,
+        transparent 48%,
+        rgba(0,0,0,0.55) 49%,
+        rgba(0,0,0,0.35) 52%,
+        rgba(245,235,200,0.85) 54%,
+        rgba(200,180,140,0.95) 70%);
+    filter: drop-shadow(-3px -3px 4px rgba(0,0,0,0.4));
+    pointer-events: none;
+  }
+  .flyer.curl-tr {
+    clip-path: polygon(0 0, calc(100% - 26px) 0, 100% 26px, 100% 100%, 0 100%);
+  }
+  .flyer.curl-tr::after {
+    content: '';
+    position: absolute;
+    right: -2px; top: -2px;
+    width: 42px; height: 42px;
+    background:
+      linear-gradient(225deg,
+        transparent 48%,
+        rgba(0,0,0,0.55) 49%,
+        rgba(0,0,0,0.35) 52%,
+        rgba(245,235,200,0.85) 54%,
+        rgba(200,180,140,0.95) 70%);
+    filter: drop-shadow(-3px 3px 4px rgba(0,0,0,0.4));
+    pointer-events: none;
+  }
+
+  /* Content wrapper sits above paper texture */
+  .flyer .c {
+    position: relative; z-index: 2;
+    width: 100%; height: 100%;
+    padding: 16px 14px;
+    display: flex; flex-direction: column;
+  }
+
+  /* ---- FLYER STYLE VARIANTS ---- */
+
+  /* Gig poster — big condensed type */
+  .s-gig .kicker { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; opacity: 0.8; margin-bottom: 10px; }
+  .s-gig .title { font-family: 'Anton', sans-serif; font-size: 56px; line-height: 0.85; letter-spacing: -0.01em; text-transform: uppercase; margin-bottom: auto; }
+  .s-gig .title.sm { font-size: 44px; }
+  .s-gig .support { font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; line-height: 1.4; margin-top: 10px; }
+  .s-gig .footer { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; padding-top: 10px; border-top: 1px solid currentColor; margin-top: 12px; display: flex; justify-content: space-between; opacity: 0.85; }
+
+  /* Typographic brutalist */
+  .s-type { padding: 22px 18px; }
+  .s-type .c { justify-content: space-between; padding: 22px 18px; }
+  .s-type .kicker { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; opacity: 0.75; }
+  .s-type .title { font-family: 'Archivo Black', sans-serif; font-size: 52px; line-height: 0.9; letter-spacing: -0.035em; }
+  .s-type .title.tiny { font-size: 34px; }
+  .s-type .footer { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.7; }
+
+  /* Display serif (Abril) */
+  .s-serif .c { justify-content: center; align-items: center; text-align: center; padding: 28px 16px; }
+  .s-serif .kicker { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase; opacity: 0.6; margin-bottom: 14px; }
+  .s-serif .title { font-family: 'Abril Fatface', serif; font-size: 46px; line-height: 0.95; letter-spacing: -0.015em; }
+  .s-serif .support { font-family: 'Space Grotesk', sans-serif; font-style: italic; font-size: 12px; margin-top: 12px; opacity: 0.8; }
+
+  /* Monoton striped */
+  .s-monoton .c { justify-content: center; padding: 22px 16px; }
+  .s-monoton .title { font-family: 'Monoton', cursive; font-size: 52px; line-height: 0.95; letter-spacing: 0.02em; text-align: center; }
+  .s-monoton .title.sm { font-size: 38px; }
+  .s-monoton .support { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; margin-top: 16px; text-align: center; opacity: 0.75; }
+
+  /* Bungee blocky */
+  .s-bungee .c { justify-content: center; padding: 20px 14px; }
+  .s-bungee .title { font-family: 'Bungee', cursive; font-size: 38px; line-height: 0.95; text-transform: uppercase; text-align: center; }
+  .s-bungee .title.sm { font-size: 28px; }
+  .s-bungee .support { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; margin-top: 14px; text-align: center; opacity: 0.85; }
+
+  /* Zine handdrawn */
+  .s-zine { }
+  .s-zine .c { padding: 18px 16px; }
+  .s-zine .title { font-family: 'Permanent Marker', cursive; font-size: 40px; line-height: 0.95; transform: rotate(-2deg); margin-bottom: 8px; }
+  .s-zine .title.sm { font-size: 30px; }
+  .s-zine .scribble { font-family: 'Caveat', cursive; font-size: 22px; line-height: 1.1; font-weight: 700; margin-top: auto; }
+  .s-zine .kicker { font-family: 'Caveat', cursive; font-size: 22px; font-weight: 700; }
+
+  /* Punk photocopy */
+  .s-punk .c { padding: 20px 16px; }
+  .s-punk .kicker { font-family: 'Permanent Marker', cursive; font-size: 20px; transform: rotate(-3deg); margin-bottom: 4px; }
+  .s-punk .title { font-family: 'Staatliches', sans-serif; font-size: 50px; line-height: 0.9; text-transform: uppercase; letter-spacing: -0.01em; margin-bottom: 12px; }
+  .s-punk .title.sm { font-size: 36px; }
+  .s-punk .support { font-family: 'Bebas Neue', sans-serif; font-size: 14px; line-height: 1.2; letter-spacing: 0.04em; text-transform: uppercase; }
+  .s-punk .footer { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; margin-top: auto; padding-top: 8px; border-top: 2px solid currentColor; }
+
+  /* Rave flyer — dense info */
+  .s-rave .c { padding: 14px 12px; justify-content: space-between; }
+  .s-rave .kicker { font-family: 'Rubik Mono One', sans-serif; font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; }
+  .s-rave .title { font-family: 'Bungee', cursive; font-size: 30px; line-height: 0.95; text-align: center; text-transform: uppercase; margin: 8px 0; }
+  .s-rave .support { font-family: 'JetBrains Mono', monospace; font-size: 8px; line-height: 1.5; letter-spacing: 0.04em; }
+  .s-rave .footer { font-family: 'Bebas Neue', sans-serif; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; text-align: center; padding-top: 8px; border-top: 1px dashed currentColor; }
+
+  /* Sticker — small & loud */
+  .s-sticker { border-radius: 4px; }
+  .s-sticker .c { padding: 10px 12px; justify-content: center; align-items: center; text-align: center; }
+  .s-sticker .title { font-family: 'Shrikhand', cursive; font-size: 26px; line-height: 0.95; letter-spacing: -0.01em; }
+  .s-sticker .title.sm { font-size: 20px; }
+  .s-sticker .support { font-family: 'JetBrains Mono', monospace; font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase; margin-top: 4px; opacity: 0.75; }
+
+  /* Concert bill — stacked names */
+  .s-bill .c { padding: 16px 14px; justify-content: space-between; }
+  .s-bill .kicker { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.7; margin-bottom: 8px; }
+  .s-bill .lineup { font-family: 'Unica One', sans-serif; font-size: 22px; line-height: 1.05; text-transform: uppercase; letter-spacing: 0.02em; }
+  .s-bill .lineup .hdl { font-size: 34px; line-height: 0.95; font-weight: normal; display: block; }
+  .s-bill .footer { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.85; padding-top: 8px; border-top: 1px solid currentColor; }
+
+  /* Pixel retro */
+  .s-pixel .c { padding: 16px 14px; justify-content: center; text-align: center; }
+  .s-pixel .kicker { font-family: 'Press Start 2P', cursive; font-size: 8px; margin-bottom: 14px; opacity: 0.8; }
+  .s-pixel .title { font-family: 'Press Start 2P', cursive; font-size: 14px; line-height: 1.4; }
+  .s-pixel .footer { font-family: 'Press Start 2P', cursive; font-size: 7px; margin-top: 14px; opacity: 0.7; }
+
+  /* Record sleeve — centered big serif or display */
+  .s-sleeve .c { padding: 0; }
+  .s-sleeve .art {
+    flex: 1;
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .s-sleeve .disc {
+    width: 64%; aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(circle, #1a1208 15%, #2a1810 18%, #0a0806 22%, #0a0806 60%, #0f0a05 65%);
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.15), inset 0 0 40px rgba(0,0,0,0.7);
+  }
+  .s-sleeve .disc::before {
+    content: ''; position: absolute; inset: 0;
+    background:
+      repeating-radial-gradient(circle, transparent 0 2px, rgba(255,255,255,0.04) 2px 3px);
+    pointer-events: none;
+  }
+  .s-sleeve .disc::after {
+    content: ''; position: absolute; left: 50%; top: 50%;
+    width: 14%; aspect-ratio: 1;
+    background: var(--bl-red);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+  }
+  .s-sleeve .caption {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    padding: 12px 14px;
+    background: linear-gradient(180deg, transparent, rgba(0,0,0,0.85));
+    font-family: 'Syne', sans-serif; font-weight: 800;
+    font-size: 16px; line-height: 1.05;
+    letter-spacing: -0.015em;
+    color: #fff;
+  }
+
+  /* ---- HOVER PLAYER (appears on hover) ---- */
+  .flyer .player {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    padding: 8px 10px;
+    background: linear-gradient(180deg, transparent, rgba(0,0,0,0.92));
+    display: flex; align-items: center; gap: 8px;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.35s, transform 0.35s;
+    z-index: 5;
+    pointer-events: none;
+  }
+  .flyer:hover .player {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: 0.1s;
+  }
+  .flyer .play-btn {
+    width: 22px; height: 22px;
+    flex-shrink: 0;
+    background: var(--bl-red);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+    font-size: 9px;
+  }
+  .flyer .play-btn::before {
+    content: '';
+    width: 0; height: 0;
+    border-left: 7px solid #fff;
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    margin-left: 2px;
+  }
+  .flyer .waveform {
+    flex: 1; display: flex; align-items: center; gap: 2px;
+    height: 18px;
+  }
+  .flyer .waveform span {
+    flex: 1;
+    background: #fff;
+    min-width: 1px;
+    opacity: 0.75;
+  }
+  .flyer .dur {
+    font-family: var(--font-mono);
+    font-size: 9px; color: rgba(255,255,255,0.7);
+    letter-spacing: 0.06em;
+    flex-shrink: 0;
+  }
+
+  /* ---- SIZE PRESETS ---- */
+  .sz-xs { --w: 140px; --h: 170px; }
+  .sz-s  { --w: 180px; --h: 240px; }
+  .sz-m  { --w: 220px; --h: 300px; }
+  .sz-l  { --w: 260px; --h: 360px; }
+  .sz-xl { --w: 300px; --h: 420px; }
+  .sz-sq { --w: 220px; --h: 220px; }
+  .sz-sticker { --w: 140px; --h: 140px; }
+  .sz-wide { --w: 280px; --h: 200px; }
+
+  /* ---- BOTTOM STRIP ---- */
+  .bottomstrip {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 18px 32px;
+    background: linear-gradient(0deg, rgba(1,1,1,0.85), rgba(1,1,1,0));
+    z-index: 100;
+    font-family: var(--font-mono);
+    font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--ink-faint);
+    font-weight: 500;
+    pointer-events: none;
+  }
+  .bottomstrip > div { pointer-events: auto; }
+  .bottomstrip .counter {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .bottomstrip .counter .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--bl-red);
+    box-shadow: 0 0 10px var(--bl-red);
+    animation: pulse 1.8s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:.4} 50%{opacity:1} }
+  .bottomstrip .hint span {
+    font-family: var(--font-display);
+    text-transform: none;
+    letter-spacing: -0.005em;
+    font-size: 13px;
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  /* ---- SCROLLABLE WALL VIEWPORT ---- */
+  /* Wall content is bigger than viewport; user can drag to pan */
+  .wall-inner {
+    position: absolute;
+    width: 2400px;
+    height: 1500px;
+    left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    will-change: transform;
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">Soundgarden <span>by BandLab</span></div>
+  <div style="text-align:center">
+    <div class="location"><em>Brooklyn</em> / New York</div>
+    <div class="location-sub">Your home wall · 3,421 flyers · 18 posted today</div>
+  </div>
+  <button class="post-btn">Post a flyer</button>
+</div>
+
+<div class="wall">
+  <div class="wall-inner" id="wall-inner"></div>
+</div>
+
+<div class="bottomstrip">
+  <div class="counter"><div class="dot"></div>LIVE · 18 FLYERS POSTED IN THE LAST HOUR</div>
+  <div class="hint">Drag to explore · hover a flyer to <span>play the sound</span></div>
+</div>
+
+<script>
+// ============================================================
+// FLYER CONTENT — hand-authored music scene
+// ============================================================
+const FLYERS = [
+  // Big anchors
+  { style: 's-gig', paper: 'paper-cream', size: 'sz-l',
+    html: `<div class="kicker">FRI 14 NOV · WAREHOUSE 3</div>
+           <div class="title">MIDNIGHT<br>DRIFT</div>
+           <div class="support">w/ HALE MOON · PAPER SEA · ZNG</div>
+           <div class="footer"><span>£8 ADV</span><span>22:00</span></div>` },
+
+  { style: 's-type', paper: 'paper-red', size: 'sz-m',
+    html: `<div class="kicker">808 HEAT — SIDE A</div>
+           <div class="title">BASS<br>CHURCH</div>
+           <div class="footer">brooklyn ※ weekly</div>` },
+
+  { style: 's-punk', paper: 'paper-photocopy', size: 'sz-m',
+    html: `<div class="kicker">no encore</div>
+           <div class="title">SCARED OF<br>HORSES</div>
+           <div class="support">+ burn the menu<br>+ glass vowel<br>+ dial-up</div>
+           <div class="footer">sat 18.01 — door £5</div>` },
+
+  { style: 's-serif', paper: 'paper-cream', size: 'sz-m',
+    html: `<div class="kicker">a listening session</div>
+           <div class="title">PIANO<br>ROOMS</div>
+           <div class="support">nocturnes for an empty church</div>` },
+
+  { style: 's-monoton', paper: 'paper-black', size: 'sz-m',
+    html: `<div class="title">NEON<br>MARKET</div>
+           <div class="support">synthwave · every thursday</div>` },
+
+  { style: 's-bungee', paper: 'paper-yellow', size: 'sz-m',
+    html: `<div class="title">FUTURE<br>FUNK</div>
+           <div class="support">warehouse 12 · 23:00</div>` },
+
+  { style: 's-type', paper: 'paper-white', size: 'sz-m',
+    html: `<div class="kicker">minimal techno / issue 04</div>
+           <div class="title tiny">MONO.<br>CHROME.</div>
+           <div class="footer">berlin → detroit → nyc</div>` },
+
+  { style: 's-gig', paper: 'paper-kraft', size: 'sz-l',
+    html: `<div class="kicker">SUN 02 FEB · SMALLS</div>
+           <div class="title">HALF<br>MOON<br>CLUB</div>
+           <div class="support">live quartet · late set</div>
+           <div class="footer"><span>free ent.</span><span>01:00</span></div>` },
+
+  { style: 's-rave', paper: 'paper-riso-rb', size: 'sz-m',
+    html: `<div class="kicker">[[ acid residency ]]</div>
+           <div class="title">WARP<br>FACTOR</div>
+           <div class="support">DJ SET · KATO · LUNEBEAT · 6DB · ARCSINE · VENDETTA · DOWNTIME</div>
+           <div class="footer">↯ saturday ↯ all night</div>` },
+
+  { style: 's-zine', paper: 'paper-cream', size: 'sz-s',
+    html: `<div class="kicker">demo club!</div>
+           <div class="title">skate<br>beats<br>vol.3</div>
+           <div class="scribble">lofi bedroom tape trade<br>every weds ✂</div>` },
+
+  { style: 's-serif', paper: 'paper-blue', size: 'sz-m',
+    html: `<div class="kicker">a nightbloom for strings</div>
+           <div class="title">REYKJAVIK<br>NOCTURNE</div>
+           <div class="support">live drone · hourly</div>` },
+
+  { style: 's-bill', paper: 'paper-black', size: 'sz-l',
+    html: `<div class="kicker">the crosswalk sessions · vol. 12</div>
+           <div class="lineup">
+             <span class="hdl">NINA WRECK</span>
+             POLARIS<br>
+             MIDKEY<br>
+             THE OFF-RAMP<br>
+             BEANFIELD<br>
+             AN HONEST LIAR
+           </div>
+           <div class="footer">mercury lounge · $12</div>` },
+
+  { style: 's-sticker', paper: 'paper-red', size: 'sz-sticker',
+    html: `<div class="title">DUB<br>TAPES</div>
+           <div class="support">kingston · 93</div>` },
+
+  { style: 's-bungee', paper: 'paper-cyan', size: 'sz-m',
+    html: `<div class="title">CITY POP<br>REVIVAL</div>
+           <div class="support">tokyo → los angeles · nightly</div>` },
+
+  { style: 's-type', paper: 'paper-orange', size: 'sz-m',
+    html: `<div class="kicker">afrobeats surge · fri</div>
+           <div class="title">LAGOS<br>AFTER<br>DARK</div>
+           <div class="footer">22:00 — late</div>` },
+
+  { style: 's-punk', paper: 'paper-white', size: 'sz-s',
+    html: `<div class="kicker">diy basement gig</div>
+           <div class="title sm">DISTORTION<br>FIELD</div>
+           <div class="support">noise / hardcore / punk</div>
+           <div class="footer">byo ear plugs</div>` },
+
+  { style: 's-gig', paper: 'paper-purple', size: 'sz-m',
+    html: `<div class="kicker">MON 09 DEC · THE LOOP</div>
+           <div class="title sm">OVERTONE</div>
+           <div class="support">drone / long-form</div>
+           <div class="footer"><span>donation</span><span>20:00</span></div>` },
+
+  { style: 's-serif', paper: 'paper-cream', size: 'sz-sq',
+    html: `<div class="kicker">issue 07</div>
+           <div class="title">GHOST<br>CHORUS</div>
+           <div class="support">an EP by faraway voices</div>` },
+
+  { style: 's-zine', paper: 'paper-yellow', size: 'sz-s',
+    html: `<div class="title sm">new moon<br>drone</div>
+           <div class="scribble">crickets ★ pedal steel ★ dream logic</div>` },
+
+  { style: 's-monoton', paper: 'paper-cream', size: 'sz-m',
+    html: `<div class="title sm">GENERATIONS</div>
+           <div class="support">a soul festival · sunday</div>` },
+
+  { style: 's-sleeve', paper: 'paper-kraft', size: 'sz-sq',
+    html: `<div class="art"><div class="disc"></div></div>
+           <div class="caption">SLOW LEAK — downtempo mix 04</div>` },
+
+  { style: 's-pixel', paper: 'paper-black', size: 'sz-s',
+    html: `<div class="kicker">* new *</div>
+           <div class="title">GHETTO<br>TECH<br>FOREVER</div>
+           <div class="footer">// 180 BPM //</div>` },
+
+  { style: 's-gig', paper: 'paper-red', size: 'sz-m',
+    html: `<div class="kicker">SAT 21 DEC · BUSHWICK</div>
+           <div class="title sm">CRATE<br>DIGGERS</div>
+           <div class="support">vinyl-only all nighter</div>
+           <div class="footer"><span>$15</span><span>until 6am</span></div>` },
+
+  { style: 's-type', paper: 'paper-cream', size: 'sz-m',
+    html: `<div class="kicker">ambient lab · res.</div>
+           <div class="title tiny">TRUE<br>NORTH</div>
+           <div class="footer">mondays — weekly</div>` },
+
+  { style: 's-sticker', paper: 'paper-cyan', size: 'sz-sticker',
+    html: `<div class="title sm">KYOTO<br>DRIFT</div>
+           <div class="support">jdm citypop</div>` },
+
+  { style: 's-serif', paper: 'paper-newsprint', size: 'sz-m',
+    html: `<div class="kicker">a chamber ensemble</div>
+           <div class="title">MELLOW<br>TONES</div>
+           <div class="support">strings for late afternoons</div>` },
+
+  { style: 's-bungee', paper: 'paper-red', size: 'sz-s',
+    html: `<div class="title sm">THE<br>LOOP</div>
+           <div class="support">techno · late</div>` },
+
+  { style: 's-rave', paper: 'paper-black', size: 'sz-m',
+    html: `<div class="kicker">⟿⟿ amapiano nights ⟿⟿</div>
+           <div class="title">JOZI<br>TO YOU</div>
+           <div class="support">weekly residency · johannesburg bloc collective · special guests TBA</div>
+           <div class="footer">free entry before midnight</div>` },
+
+  { style: 's-punk', paper: 'paper-yellow', size: 'sz-s',
+    html: `<div class="kicker">photocopied w/ love</div>
+           <div class="title sm">BRIXTON<br>JUNGLE</div>
+           <div class="support">dnb / jungle / tear-outs</div>
+           <div class="footer">fri @ basement</div>` },
+
+  { style: 's-sticker', paper: 'paper-purple', size: 'sz-sticker',
+    html: `<div class="title sm">BANDLAB<br>LIVE</div>
+           <div class="support">studio sessions</div>` },
+
+  { style: 's-sleeve', paper: 'paper-black', size: 'sz-sq',
+    html: `<div class="art"><div class="disc"></div></div>
+           <div class="caption">FIRST LIGHT — morning ambient vol.2</div>` },
+
+  { style: 's-gig', paper: 'paper-orange', size: 'sz-m',
+    html: `<div class="kicker">THU 12 · BUSHWICK LOT</div>
+           <div class="title sm">SUNBLEACH</div>
+           <div class="support">surf / shoegaze / lo-fi</div>
+           <div class="footer"><span>pay what you can</span><span>19:00</span></div>` },
+
+  { style: 's-type', paper: 'paper-cyan', size: 'sz-s',
+    html: `<div class="kicker">bushwick bloc</div>
+           <div class="title tiny">BREAK<br>BEATS</div>
+           <div class="footer">open decks · tuesdays</div>` },
+
+  { style: 's-zine', paper: 'paper-white', size: 'sz-s',
+    html: `<div class="title sm">bedroom<br>pop</div>
+           <div class="scribble">an open tape night<br>bring your songs ♡</div>` },
+];
+
+// ============================================================
+// PLACEMENT — poisson-ish, jittered
+// ============================================================
+const inner = document.getElementById('wall-inner');
+const W = 2400, H = 1500;
+const placed = [];
+
+function tryPlace(f, w, h) {
+  const padding = 100;
+  for (let attempt = 0; attempt < 60; attempt++) {
+    const x = padding + Math.random() * (W - padding*2);
+    const y = padding + Math.random() * (H - padding*2);
+    // check min distance against placed centers
+    let minD = Infinity;
+    for (const p of placed) {
+      const dx = x - p.x, dy = y - p.y;
+      const d = Math.sqrt(dx*dx + dy*dy);
+      if (d < minD) minD = d;
+    }
+    // allow overlap but maintain flow — we want clusters, not alignment
+    const desired = 80 + Math.random() * 50;
+    if (minD > desired || attempt >= 40) {
+      return { x, y };
+    }
+  }
+  return { x: padding + Math.random()*(W - padding*2), y: padding + Math.random()*(H - padding*2) };
+}
+
+// Scatter some masking tape scraps and pin marks first (go under flyers)
+const wallEl = document.querySelector('.wall');
+for (let i = 0; i < 14; i++) {
+  const scrap = document.createElement('div');
+  scrap.className = 'tape-scrap';
+  scrap.style.left = Math.random() * 100 + '%';
+  scrap.style.top = Math.random() * 100 + '%';
+  scrap.style.transform = `translate(-50%, -50%) rotate(${(Math.random()-0.5)*80}deg)`;
+  wallEl.appendChild(scrap);
+}
+
+// Size lookup for placement distance
+const sizeMap = {
+  'sz-xs': [140, 170],
+  'sz-s':  [180, 240],
+  'sz-m':  [220, 300],
+  'sz-l':  [260, 360],
+  'sz-xl': [300, 420],
+  'sz-sq': [220, 220],
+  'sz-sticker': [140, 140],
+  'sz-wide': [280, 200],
+};
+
+// Shuffle flyers for varied layering
+const shuffled = FLYERS.slice().sort(() => Math.random() - 0.5);
+
+shuffled.forEach((f, i) => {
+  const [w, h] = sizeMap[f.size] || [220, 300];
+  const pos = tryPlace(f, w, h);
+  placed.push({ x: pos.x, y: pos.y });
+
+  const rot = (Math.random() - 0.5) * 22;
+  const curl = Math.random() < 0.28 ? (Math.random() < 0.5 ? 'curl-br' : 'curl-tr') : '';
+  const age = Math.random() < 0.2 ? 'age-mid' : (Math.random() < 0.35 ? 'age-light' : '');
+  const z = Math.floor(i * 2 + Math.random() * 6);
+
+  const div = document.createElement('div');
+  div.className = `flyer ${f.size} ${f.style} ${f.paper} ${curl} ${age}`;
+  div.style.setProperty('--x', pos.x + 'px');
+  div.style.setProperty('--y', pos.y + 'px');
+  div.style.setProperty('--rot', rot + 'deg');
+  div.style.zIndex = z;
+
+  // build inner content + player
+  const waveformBars = Array.from({length: 28}, (_, k) => {
+    const barH = 20 + Math.abs(Math.sin(k * 0.7 + i)) * 80;
+    return `<span style="height:${barH}%"></span>`;
+  }).join('');
+
+  const dur = `${Math.floor(1 + Math.random()*4)}:${String(Math.floor(Math.random()*60)).padStart(2,'0')}`;
+
+  div.innerHTML = `
+    <div class="c">${f.html}</div>
+    <div class="player">
+      <div class="play-btn"></div>
+      <div class="waveform">${waveformBars}</div>
+      <div class="dur">${dur}</div>
+    </div>
+  `;
+
+  inner.appendChild(div);
+});
+
+// ============================================================
+// DRAG-TO-PAN
+// ============================================================
+let panX = 0, panY = 0;
+let dragging = false, startX, startY, startPanX, startPanY;
+const wrap = document.querySelector('.wall');
+const innerEl = document.getElementById('wall-inner');
+
+// Clamp pan so edges stay within sight
+function applyPan() {
+  innerEl.style.transform = `translate(calc(-50% + ${panX}px), calc(-50% + ${panY}px))`;
+}
+
+wrap.addEventListener('mousedown', e => {
+  if (e.target.closest('.flyer')) return;
+  dragging = true;
+  startX = e.clientX; startY = e.clientY;
+  startPanX = panX; startPanY = panY;
+  wrap.style.cursor = 'grabbing';
+});
+window.addEventListener('mousemove', e => {
+  if (!dragging) return;
+  panX = startPanX + (e.clientX - startX);
+  panY = startPanY + (e.clientY - startY);
+  applyPan();
+});
+window.addEventListener('mouseup', () => {
+  dragging = false;
+  wrap.style.cursor = '';
+});
+
+// Subtle parallax idle drift
+let driftT = 0;
+function idle() {
+  if (!dragging) {
+    driftT += 0.005;
+    innerEl.style.transform = `translate(calc(-50% + ${panX + Math.sin(driftT) * 6}px), calc(-50% + ${panY + Math.cos(driftT * 0.8) * 4}px))`;
+  }
+  requestAnimationFrame(idle);
+}
+idle();
+
+wrap.style.cursor = 'grab';
+</script>
+</body>
+</html>

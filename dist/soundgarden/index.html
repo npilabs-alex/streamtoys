@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SoundGarden — Infinite Music Canvas</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=DM+Sans:wght@300;400;500&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --cyan: #00f5d4;
+    --magenta: #f72585;
+    --amber: #ffd60a;
+    --blue: #4361ee;
+    --violet: #7b2ff7;
+    --coral: #ff6b6b;
+    --glass-bg: rgba(10, 5, 20, 0.55);
+    --glass-border: rgba(255, 255, 255, 0.07);
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: #030108;
+    font-family: 'DM Sans', sans-serif;
+    color: rgba(255,255,255,0.85);
+    cursor: none;
+    user-select: none;
+  }
+
+  canvas#world { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+
+  /* Custom cursor */
+  #cursor {
+    position: fixed; width: 20px; height: 20px;
+    border: 1.5px solid rgba(0,245,212,0.5);
+    border-radius: 50%; pointer-events: none; z-index: 9999;
+    transform: translate(-50%,-50%);
+    transition: width 0.3s, height 0.3s, border-color 0.3s, background 0.3s;
+    mix-blend-mode: screen;
+  }
+  #cursor.hovering {
+    width: 44px; height: 44px;
+    border-color: rgba(247,37,133,0.7);
+    background: rgba(247,37,133,0.08);
+  }
+
+  /* Title */
+  #title {
+    position: fixed; top: 28px; left: 32px; z-index: 20; pointer-events: none;
+  }
+  #title h1 {
+    font-family: 'Cormorant Garamond', serif; font-weight: 300;
+    font-size: 28px; letter-spacing: 0.15em; text-transform: uppercase;
+    color: rgba(255,255,255,0.65);
+    text-shadow: 0 0 40px rgba(0,245,212,0.25);
+  }
+  #title h1 span { font-weight: 600; color: var(--cyan); }
+  #title p {
+    font-size: 10px; letter-spacing: 0.3em; text-transform: uppercase;
+    color: rgba(255,255,255,0.25); margin-top: 4px;
+  }
+
+  /* Minimap */
+  #minimap {
+    position: fixed; top: 24px; right: 24px; width: 170px; height: 170px;
+    border-radius: 16px; background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(16px); overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    z-index: 20;
+  }
+  #minimap canvas { width: 100%; height: 100%; }
+  #minimap-label {
+    position: absolute; bottom: 7px; left: 10px;
+    font-size: 8px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: rgba(255,255,255,0.2);
+  }
+
+  /* Tooltip */
+  #tooltip {
+    position: fixed; padding: 14px 18px; border-radius: 14px;
+    background: rgba(8,4,18,0.88); border: 1px solid var(--glass-border);
+    backdrop-filter: blur(16px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+    pointer-events: none; opacity: 0; transform: translateY(8px);
+    transition: opacity 0.25s, transform 0.25s; z-index: 50; min-width: 200px;
+  }
+  #tooltip.visible { opacity: 1; transform: translateY(0); }
+  .tt-name { font-family: 'Cormorant Garamond', serif; font-size: 18px; color: #fff; }
+  .tt-creator { font-size: 11px; color: rgba(255,255,255,0.35); margin-bottom: 10px; }
+  .tt-meta { display: flex; gap: 8px; flex-wrap: wrap; }
+  .tt-tag {
+    font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 6px;
+    background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.45);
+  }
+  .tt-stage {
+    font-size: 10px; color: rgba(255,255,255,0.3); margin-top: 8px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .tt-stage .bar { flex: 1; height: 3px; border-radius: 2px; background: rgba(255,255,255,0.06); }
+  .tt-stage .bar-fill { height: 100%; border-radius: 2px; }
+
+  /* Bottom HUD */
+  #hud {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 2px; padding: 10px 8px;
+    border-radius: 20px; background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(20px);
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5); z-index: 20;
+  }
+  .hud-item {
+    display: flex; align-items: center; gap: 6px; padding: 6px 14px;
+    font-size: 12px; font-weight: 300; color: rgba(255,255,255,0.45);
+    border-right: 1px solid rgba(255,255,255,0.05);
+    white-space: nowrap;
+  }
+  .hud-item:last-child { border-right: none; }
+  .hud-label { font-size: 8px; letter-spacing: 0.15em; text-transform: uppercase; color: rgba(255,255,255,0.2); }
+  .hud-val { font-variant-numeric: tabular-nums; color: rgba(255,255,255,0.55); }
+  .hud-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--cyan); box-shadow: 0 0 8px var(--cyan);
+    animation: dp 2s ease-in-out infinite;
+  }
+  @keyframes dp { 0%,100%{opacity:.4;transform:scale(1)} 50%{opacity:1;transform:scale(1.3)} }
+
+  #plant-btn {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 20px; margin-left: 6px;
+    border: 1px solid rgba(0,245,212,0.25); border-radius: 12px;
+    background: rgba(0,245,212,0.06); color: var(--cyan);
+    font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 500;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    cursor: none; transition: all 0.3s;
+  }
+  #plant-btn:hover {
+    background: rgba(0,245,212,0.12); border-color: rgba(0,245,212,0.4);
+    box-shadow: 0 0 20px rgba(0,245,212,0.12);
+  }
+
+  /* Seed modal */
+  #modal {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.4s;
+  }
+  #modal.open { opacity: 1; pointer-events: auto; }
+  #modal-bg {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(3,1,8,0.65); backdrop-filter: blur(6px);
+  }
+  #modal-box {
+    position: relative; width: 400px; padding: 32px 36px; border-radius: 22px;
+    background: rgba(12,6,28,0.92); border: 1px solid rgba(255,255,255,0.07);
+    box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+    transform: scale(0.92) translateY(16px);
+    transition: transform 0.4s cubic-bezier(0.16,1,0.3,1);
+  }
+  #modal.open #modal-box { transform: scale(1) translateY(0); }
+  #modal-box h2 {
+    font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 24px; color: #fff;
+  }
+  #modal-box .sub { font-size: 11px; color: rgba(255,255,255,0.3); margin-bottom: 24px; }
+  .fg { margin-bottom: 20px; }
+  .fl { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255,255,255,0.25); margin-bottom: 8px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 7px; }
+  .chip {
+    padding: 6px 13px; border-radius: 9px;
+    border: 1px solid rgba(255,255,255,0.07); background: rgba(255,255,255,0.025);
+    color: rgba(255,255,255,0.45); font-size: 11px; font-family: 'DM Sans'; cursor: none;
+    transition: all 0.2s;
+  }
+  .chip:hover { border-color: rgba(255,255,255,0.12); color: rgba(255,255,255,0.7); }
+  .chip.sel { border-color: rgba(0,245,212,0.35); background: rgba(0,245,212,0.08); color: var(--cyan); }
+  .chip.selM { border-color: rgba(247,37,133,0.35); background: rgba(247,37,133,0.08); color: var(--magenta); }
+  .bpm-row { display: flex; align-items: center; gap: 14px; }
+  .bpm-slider {
+    flex: 1; -webkit-appearance: none; height: 3px; border-radius: 2px;
+    background: rgba(255,255,255,0.07); outline: none; cursor: none;
+  }
+  .bpm-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%;
+    background: var(--cyan); box-shadow: 0 0 10px rgba(0,245,212,0.35); cursor: none;
+  }
+  .bpm-val { font-size: 18px; font-weight: 300; color: var(--cyan); min-width: 42px; text-align: right; font-variant-numeric: tabular-nums; }
+  .kchip {
+    width: 36px; height: 32px; display: flex; align-items: center; justify-content: center;
+    border-radius: 7px; border: 1px solid rgba(255,255,255,0.05);
+    background: rgba(255,255,255,0.02); color: rgba(255,255,255,0.35);
+    font-size: 11px; cursor: none; transition: all 0.2s;
+  }
+  .kchip:hover { border-color: rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); }
+  .kchip.sel { border-color: rgba(247,37,133,0.35); background: rgba(247,37,133,0.08); color: var(--magenta); }
+  .modal-btns { display: flex; gap: 10px; margin-top: 24px; }
+  .btn-c {
+    flex: 1; padding: 11px; border-radius: 11px;
+    border: 1px solid rgba(255,255,255,0.07); background: transparent;
+    color: rgba(255,255,255,0.35); font-family: 'DM Sans'; font-size: 12px; cursor: none;
+  }
+  .btn-p {
+    flex: 2; padding: 11px; border-radius: 11px; border: none;
+    background: linear-gradient(135deg, var(--cyan), var(--blue));
+    color: #030108; font-family: 'DM Sans'; font-size: 12px; font-weight: 500;
+    letter-spacing: 0.08em; text-transform: uppercase; cursor: none;
+    box-shadow: 0 4px 18px rgba(0,245,212,0.18);
+    transition: all 0.3s;
+  }
+  .btn-p:hover { box-shadow: 0 4px 28px rgba(0,245,212,0.3); transform: translateY(-1px); }
+
+  /* Intro */
+  #intro {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 200; background: #030108; transition: opacity 1.2s;
+  }
+  #intro.out { opacity: 0; pointer-events: none; }
+  #intro h1 {
+    font-family: 'Cormorant Garamond', serif; font-weight: 300;
+    font-size: 52px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: rgba(255,255,255,0.8);
+    text-shadow: 0 0 60px rgba(0,245,212,0.25);
+    animation: fi 2s ease forwards; opacity: 0;
+  }
+  #intro h1 span {
+    font-weight: 600;
+    background: linear-gradient(135deg, var(--cyan), var(--magenta));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  #intro p {
+    font-size: 13px; letter-spacing: 0.25em; text-transform: uppercase;
+    color: rgba(255,255,255,0.2); margin-top: 14px;
+    animation: fi 2s ease 0.4s forwards; opacity: 0;
+  }
+  #intro button {
+    margin-top: 44px; padding: 13px 36px; border-radius: 13px;
+    border: 1px solid rgba(0,245,212,0.25); background: rgba(0,245,212,0.05);
+    color: var(--cyan); font-family: 'DM Sans'; font-size: 12px; font-weight: 500;
+    letter-spacing: 0.15em; text-transform: uppercase; cursor: none;
+    animation: fi 2s ease 0.8s forwards; opacity: 0; transition: all 0.3s;
+  }
+  #intro button:hover { background: rgba(0,245,212,0.1); box-shadow: 0 0 30px rgba(0,245,212,0.12); }
+  @keyframes fi { to { opacity: 1; } }
+
+  /* Toast */
+  #toast {
+    position: fixed; top: 24px; left: 50%;
+    transform: translateX(-50%) translateY(-60px);
+    padding: 10px 20px; border-radius: 11px;
+    background: rgba(12,6,28,0.88); border: 1px solid rgba(0,245,212,0.15);
+    color: rgba(255,255,255,0.6); font-size: 11px; z-index: 150;
+    transition: transform 0.5s cubic-bezier(0.16,1,0.3,1);
+    backdrop-filter: blur(12px); pointer-events: none;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<canvas id="world"></canvas>
+<div id="cursor"></div>
+
+<div id="title"><h1>Sound<span>Garden</span></h1><p>Infinite music canvas</p></div>
+
+<div id="minimap"><canvas id="mmc"></canvas><div id="minimap-label">Garden</div></div>
+
+<div id="tooltip">
+  <div class="tt-name"></div>
+  <div class="tt-creator"></div>
+  <div class="tt-meta"></div>
+  <div class="tt-stage"><span class="bar"><div class="bar-fill"></div></span></div>
+</div>
+
+<div id="hud">
+  <div class="hud-item"><div class="hud-dot"></div><div><div class="hud-label">Position</div><div class="hud-val" id="hp">0, 0</div></div></div>
+  <div class="hud-item"><div><div class="hud-label">Zoom</div><div class="hud-val" id="hz">100%</div></div></div>
+  <div class="hud-item"><div><div class="hud-label">Nearby</div><div class="hud-val" id="hn">—</div></div></div>
+  <div class="hud-item"><div><div class="hud-label">Organisms</div><div class="hud-val" id="ho">—</div></div></div>
+  <button id="plant-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Plant Seed</button>
+</div>
+
+<div id="modal">
+  <div id="modal-bg"></div>
+  <div id="modal-box">
+    <h2>Plant a Seed</h2><p class="sub">Your creation grows with the garden</p>
+    <div class="fg"><div class="fl">Genre</div><div class="chips" id="gc"></div></div>
+    <div class="fg"><div class="fl">Tempo</div><div class="bpm-row"><input type="range" class="bpm-slider" id="bs" min="60" max="180" value="120"><div class="bpm-val" id="bv">120</div></div></div>
+    <div class="fg"><div class="fl">Key</div><div class="chips" id="kc"></div></div>
+    <div class="modal-btns"><button class="btn-c" id="mc">Cancel</button><button class="btn-p" id="mp">Plant Seed</button></div>
+  </div>
+</div>
+
+<div id="intro"><h1>Sound<span>Garden</span></h1><p>An infinite living music canvas</p><button id="enter">Enter the Garden</button></div>
+<div id="toast"></div>
+
+<script>
+// ============================================================
+// SoundGarden v2 — LBP/Spore Visual Benchmark
+// ============================================================
+
+const C = document.getElementById('world');
+const X = C.getContext('2d');
+const MC = document.getElementById('mmc');
+const MX = MC.getContext('2d');
+const dpr = Math.min(devicePixelRatio, 2);
+
+// --- Dynamic texture: offscreen canvases at reduced resolution ---
+const TEX_SCALE = 6; // render at 1/6 resolution for perf
+const texCanvas = document.createElement('canvas');
+const texCtx = texCanvas.getContext('2d');
+const tex2Canvas = document.createElement('canvas'); // second layer
+const tex2Ctx = tex2Canvas.getContext('2d');
+
+// --- State ---
+const S = {
+  w: 0, h: 0,
+  cam: { x: 0, y: 0, z: 1, tz: 1 },
+  mouse: { x: 0, y: 0 },
+  drag: false, ds: { x: 0, y: 0 }, cs: { x: 0, y: 0 },
+  t: 0, hovered: null, started: false,
+};
+
+// --- Palettes (Spore cell-stage inspired: saturated, bioluminescent, with warm LBP undertones) ---
+const PAL = {
+  ambient:    { p: '#00f5d4', s: '#0a9396', g: '0,245,212' },
+  hiphop:     { p: '#ffd60a', s: '#e09f3e', g: '255,214,10' },
+  electronic: { p: '#f72585', s: '#b5179e', g: '247,37,133' },
+  lofi:       { p: '#c4b5fd', s: '#7c3aed', g: '196,181,253' },
+  rnb:        { p: '#ff6b6b', s: '#c9184a', g: '255,107,107' },
+  rock:       { p: '#fb923c', s: '#c2410c', g: '251,146,60' },
+  jazz:       { p: '#4361ee', s: '#3a0ca3', g: '67,97,238' },
+  classical:  { p: '#fde68a', s: '#d4a056', g: '253,230,138' },
+  pop:        { p: '#ff79c6', s: '#ff2d95', g: '255,121,198' },
+  world:      { p: '#34d399', s: '#059669', g: '52,211,153' },
+};
+
+const GENRES = Object.keys(PAL);
+const KEYS = ['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B'];
+const STAGES = ['seed','sprout','bloom','ancient'];
+const ADJ = ['Ethereal','Velvet','Cosmic','Neon','Phantom','Crystal','Molten','Silken','Dew','Prismatic','Gossamer','Luminous','Spectral','Iridescent','Tender'];
+const NOUN = ['Polyp','Medusa','Sprout','Tendril','Filament','Anemone','Coral','Nudibranch','Plume','Frond','Colony','Mycelia','Blossom','Diatom','Spicule'];
+const CREATORS = ['astralbeats','loopweaver','synthgarden','beatroot','echomoss','pulseflora','wavefern','bassbloom','melodrift','rhythmvine','sonicspore','harmonyleaf','deepcoral','neonmist','chordember'];
+
+// --- Noise ---
+function hash(x, y) {
+  let h = (x * 374761393 + y * 668265263) | 0;
+  h = ((h ^ (h >> 13)) * 1274126177) | 0;
+  return (h & 0x7fffffff) / 0x7fffffff;
+}
+function noise(x, y) {
+  const ix = Math.floor(x), iy = Math.floor(y);
+  const fx = x - ix, fy = y - iy;
+  const sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
+  const a = hash(ix, iy), b = hash(ix + 1, iy), c = hash(ix, iy + 1), d = hash(ix + 1, iy + 1);
+  return a + (b - a) * sx + (c - a) * sy + (a - b - c + d) * sx * sy;
+}
+function fbm(x, y, oct) {
+  let v = 0, a = 0.5, f = 1;
+  for (let i = 0; i < oct; i++) { v += a * noise(x * f, y * f); a *= 0.5; f *= 2; }
+  return v;
+}
+
+// --- Organism Generation ---
+const organisms = [];
+
+function mkOrg(x, y, opts = {}) {
+  const genre = opts.genre || GENRES[Math.random() * GENRES.length | 0];
+  const key = opts.key || KEYS[Math.random() * 12 | 0];
+  const bpm = opts.bpm || (70 + Math.random() * 110 | 0);
+  const stage = opts.stage || STAGES[Math.random() * 4 | 0];
+  const si = STAGES.indexOf(stage);
+  const base = [10, 22, 42, 72][si];
+  const pal = PAL[genre];
+
+  // Spore-style body plan: number of lobes, eye count, appendage count
+  const lobes = 3 + (Math.random() * 4 | 0) + si;
+  const hasEyes = si >= 1;
+  const eyeCount = hasEyes ? 1 + (Math.random() * (1 + si) | 0) : 0;
+  const appendages = si >= 2 ? 3 + (Math.random() * (si * 3) | 0) : (si >= 1 ? 1 + (Math.random() * 3 | 0) : 0);
+  const appendageLen = base * (0.8 + Math.random() * 1.2);
+  // Spore: each creature has a unique body wobble signature
+  const wobbleSpeeds = Array.from({length: lobes}, () => 0.3 + Math.random() * 0.8);
+  const wobbleAmps = Array.from({length: lobes}, () => 0.06 + Math.random() * 0.15);
+  const wobblePhases = Array.from({length: lobes}, () => Math.random() * Math.PI * 2);
+  // Eye positions (as angle offsets from centre)
+  const eyes = Array.from({length: eyeCount}, () => ({
+    angle: Math.random() * Math.PI * 2,
+    dist: 0.2 + Math.random() * 0.35,
+    size: 0.12 + Math.random() * 0.1,
+    pupilPhase: Math.random() * Math.PI * 2,
+  }));
+  // LBP-style stitch marks around the body
+  const stitchCount = 6 + (Math.random() * 8 | 0);
+
+  return {
+    x, y, genre, key, bpm, stage, si, pal,
+    size: base + Math.random() * base * 0.3,
+    name: ADJ[Math.random() * ADJ.length | 0] + ' ' + NOUN[Math.random() * NOUN.length | 0],
+    creator: CREATORS[Math.random() * CREATORS.length | 0],
+    phase: Math.random() * Math.PI * 2,
+    lobes, wobbleSpeeds, wobbleAmps, wobblePhases,
+    eyes, appendages, appendageLen, stitchCount,
+    pulseSpeed: 0.4 + Math.random() * 0.8,
+    rings: [], ringTimer: 0, ringInt: 1.2 + Math.random() * 2.5,
+    particles: [],
+    hover: 0,
+    contributions: 1 + Math.random() * 25 | 0,
+    plays: Math.random() * 8000 | 0,
+    // Spore breathing
+    breathPhase: Math.random() * Math.PI * 2,
+    breathSpeed: 0.6 + Math.random() * 0.4,
+    // LBP material — each organism has a subtle "texture grain" seed
+    texSeed: Math.random() * 1000,
+  };
+}
+
+// Scatter + clusters
+for (let i = 0; i < 70; i++) {
+  const a = Math.random() * Math.PI * 2, d = Math.random() * 2500;
+  organisms.push(mkOrg(Math.cos(a) * d, Math.sin(a) * d));
+}
+for (let c = 0; c < 7; c++) {
+  const cx = (Math.random() - 0.5) * 4500, cy = (Math.random() - 0.5) * 4500;
+  const n = 8 + Math.random() * 14 | 0;
+  const genre = GENRES[Math.random() * GENRES.length | 0];
+  const key = KEYS[Math.random() * 12 | 0];
+  for (let i = 0; i < n; i++) {
+    organisms.push(mkOrg(cx + (Math.random() - 0.5) * 500, cy + (Math.random() - 0.5) * 500, { genre, key }));
+  }
+}
+
+// Ambient particles
+const ambParts = Array.from({length: 250}, () => ({
+  x: (Math.random() - 0.5) * 8000, y: (Math.random() - 0.5) * 8000,
+  sz: 0.5 + Math.random() * 2.5, sp: 0.08 + Math.random() * 0.25,
+  ang: Math.random() * Math.PI * 2, a: 0.08 + Math.random() * 0.25,
+  col: ['0,245,212', '196,181,253', '247,37,133', '253,230,138'][Math.random() * 4 | 0],
+  drift: Math.random() * 0.015, wobble: Math.random() * 0.5,
+}));
+
+// Connections
+let conns = [];
+function compConns() {
+  conns = [];
+  for (let i = 0; i < organisms.length; i++) {
+    for (let j = i + 1; j < organisms.length; j++) {
+      const a = organisms[i], b = organisms[j];
+      const dx = a.x - b.x, dy = a.y - b.y, dist = Math.sqrt(dx * dx + dy * dy);
+      const maxD = (a.si + b.si >= 3) ? 380 : 220;
+      if (dist < maxD && (a.key === b.key || a.genre === b.genre)) {
+        conns.push({ a, b, dist, maxD });
+      }
+    }
+  }
+}
+compConns();
+
+// --- Resize ---
+function resize() {
+  S.w = innerWidth; S.h = innerHeight;
+  C.width = S.w * dpr; C.height = S.h * dpr;
+  C.style.width = S.w + 'px'; C.style.height = S.h + 'px';
+  X.setTransform(dpr, 0, 0, dpr, 0, 0);
+  MC.width = 170 * dpr; MC.height = 170 * dpr;
+  // Texture canvases at reduced res
+  texCanvas.width = Math.ceil(S.w / TEX_SCALE);
+  texCanvas.height = Math.ceil(S.h / TEX_SCALE);
+  tex2Canvas.width = Math.ceil(S.w / TEX_SCALE);
+  tex2Canvas.height = Math.ceil(S.h / TEX_SCALE);
+}
+resize();
+addEventListener('resize', resize);
+
+function w2s(wx, wy) {
+  return { x: (wx - S.cam.x) * S.cam.z + S.w / 2, y: (wy - S.cam.y) * S.cam.z + S.h / 2 };
+}
+function s2w(sx, sy) {
+  return { x: (sx - S.w / 2) / S.cam.z + S.cam.x, y: (sy - S.h / 2) / S.cam.z + S.cam.y };
+}
+
+// ============================================================
+// DRAW — Spore/LBP hybrid rendering
+// ============================================================
+
+// --- Dynamic texture rendering (offscreen, reduced res) ---
+// Layer 1: Deep organic flowing noise — like deep-sea currents / Spore cell fluid
+function renderTexture1(t) {
+  const tw = texCanvas.width, th = texCanvas.height;
+  const img = texCtx.createImageData(tw, th);
+  const d = img.data;
+  // Camera offset for world-space scrolling
+  const cox = S.cam.x * 0.0004, coy = S.cam.y * 0.0004;
+  const slow = t * 0.04; // very slow drift
+  for (let y = 0; y < th; y++) {
+    for (let x = 0; x < tw; x++) {
+      const i = (y * tw + x) * 4;
+      const nx = x * 0.018 + cox, ny = y * 0.018 + coy;
+      // Multi-octave flowing noise
+      const n1 = fbm(nx + slow, ny + slow * 0.7, 4);
+      // Warped domain for organic swirl (reaction-diffusion feel)
+      const warp = fbm(nx + n1 * 2.5 + slow * 0.3, ny + n1 * 2.5 - slow * 0.2, 3);
+      // Second warp layer for extra complexity
+      const n2 = fbm(nx * 0.6 + warp * 1.8 - slow * 0.5, ny * 0.6 + warp * 1.8 + slow * 0.4, 3);
+
+      // Color mapping: deep purples, midnight blues, hints of teal
+      const v = n2;
+      const v2 = warp;
+      // Base: very dark purple-blue
+      const r = (8 + v * 22 + v2 * 8) | 0;
+      const g = (3 + v * 8 + v2 * 18) | 0;
+      const b = (16 + v * 35 + v2 * 25) | 0;
+      d[i] = Math.min(255, r);
+      d[i + 1] = Math.min(255, g);
+      d[i + 2] = Math.min(255, b);
+      d[i + 3] = 255;
+    }
+  }
+  texCtx.putImageData(img, 0, 0);
+}
+
+// Layer 2: Bright veins / mycelium energy flowing through the substrate
+function renderTexture2(t) {
+  const tw = tex2Canvas.width, th = tex2Canvas.height;
+  const img = tex2Ctx.createImageData(tw, th);
+  const d = img.data;
+  const cox = S.cam.x * 0.0003, coy = S.cam.y * 0.0003;
+  const slow = t * 0.025;
+  for (let y = 0; y < th; y++) {
+    for (let x = 0; x < tw; x++) {
+      const i = (y * tw + x) * 4;
+      const nx = x * 0.025 + cox, ny = y * 0.025 + coy;
+      // Ridge noise: take abs of noise for vein-like ridges
+      const n1 = fbm(nx + slow * 0.8, ny - slow * 0.6, 3);
+      const warp = fbm(nx + n1 * 3 + slow * 0.15, ny + n1 * 3 + slow * 0.1, 3);
+      // Ridge: 1 - abs(noise * 2 - 1) creates bright lines
+      const ridge = 1 - Math.abs(warp * 2 - 1);
+      const sharp = ridge * ridge * ridge; // sharpen the ridges
+      // Colour: teal/cyan veins with magenta hotspots
+      const hotspot = fbm(nx * 0.5 + slow * 0.3, ny * 0.5 - slow * 0.2, 2);
+      const isMagenta = hotspot > 0.6;
+      let r, g, b, a;
+      if (isMagenta) {
+        r = (sharp * 80) | 0;
+        g = (sharp * 10) | 0;
+        b = (sharp * 50) | 0;
+      } else {
+        r = (sharp * 5) | 0;
+        g = (sharp * 60) | 0;
+        b = (sharp * 55) | 0;
+      }
+      a = (sharp * 90) | 0; // semi-transparent veins
+      d[i] = r; d[i + 1] = g; d[i + 2] = b; d[i + 3] = a;
+    }
+  }
+  tex2Ctx.putImageData(img, 0, 0);
+}
+
+// Throttle texture updates (expensive — run every N frames)
+let texFrame = 0;
+const TEX_UPDATE_INTERVAL = 2; // every 2 frames
+
+// --- Background composite ---
+function drawBg(t) {
+  // Update dynamic textures (throttled)
+  texFrame++;
+  if (texFrame % TEX_UPDATE_INTERVAL === 0) {
+    renderTexture1(t);
+    renderTexture2(t);
+  }
+
+  // Layer 0: Solid base
+  X.fillStyle = '#030108';
+  X.fillRect(0, 0, S.w, S.h);
+
+  // Layer 1: Deep organic texture (full coverage, upscaled with smoothing)
+  X.imageSmoothingEnabled = true;
+  X.imageSmoothingQuality = 'high';
+  X.drawImage(texCanvas, 0, 0, S.w, S.h);
+
+  // Layer 2: Bright veins overlay (additive-ish via lighter composite)
+  X.globalCompositeOperation = 'screen';
+  X.drawImage(tex2Canvas, 0, 0, S.w, S.h);
+  X.globalCompositeOperation = 'source-over';
+
+  // Layer 3: Radial depth gradient (LBP cozy centre focus)
+  const depth = X.createRadialGradient(S.w/2, S.h/2, S.w * 0.15, S.w/2, S.h/2, S.w * 0.7);
+  depth.addColorStop(0, 'rgba(0,0,0,0)');
+  depth.addColorStop(0.6, 'rgba(3,1,8,0.2)');
+  depth.addColorStop(1, 'rgba(3,1,8,0.55)');
+  X.fillStyle = depth;
+  X.fillRect(0, 0, S.w, S.h);
+
+  // Layer 4: Slow-moving nebula clouds (parallax, overlay)
+  for (let i = 0; i < 5; i++) {
+    const px = S.w * (0.1 + i * 0.2) + Math.sin(t * 0.05 + i * 1.8) * 70 - S.cam.x * 0.015 * S.cam.z;
+    const py = S.h * (0.15 + i * 0.17) + Math.cos(t * 0.04 + i * 1.3) * 50 - S.cam.y * 0.015 * S.cam.z;
+    const r = 200 + i * 60;
+    const neb = X.createRadialGradient(px, py, 0, px, py, r);
+    const cols = [
+      'rgba(123,47,247,0.025)', 'rgba(247,37,133,0.02)',
+      'rgba(0,245,212,0.015)', 'rgba(67,97,238,0.018)', 'rgba(253,230,138,0.01)'
+    ];
+    neb.addColorStop(0, cols[i]);
+    neb.addColorStop(0.5, cols[i].replace(/[\d.]+\)$/, '0.005)'));
+    neb.addColorStop(1, 'rgba(0,0,0,0)');
+    X.fillStyle = neb;
+    X.fillRect(0, 0, S.w, S.h);
+  }
+
+  // Layer 5: Parallax star field
+  for (let i = 0; i < 140; i++) {
+    const sx = ((hash(i + 42, 0) * S.w - S.cam.x * 0.03 * S.cam.z) % S.w + S.w) % S.w;
+    const sy = ((hash(0, i + 42) * S.h - S.cam.y * 0.03 * S.cam.z) % S.h + S.h) % S.h;
+    const bri = 0.06 + hash(i, 42) * 0.2;
+    const tw2 = Math.sin(t * (0.8 + hash(i, 1) * 1.5) + i) * 0.5 + 0.5;
+    X.beginPath();
+    X.arc(sx, sy, 0.4 + hash(i, 2) * 0.9, 0, Math.PI * 2);
+    X.fillStyle = `rgba(255,255,255,${bri * tw2})`;
+    X.fill();
+  }
+
+  // Layer 6: Subtle film grain (LBP felt texture, screen-space)
+  X.globalAlpha = 0.03;
+  const gs = 3;
+  const gOffX = (t * 100 | 0) % 37, gOffY = (t * 77 | 0) % 29; // jitter grain
+  for (let gx = 0; gx < S.w; gx += gs * 5) {
+    for (let gy = 0; gy < S.h; gy += gs * 5) {
+      const n = hash(gx + gOffX, gy + gOffY);
+      if (n > 0.5) {
+        X.fillStyle = n > 0.7 ? '#3a2060' : '#1a1030';
+        X.fillRect(gx, gy, gs, gs);
+      }
+    }
+  }
+  X.globalAlpha = 1;
+}
+
+// --- LBP stitch line helper ---
+function drawStitch(x1, y1, x2, y2, color, alpha) {
+  const dx = x2 - x1, dy = y2 - y1;
+  const len = Math.sqrt(dx * dx + dy * dy);
+  const steps = Math.max(2, len / 4 | 0);
+  X.strokeStyle = `rgba(${color},${alpha})`;
+  X.lineWidth = 0.8;
+  for (let i = 0; i < steps; i += 2) {
+    const t1 = i / steps, t2 = Math.min((i + 1) / steps, 1);
+    X.beginPath();
+    X.moveTo(x1 + dx * t1, y1 + dy * t1);
+    X.lineTo(x1 + dx * t2, y1 + dy * t2);
+    X.stroke();
+  }
+}
+
+// --- Draw Spore-style organism ---
+function drawOrg(org, t) {
+  const scr = w2s(org.x, org.y);
+  const z = S.cam.z;
+  const sz = org.size * z;
+  const m = sz * 5;
+  if (scr.x < -m || scr.x > S.w + m || scr.y < -m || scr.y > S.h + m) return;
+
+  const hv = org.hover;
+  const pulse = Math.sin(t * org.pulseSpeed + org.phase) * 0.5 + 0.5;
+  const breath = Math.sin(t * org.breathSpeed + org.breathPhase) * 0.03 + 1;
+  const eSz = sz * (breath + pulse * 0.06 + hv * 0.12);
+
+  X.save();
+  X.translate(scr.x, scr.y);
+
+  // --- Outer glow (Spore cell-stage bioluminescence) ---
+  const glowR = eSz * (2.5 + org.si * 0.6 + hv * 1.5);
+  const glow = X.createRadialGradient(0, 0, eSz * 0.3, 0, 0, glowR);
+  glow.addColorStop(0, `rgba(${org.pal.g},${0.12 + hv * 0.12})`);
+  glow.addColorStop(0.4, `rgba(${org.pal.g},0.03)`);
+  glow.addColorStop(1, `rgba(${org.pal.g},0)`);
+  X.fillStyle = glow;
+  X.beginPath(); X.arc(0, 0, glowR, 0, Math.PI * 2); X.fill();
+
+  // --- Appendages / tentacles (Spore-style, organic curves) ---
+  for (let i = 0; i < org.appendages; i++) {
+    const baseAng = (Math.PI * 2 / org.appendages) * i + org.phase;
+    const wave = Math.sin(t * 0.7 + i * 1.8 + org.phase) * 0.4;
+    const ang = baseAng + wave;
+    const len = org.appendageLen * z * (0.6 + pulse * 0.4);
+    // Spore tentacle: thick at base, thin at tip, wobbly
+    const midWobble = Math.sin(t * 1.2 + i * 2.5) * eSz * 0.4;
+    const tipX = Math.cos(ang) * len;
+    const tipY = Math.sin(ang) * len;
+    const midX = Math.cos(ang + 0.3) * len * 0.5 + Math.cos(ang + 1.57) * midWobble;
+    const midY = Math.sin(ang + 0.3) * len * 0.5 + Math.sin(ang + 1.57) * midWobble;
+
+    // Thick-to-thin tentacle
+    const baseWidth = (2.5 + org.si * 1.5) * z;
+    X.beginPath();
+    X.moveTo(Math.cos(ang + 0.15) * eSz * 0.4, Math.sin(ang + 0.15) * eSz * 0.4);
+    X.quadraticCurveTo(midX, midY, tipX, tipY);
+    X.lineWidth = baseWidth;
+    X.strokeStyle = `rgba(${org.pal.g},${0.18 + hv * 0.12})`;
+    X.lineCap = 'round';
+    X.stroke();
+
+    // Tentacle tip glow
+    if (org.si >= 2) {
+      const tipGlow = X.createRadialGradient(tipX, tipY, 0, tipX, tipY, 6 * z);
+      tipGlow.addColorStop(0, `rgba(${org.pal.g},${0.4 + hv * 0.3})`);
+      tipGlow.addColorStop(1, `rgba(${org.pal.g},0)`);
+      X.fillStyle = tipGlow;
+      X.beginPath(); X.arc(tipX, tipY, 6 * z, 0, Math.PI * 2); X.fill();
+    }
+  }
+
+  // --- Pulse rings (sonar) ---
+  org.ringTimer += 1 / 60;
+  if (org.ringTimer > org.ringInt && org.si >= 1) {
+    org.rings.push({ r: eSz, a: 0.35, mx: eSz * (3 + org.si * 1.5) });
+    org.ringTimer = 0;
+  }
+  for (let i = org.rings.length - 1; i >= 0; i--) {
+    const r = org.rings[i];
+    r.r += (0.4 + org.si * 0.25) * z;
+    r.a -= 0.004;
+    if (r.a <= 0) { org.rings.splice(i, 1); continue; }
+    X.beginPath(); X.arc(0, 0, r.r, 0, Math.PI * 2);
+    X.strokeStyle = `rgba(${org.pal.g},${r.a})`;
+    X.lineWidth = (0.8 + hv * 0.8) * z;
+    X.stroke();
+  }
+
+  // --- Core body: Spore blobby multi-lobe shape ---
+  X.beginPath();
+  const pts = org.lobes * 6;
+  for (let i = 0; i <= pts; i++) {
+    const a = (Math.PI * 2 / pts) * i;
+    // Each lobe contributes a bulge
+    let r = eSz;
+    for (let l = 0; l < org.lobes; l++) {
+      const lobeAng = (Math.PI * 2 / org.lobes) * l;
+      const diff = Math.cos(a - lobeAng);
+      const wobble = Math.sin(t * org.wobbleSpeeds[l] + org.wobblePhases[l]) * org.wobbleAmps[l];
+      r += eSz * (0.12 + wobble) * Math.max(0, diff * diff * diff);
+    }
+    const px = Math.cos(a) * r, py = Math.sin(a) * r;
+    i === 0 ? X.moveTo(px, py) : X.lineTo(px, py);
+  }
+  X.closePath();
+
+  // Body fill: rich radial gradient (Spore's semi-translucent flesh)
+  const bodyG = X.createRadialGradient(-eSz * 0.15, -eSz * 0.15, 0, 0, 0, eSz * 1.4);
+  bodyG.addColorStop(0, org.pal.p + 'dd');
+  bodyG.addColorStop(0.45, org.pal.s + 'aa');
+  bodyG.addColorStop(0.85, org.pal.s + '44');
+  bodyG.addColorStop(1, `rgba(${org.pal.g},0)`);
+  X.fillStyle = bodyG;
+  X.fill();
+
+  // LBP felt/fabric edge — subtle outer stroke with texture
+  X.strokeStyle = `rgba(${org.pal.g},${0.25 + hv * 0.2})`;
+  X.lineWidth = (1.2 + org.si * 0.3) * z;
+  X.setLineDash(org.si >= 2 ? [] : [3 * z, 3 * z]); // Stitched edge for young organisms (LBP)
+  X.stroke();
+  X.setLineDash([]);
+
+  // Inner subsurface glow (Spore translucency)
+  const inner = X.createRadialGradient(-eSz * 0.2, -eSz * 0.2, 0, 0, 0, eSz * 0.7);
+  inner.addColorStop(0, `rgba(255,255,255,${0.2 + hv * 0.25})`);
+  inner.addColorStop(0.5, `rgba(255,255,255,${0.05 + hv * 0.05})`);
+  inner.addColorStop(1, 'rgba(255,255,255,0)');
+  X.fillStyle = inner;
+  X.fill();
+
+  // --- LBP stitch marks (decorative, like thread through felt) ---
+  if (org.si <= 2) {
+    X.globalAlpha = 0.15 + hv * 0.1;
+    for (let i = 0; i < org.stitchCount; i++) {
+      const a1 = (Math.PI * 2 / org.stitchCount) * i;
+      const a2 = a1 + 0.15;
+      const r1 = eSz * 0.85, r2 = eSz * 1.05;
+      drawStitch(
+        Math.cos(a1) * r1, Math.sin(a1) * r1,
+        Math.cos(a2) * r2, Math.sin(a2) * r2,
+        org.pal.g, 0.4
+      );
+    }
+    X.globalAlpha = 1;
+  }
+
+  // --- Spore eyes ---
+  for (const eye of org.eyes) {
+    const ea = eye.angle + Math.sin(t * 0.3 + eye.pupilPhase) * 0.2;
+    const ed = eye.dist * eSz;
+    const ex = Math.cos(ea) * ed;
+    const ey = Math.sin(ea) * ed;
+    const eSize = eye.size * eSz;
+
+    // Eye white (slightly off-white, LBP fabric feel)
+    X.beginPath(); X.arc(ex, ey, eSize, 0, Math.PI * 2);
+    const eyeG = X.createRadialGradient(ex - eSize * 0.2, ey - eSize * 0.2, 0, ex, ey, eSize);
+    eyeG.addColorStop(0, '#f0ebe0');
+    eyeG.addColorStop(0.7, '#d8d0c0');
+    eyeG.addColorStop(1, '#b0a890');
+    X.fillStyle = eyeG;
+    X.fill();
+    X.strokeStyle = `rgba(${org.pal.g},0.3)`;
+    X.lineWidth = 0.8 * z;
+    X.stroke();
+
+    // Pupil — looks toward mouse (Spore creature awareness)
+    const toMouseAng = Math.atan2(S.mouse.y - scr.y, S.mouse.x - scr.x);
+    const pupilDist = eSize * 0.3 * (0.5 + hv * 0.5);
+    const px = ex + Math.cos(toMouseAng) * pupilDist;
+    const py = ey + Math.sin(toMouseAng) * pupilDist;
+    X.beginPath(); X.arc(px, py, eSize * 0.45, 0, Math.PI * 2);
+    X.fillStyle = '#0a0a0a';
+    X.fill();
+
+    // Eye highlight
+    X.beginPath(); X.arc(px - eSize * 0.15, py - eSize * 0.15, eSize * 0.15, 0, Math.PI * 2);
+    X.fillStyle = 'rgba(255,255,255,0.7)';
+    X.fill();
+  }
+
+  // --- Organism particles (bloom+) ---
+  if (org.si >= 2 && Math.random() < 0.12 + hv * 0.25) {
+    const pa = Math.random() * Math.PI * 2;
+    org.particles.push({
+      x: Math.cos(pa) * eSz * 0.4, y: Math.sin(pa) * eSz * 0.4,
+      vx: Math.cos(pa) * (0.2 + Math.random() * 0.4),
+      vy: Math.sin(pa) * (0.2 + Math.random() * 0.4),
+      a: 0.5, sz: (1 + Math.random() * 2.5) * z,
+    });
+  }
+  for (let i = org.particles.length - 1; i >= 0; i--) {
+    const p = org.particles[i];
+    p.x += p.vx; p.y += p.vy; p.a -= 0.007;
+    if (p.a <= 0) { org.particles.splice(i, 1); continue; }
+    X.beginPath(); X.arc(p.x, p.y, p.sz, 0, Math.PI * 2);
+    X.fillStyle = `rgba(${org.pal.g},${p.a})`;
+    X.fill();
+  }
+
+  X.restore();
+}
+
+// --- Mycelium connections (LBP thread/yarn + Spore bioluminescence) ---
+function drawConns(t) {
+  for (const cn of conns) {
+    const sa = w2s(cn.a.x, cn.a.y), sb = w2s(cn.b.x, cn.b.y);
+    const minX = Math.min(sa.x, sb.x), maxX = Math.max(sa.x, sb.x);
+    const minY = Math.min(sa.y, sb.y), maxY = Math.max(sa.y, sb.y);
+    if (maxX < -50 || minX > S.w + 50 || maxY < -50 || minY > S.h + 50) continue;
+
+    const str = 1 - cn.dist / cn.maxD;
+    const hv = Math.max(cn.a.hover, cn.b.hover);
+    const a = 0.04 + str * 0.08 + hv * 0.15;
+
+    // LBP yarn-style: dashed for weak, solid for strong
+    const mx = (sa.x + sb.x) / 2 + Math.sin(t * 0.4 + cn.a.phase) * 25 * S.cam.z;
+    const my = (sa.y + sb.y) / 2 + Math.cos(t * 0.6 + cn.b.phase) * 25 * S.cam.z;
+
+    X.beginPath();
+    X.moveTo(sa.x, sa.y);
+    X.quadraticCurveTo(mx, my, sb.x, sb.y);
+    X.strokeStyle = `rgba(${cn.a.pal.g},${a})`;
+    X.lineWidth = (0.6 + str * 1.5 + hv * 1.2) * S.cam.z;
+    if (str < 0.4) {
+      X.setLineDash([4 * S.cam.z, 4 * S.cam.z]); // LBP stitch for weak links
+    }
+    X.lineCap = 'round';
+    X.stroke();
+    X.setLineDash([]);
+
+    // Travelling spore along connection
+    if (str > 0.3) {
+      const prog = ((t * 0.25 + cn.a.phase) % 1 + 1) % 1;
+      const tp = 1 - prog;
+      const cx = sa.x * tp * tp + mx * 2 * tp * prog + sb.x * prog * prog;
+      const cy = sa.y * tp * tp + my * 2 * tp * prog + sb.y * prog * prog;
+      X.beginPath(); X.arc(cx, cy, (1.5 + hv) * S.cam.z, 0, Math.PI * 2);
+      X.fillStyle = `rgba(${cn.a.pal.g},${0.3 + hv * 0.3})`;
+      X.fill();
+    }
+  }
+}
+
+// --- Ambient particles (Spore cell-stage floating debris) ---
+function drawAmb(t) {
+  for (const p of ambParts) {
+    p.ang += p.drift;
+    p.x += Math.cos(p.ang) * p.sp;
+    p.y += Math.sin(p.ang) * p.sp;
+    const scr = w2s(p.x, p.y);
+    if (scr.x < -10 || scr.x > S.w + 10 || scr.y < -10 || scr.y > S.h + 10) continue;
+    const flicker = 0.5 + Math.sin(t * 1.5 + p.x * 0.008 + p.wobble) * 0.5;
+    const s = p.sz * S.cam.z;
+    // Tiny blobby shape instead of circle (Spore cell debris)
+    X.beginPath();
+    X.ellipse(scr.x, scr.y, s, s * (0.6 + flicker * 0.4), t * 0.3 + p.ang, 0, Math.PI * 2);
+    X.fillStyle = `rgba(${p.col},${p.a * flicker})`;
+    X.fill();
+  }
+}
+
+// --- Depth of field vignette (LBP's cozy focus) ---
+function drawVignette() {
+  const vig = X.createRadialGradient(S.w / 2, S.h / 2, S.w * 0.25, S.w / 2, S.h / 2, S.w * 0.75);
+  vig.addColorStop(0, 'rgba(0,0,0,0)');
+  vig.addColorStop(0.7, 'rgba(3,1,8,0.15)');
+  vig.addColorStop(1, 'rgba(3,1,8,0.5)');
+  X.fillStyle = vig;
+  X.fillRect(0, 0, S.w, S.h);
+}
+
+// --- Minimap ---
+function drawMinimap() {
+  const mw = 170 * dpr, mh = 170 * dpr;
+  MX.setTransform(1, 0, 0, 1, 0, 0);
+  MX.clearRect(0, 0, mw, mh);
+  MX.fillStyle = 'rgba(3,1,8,0.5)';
+  MX.fillRect(0, 0, mw, mh);
+  const sc = mw / 8000, ox = mw / 2, oy = mh / 2;
+  for (const o of organisms) {
+    const mx = o.x * sc + ox, my = o.y * sc + oy;
+    if (mx < 0 || mx > mw || my < 0 || my > mh) continue;
+    const s = (1 + o.si) * dpr;
+    MX.beginPath(); MX.arc(mx, my, s, 0, Math.PI * 2);
+    MX.fillStyle = `rgba(${o.pal.g},0.55)`;
+    MX.fill();
+  }
+  const vl = (-S.w / 2 / S.cam.z + S.cam.x) * sc + ox;
+  const vt = (-S.h / 2 / S.cam.z + S.cam.y) * sc + oy;
+  const vw = (S.w / S.cam.z) * sc, vh = (S.h / S.cam.z) * sc;
+  MX.strokeStyle = 'rgba(255,255,255,0.2)';
+  MX.lineWidth = dpr;
+  MX.strokeRect(vl, vt, vw, vh);
+}
+
+// --- Hit test ---
+function hitTest(mx, my) {
+  const w = s2w(mx, my);
+  let best = null, bestD = Infinity;
+  for (const o of organisms) {
+    const dx = o.x - w.x, dy = o.y - w.y, d = Math.sqrt(dx * dx + dy * dy);
+    if (d < o.size * 1.6 && d < bestD) { best = o; bestD = d; }
+  }
+  return best;
+}
+
+// --- Tooltip ---
+const ttEl = document.getElementById('tooltip');
+function updateTT(org) {
+  if (org) {
+    ttEl.querySelector('.tt-name').textContent = org.name;
+    ttEl.querySelector('.tt-creator').textContent = `by @${org.creator} · ${org.contributions} layers · ${org.plays.toLocaleString()} plays`;
+    ttEl.querySelector('.tt-meta').innerHTML =
+      `<span class="tt-tag" style="color:${org.pal.p}">${org.genre}</span>` +
+      `<span class="tt-tag">${org.bpm} BPM</span>` +
+      `<span class="tt-tag">${org.key}</span>` +
+      `<span class="tt-tag">${org.stage}</span>`;
+    const progress = [0.15, 0.4, 0.7, 0.95][org.si];
+    ttEl.querySelector('.bar-fill').style.cssText = `width:${progress * 100}%;background:${org.pal.p};box-shadow:0 0 6px ${org.pal.p}`;
+    const scr = w2s(org.x, org.y);
+    ttEl.style.left = (scr.x + org.size * S.cam.z + 18) + 'px';
+    ttEl.style.top = (scr.y - 40) + 'px';
+    ttEl.classList.add('visible');
+  } else {
+    ttEl.classList.remove('visible');
+  }
+}
+
+// --- HUD ---
+function updateHUD() {
+  document.getElementById('hp').textContent = `${Math.round(S.cam.x)}, ${Math.round(S.cam.y)}`;
+  document.getElementById('hz').textContent = `${Math.round(S.cam.z * 100)}%`;
+  const near = organisms.filter(o => {
+    const dx = o.x - S.cam.x, dy = o.y - S.cam.y;
+    return Math.sqrt(dx * dx + dy * dy) < 800 / S.cam.z;
+  }).length;
+  document.getElementById('hn').textContent = `${near} creators`;
+  document.getElementById('ho').textContent = `${organisms.length} alive`;
+}
+
+// ============================================================
+// Main loop
+// ============================================================
+function frame(ts) {
+  if (!S.started) { requestAnimationFrame(frame); return; }
+  const t = ts / 1000;
+  S.t = t;
+
+  S.cam.z += (S.cam.tz - S.cam.z) * 0.1;
+
+  X.clearRect(0, 0, S.w, S.h);
+
+  drawBg(t);
+  drawAmb(t);
+  drawConns(t);
+
+  // Hover lerp
+  for (const o of organisms) {
+    o.hover += ((o === S.hovered ? 1 : 0) - o.hover) * 0.08;
+  }
+
+  // Draw sorted by size
+  const sorted = [...organisms].sort((a, b) => a.size - b.size);
+  for (const o of sorted) drawOrg(o, t);
+
+  drawVignette();
+  drawMinimap();
+  if ((ts | 0) % 250 < 17) updateHUD();
+
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+// ============================================================
+// Events
+// ============================================================
+const cur = document.getElementById('cursor');
+
+document.addEventListener('mousemove', e => {
+  S.mouse.x = e.clientX; S.mouse.y = e.clientY;
+  cur.style.left = e.clientX + 'px'; cur.style.top = e.clientY + 'px';
+  if (S.drag) {
+    S.cam.x = S.cs.x - (e.clientX - S.ds.x) / S.cam.z;
+    S.cam.y = S.cs.y - (e.clientY - S.ds.y) / S.cam.z;
+  }
+  const hit = hitTest(e.clientX, e.clientY);
+  S.hovered = hit;
+  updateTT(hit);
+  cur.classList.toggle('hovering', !!hit);
+});
+
+C.addEventListener('mousedown', e => {
+  S.drag = true; S.ds.x = e.clientX; S.ds.y = e.clientY;
+  S.cs.x = S.cam.x; S.cs.y = S.cam.y;
+});
+
+document.addEventListener('mouseup', e => {
+  if (S.drag && Math.abs(e.clientX - S.ds.x) < 4 && Math.abs(e.clientY - S.ds.y) < 4 && !S.hovered) {
+    openModal(e.clientX, e.clientY);
+  }
+  S.drag = false;
+});
+
+C.addEventListener('wheel', e => {
+  e.preventDefault();
+  S.cam.tz = Math.max(0.12, Math.min(5, S.cam.tz * (e.deltaY > 0 ? 0.88 : 1.12)));
+}, { passive: false });
+
+// Touch support
+let touches = {};
+C.addEventListener('touchstart', e => {
+  e.preventDefault();
+  for (const t of e.changedTouches) touches[t.identifier] = { x: t.clientX, y: t.clientY };
+  if (e.touches.length === 1) {
+    S.drag = true;
+    S.ds.x = e.touches[0].clientX; S.ds.y = e.touches[0].clientY;
+    S.cs.x = S.cam.x; S.cs.y = S.cam.y;
+  }
+}, { passive: false });
+
+C.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (e.touches.length === 1 && S.drag) {
+    S.cam.x = S.cs.x - (e.touches[0].clientX - S.ds.x) / S.cam.z;
+    S.cam.y = S.cs.y - (e.touches[0].clientY - S.ds.y) / S.cam.z;
+  } else if (e.touches.length === 2) {
+    // Pinch zoom
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (touches._pinch) {
+      const scale = dist / touches._pinch;
+      S.cam.tz = Math.max(0.12, Math.min(5, S.cam.tz * scale));
+    }
+    touches._pinch = dist;
+  }
+}, { passive: false });
+
+C.addEventListener('touchend', e => {
+  S.drag = false; touches._pinch = null;
+});
+
+// --- Modal ---
+let plantPos = { x: 0, y: 0 }, selGenre = null, selKey = null;
+const modal = document.getElementById('modal');
+
+// Build genre chips
+const gc = document.getElementById('gc');
+GENRES.forEach(g => {
+  const c = document.createElement('button');
+  c.className = 'chip'; c.textContent = g; c.dataset.g = g;
+  c.onclick = () => { gc.querySelectorAll('.chip').forEach(x => x.classList.remove('sel')); c.classList.add('sel'); selGenre = g; };
+  gc.appendChild(c);
+});
+
+// Build key chips
+const kc = document.getElementById('kc');
+KEYS.forEach(k => {
+  const c = document.createElement('button');
+  c.className = 'kchip'; c.textContent = k; c.dataset.k = k;
+  c.onclick = () => { kc.querySelectorAll('.kchip').forEach(x => x.classList.remove('sel')); c.classList.add('sel'); selKey = k; };
+  kc.appendChild(c);
+});
+
+const bs = document.getElementById('bs'), bv = document.getElementById('bv');
+bs.addEventListener('input', () => bv.textContent = bs.value);
+
+function openModal(sx, sy) { plantPos = s2w(sx, sy); modal.classList.add('open'); }
+function closeModal() { modal.classList.remove('open'); selGenre = null; selKey = null;
+  gc.querySelectorAll('.chip').forEach(c => c.classList.remove('sel'));
+  kc.querySelectorAll('.kchip').forEach(c => c.classList.remove('sel'));
+}
+
+document.getElementById('modal-bg').onclick = closeModal;
+document.getElementById('mc').onclick = closeModal;
+document.getElementById('mp').onclick = () => {
+  const o = mkOrg(plantPos.x, plantPos.y, {
+    genre: selGenre || 'ambient', key: selKey || 'C', bpm: +bs.value, stage: 'seed'
+  });
+  o.creator = 'you';
+  organisms.push(o);
+  compConns();
+  closeModal();
+  showToast(`Seed planted — ${o.genre} in ${o.key} at ${o.bpm} BPM`);
+};
+
+document.getElementById('plant-btn').onclick = () => openModal(S.w / 2, S.h / 2);
+
+function showToast(msg) {
+  const t = document.getElementById('toast'); t.textContent = msg;
+  t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// Intro
+document.getElementById('enter').onclick = () => {
+  document.getElementById('intro').classList.add('out');
+  S.started = true;
+  setTimeout(() => document.getElementById('intro').style.display = 'none', 1200);
+};
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+  if (e.key === '+' || e.key === '=') S.cam.tz = Math.min(5, S.cam.tz * 1.2);
+  if (e.key === '-') S.cam.tz = Math.max(0.12, S.cam.tz * 0.8);
+});
+
+C.addEventListener('contextmenu', e => e.preventDefault());
+</script>
+</body>
+</html>

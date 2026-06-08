@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>FLYER by BandLab — Product Overview</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #010101; --s1: #0a0c0e; --s2: #141618; --s3: #1c1e22;
+    --ink: #fff; --mid: #c2d7f2; --dim: rgba(194,215,242,0.55); --faint: rgba(194,215,242,0.3); --mute: rgba(194,215,242,0.12);
+    --rule: rgba(194,215,242,0.1); --rule2: rgba(194,215,242,0.2);
+    --red: #f12c18; --orange: #ff690d; --yellow: #fcc931; --green: #00c37d; --cyan: #29dbe5; --blue: #2f93f6; --purple: #b400ff;
+    --display: 'Space Grotesk', system-ui, sans-serif;
+    --body: 'Inter', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { background: var(--bg); color: var(--ink); font-family: var(--body); font-weight: 400; -webkit-font-smoothing: antialiased; scroll-behavior: smooth; }
+  a { color: inherit; text-decoration: none; }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 0 56px; }
+  @media(max-width:800px){ .wrap { padding: 0 24px; } }
+
+  /* NAV */
+  nav { position: fixed; top: 0; left: 0; right: 0; z-index: 50; padding: 18px 56px; display: flex; justify-content: space-between; align-items: center; background: rgba(1,1,1,0.9); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border-bottom: 1px solid var(--rule); }
+  .nav-logo { display: flex; align-items: center; gap: 14px; font-family: var(--display); font-size: 24px; font-weight: 700; letter-spacing: -0.02em; }
+  .nav-mark { position: relative; width: 30px; height: 26px; }
+  .nav-mark::before { content: ''; position: absolute; left: 0; top: 5px; width: 15px; height: 20px; transform: rotate(-7deg); background: rgba(255,255,255,0.5); box-shadow: 0 1px 3px rgba(0,0,0,0.5); }
+  .nav-mark::after { content: ''; position: absolute; right: 0; top: 0; width: 17px; height: 22px; transform: rotate(6deg); background: var(--red); box-shadow: 0 1px 3px rgba(0,0,0,0.5); }
+  .nav-sub { font-family: var(--mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--faint); margin-left: 14px; }
+  .nav-cta { padding: 10px 22px; background: var(--red); color: #fff; font-family: var(--display); font-size: 13px; font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; border: none; cursor: pointer; transition: background 150ms; }
+  .nav-cta:hover { background: #ff3c25; }
+
+  /* HERO */
+  .hero { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; padding: 120px 0 80px; position: relative; }
+  .hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 30% 40%, rgba(241,44,24,0.08), transparent 60%), radial-gradient(ellipse at 70% 70%, rgba(41,219,229,0.06), transparent 60%); pointer-events: none; }
+  .hero-kicker { font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 0.24em; text-transform: uppercase; color: var(--red); margin-bottom: 32px; display: flex; align-items: center; gap: 12px; }
+  .hero-kicker::before { content: ''; width: 32px; height: 1px; background: var(--red); }
+  h1 { font-family: var(--display); font-weight: 300; font-size: clamp(48px, 7vw, 96px); line-height: 0.92; letter-spacing: -0.04em; margin-bottom: 32px; }
+  h1 b { font-weight: 600; color: var(--red); }
+  .hero-sub { font-size: clamp(17px, 1.5vw, 21px); line-height: 1.55; color: var(--dim); max-width: 680px; margin-bottom: 48px; }
+  .hero-cta { display: inline-flex; align-items: center; gap: 12px; padding: 18px 36px; background: var(--red); color: #fff; font-family: var(--display); font-size: 16px; font-weight: 600; letter-spacing: 0.02em; transition: background 150ms; }
+  .hero-cta:hover { background: #ff3c25; }
+  .hero-cta::after { content: '→'; font-size: 20px; }
+  .hero-meta { display: grid; grid-template-columns: repeat(4, 1fr); gap: 40px; margin-top: 80px; padding-top: 40px; border-top: 1px solid var(--rule); }
+  .hm .k { font-family: var(--mono); font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--faint); margin-bottom: 8px; }
+  .hm .v { font-family: var(--display); font-size: 28px; font-weight: 600; letter-spacing: -0.02em; }
+  .hm .v b { color: var(--red); }
+
+  /* SECTIONS */
+  .section { padding: 120px 0; border-top: 1px solid var(--rule); }
+  .s-kicker { font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--faint); margin-bottom: 28px; display: flex; align-items: center; gap: 16px; }
+  .s-kicker::before { content: ''; width: 40px; height: 1px; background: var(--faint); }
+  .s-title { font-family: var(--display); font-weight: 500; font-size: clamp(36px, 4.5vw, 64px); line-height: 0.96; letter-spacing: -0.03em; margin-bottom: 28px; max-width: 900px; }
+  .s-title b { color: var(--red); }
+  .s-intro { font-size: 18px; line-height: 1.55; color: var(--dim); max-width: 720px; margin-bottom: 64px; }
+
+  /* HOW IT WORKS */
+  .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; background: var(--rule); border: 1px solid var(--rule); }
+  .step { background: var(--bg); padding: 40px 28px; }
+  .step-num { font-family: var(--mono); font-size: 32px; font-weight: 700; color: var(--red); margin-bottom: 20px; }
+  .step h3 { font-family: var(--display); font-size: 22px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 12px; }
+  .step p { font-size: 13px; line-height: 1.6; color: var(--dim); }
+
+  /* FLYER TYPES */
+  .types { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; background: var(--rule); border: 1px solid var(--rule); }
+  .ftype { background: var(--bg); padding: 32px 24px; text-align: center; }
+  .ftype-icon { font-size: 40px; margin-bottom: 16px; display: block; }
+  .ftype h4 { font-family: var(--display); font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+  .ftype p { font-size: 12px; line-height: 1.5; color: var(--dim); }
+  .ftype-tag { display: inline-block; margin-top: 12px; padding: 4px 10px; font-family: var(--mono); font-size: 9px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; border: 1px solid; }
+  .ftype-tag.song { color: var(--cyan); border-color: var(--cyan); }
+  .ftype-tag.event { color: var(--red); border-color: var(--red); }
+  .ftype-tag.release { color: var(--purple); border-color: var(--purple); }
+  .ftype-tag.mixtape { color: var(--yellow); border-color: var(--yellow); }
+  .ftype-tag.message { color: var(--green); border-color: var(--green); }
+  .ftype-tag.promo { color: var(--orange); border-color: var(--orange); }
+  .ftype-tag.game { color: var(--cyan); border-color: var(--cyan); }
+  .ftype-tag.merch { color: var(--yellow); border-color: var(--yellow); }
+
+  /* ECOSYSTEM */
+  .eco-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
+  .eco-diagram { background: var(--s1); border: 1px solid var(--rule2); padding: 48px 40px; position: relative; }
+  .eco-center { text-align: center; padding: 24px; background: var(--red); margin-bottom: 32px; }
+  .eco-center h3 { font-family: var(--display); font-size: 24px; font-weight: 700; color: #fff; }
+  .eco-center p { font-size: 11px; color: rgba(255,255,255,0.7); margin-top: 4px; }
+  .eco-spokes { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .eco-spoke { padding: 16px; border: 1px solid var(--rule); background: var(--s2); }
+  .eco-spoke h4 { font-family: var(--display); font-size: 14px; font-weight: 600; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+  .eco-spoke h4 .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .eco-spoke p { font-size: 11px; line-height: 1.5; color: var(--dim); }
+  .eco-detail { display: flex; flex-direction: column; gap: 20px; }
+  .eco-item { padding: 24px; border: 1px solid var(--rule); }
+  .eco-item h4 { font-family: var(--display); font-size: 18px; font-weight: 600; margin-bottom: 8px; letter-spacing: -0.01em; }
+  .eco-item h4 span { font-family: var(--mono); font-size: 9px; font-weight: 500; color: var(--faint); letter-spacing: 0.14em; text-transform: uppercase; margin-left: 10px; vertical-align: middle; }
+  .eco-item p { font-size: 13px; line-height: 1.55; color: var(--dim); }
+  .eco-item .flow { margin-top: 12px; font-family: var(--mono); font-size: 11px; color: var(--cyan); letter-spacing: 0.04em; }
+
+  /* CALDECOTT */
+  .cald-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; background: var(--rule); border: 1px solid var(--rule); }
+  .cald-card { background: var(--bg); padding: 36px 28px; }
+  .cald-brand { font-family: var(--display); font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+  .cald-sub { font-family: var(--mono); font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--faint); margin-bottom: 16px; }
+  .cald-card h4 { font-family: var(--display); font-size: 20px; font-weight: 600; margin-bottom: 10px; letter-spacing: -0.01em; }
+  .cald-card p { font-size: 13px; line-height: 1.55; color: var(--dim); }
+
+  /* PARTNERS */
+  .partner-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; background: var(--rule); border: 1px solid var(--rule); }
+  .partner { background: var(--bg); padding: 32px 24px; }
+  .partner h4 { font-family: var(--display); font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+  .partner p { font-size: 12px; line-height: 1.5; color: var(--dim); }
+
+  /* REVENUE */
+  .rev-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; background: var(--rule); border: 1px solid var(--rule); margin-top: 64px; }
+  .rev { background: var(--bg); padding: 32px 24px; }
+  .rev-val { font-family: var(--display); font-size: 32px; font-weight: 700; color: var(--red); margin-bottom: 8px; }
+  .rev h4 { font-family: var(--display); font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+  .rev p { font-size: 12px; line-height: 1.5; color: var(--dim); }
+
+  /* FOOTER CTA */
+  .cta-section { padding: 140px 0 100px; text-align: center; border-top: 1px solid var(--rule); }
+  .cta-title { font-family: var(--display); font-weight: 300; font-size: clamp(40px, 5vw, 72px); letter-spacing: -0.03em; margin-bottom: 24px; line-height: 0.95; }
+  .cta-title b { color: var(--red); font-weight: 600; }
+  .cta-sub { font-size: 18px; color: var(--dim); margin-bottom: 40px; }
+
+  footer { padding: 40px 0; border-top: 1px solid var(--rule); text-align: center; font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--faint); }
+
+  @media(max-width:900px) {
+    .hero-meta, .steps, .types { grid-template-columns: repeat(2, 1fr); }
+    .eco-grid { grid-template-columns: 1fr; }
+    .cald-grid, .partner-row, .rev-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div style="display:flex;align-items:center;">
+    <div class="nav-logo"><span class="nav-mark"></span>FLYER</div>
+    <span class="nav-sub">by BandLab</span>
+  </div>
+  <a class="nav-cta" href="flyer-wall.html">Open Demo</a>
+</nav>
+
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-kicker">Product Overview · Confidential</div>
+    <h1>Every song<br>deserves a <b>flyer.</b></h1>
+    <p class="hero-sub">FLYER is an infinite shared music wall where every track, event, and mixtape becomes a poster you can paste, play, and share. Mapped to real cities. Seeded by charts. Built on BandLab.</p>
+    <a class="hero-cta" href="flyer-wall.html">Try the prototype</a>
+    <div class="hero-meta">
+      <div class="hm"><div class="k">Core loop</div><div class="v">Discover → Listen → Create → <b>Post</b></div></div>
+      <div class="hm"><div class="k">Launch cities</div><div class="v"><b>6</b> stations</div></div>
+      <div class="hm"><div class="k">Flyer types</div><div class="v"><b>8</b> formats</div></div>
+      <div class="hm"><div class="k">Day 1 audio</div><div class="v">Spotify + <b>BandLab</b></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="s-kicker">How It Works</div>
+    <h2 class="s-title">Four steps from discovery to <b>creation.</b></h2>
+    <p class="s-intro">FLYER turns passive listening into active participation. Every interaction feeds back into the wall — the more you use it, the more alive it gets.</p>
+    <div class="steps">
+      <div class="step"><div class="step-num">01</div><h3>Discover</h3><p>Navigate city walls via the tube map. Each district has its own flyer cluster — Brick Lane sounds different from Shibuya. Swipe between sub-locations. Filter by type, mood, or trend.</p></div>
+      <div class="step"><div class="step-num">02</div><h3>Listen</h3><p>Click any flyer to open it. Songs play via Spotify or BandLab embeds. Events show lineups and ticket links. Releases expand into full album players. Games launch inline.</p></div>
+      <div class="step"><div class="step-num">03</div><h3>Create</h3><p>Post a flyer: pick your sound source (Spotify URL, BandLab track, or record a loop), design it (paper, font, shape), or just describe it and let AI build it for you.</p></div>
+      <div class="step"><div class="step-num">04</div><h3>Post</h3><p>Your flyer appears on the wall — visible to everyone in that city. It collects plays, likes, and remixes. Other users can fork it or paste their own response next to it.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="s-kicker">Flyer Types</div>
+    <h2 class="s-title">Eight formats. One <b>wall.</b></h2>
+    <p class="s-intro">Every type has its own shape language, expand page, and interaction model. The wall reads as a living mix of music, events, and culture — not a feed.</p>
+    <div class="types">
+      <div class="ftype"><span class="ftype-icon">♪</span><h4>Song</h4><p>Single track with embedded player. Spotify or BandLab playback. Waveform visible on the wall.</p><span class="ftype-tag song">Audio</span></div>
+      <div class="ftype"><span class="ftype-icon">◈</span><h4>Release</h4><p>Album or EP with cover art, tracklist, and full album embed. Square sleeve shape.</p><span class="ftype-tag release">Album</span></div>
+      <div class="ftype"><span class="ftype-icon">◉</span><h4>Event</h4><p>Live or online gig. Date badge, lineup, venue, ticket CTA. Pulsing LIVE state when streaming.</p><span class="ftype-tag event">Tickets</span></div>
+      <div class="ftype"><span class="ftype-icon">📼</span><h4>Mixtape</h4><p>Multi-track collection in cassette shape. Spinning spools. Curated playlists from BandLab creators.</p><span class="ftype-tag mixtape">Collection</span></div>
+      <div class="ftype"><span class="ftype-icon">💬</span><h4>Message</h4><p>Text-only speech bubble. Lyric fragments, scene call-outs, replies. No audio — pure voice.</p><span class="ftype-tag message">Social</span></div>
+      <div class="ftype"><span class="ftype-icon">📢</span><h4>Promo</h4><p>BandLab or partner content with distinct red frame. Product launches, features, campaigns.</p><span class="ftype-tag promo">Sponsored</span></div>
+      <div class="ftype"><span class="ftype-icon">🎮</span><h4>Game</h4><p>Arcade-cabinet-shaped sticker. Opens playable HTML5 games inline — Beat Invaders, Drop Cast, etc.</p><span class="ftype-tag game">Playable</span></div>
+      <div class="ftype"><span class="ftype-icon">👕</span><h4>Merch</h4><p>T-shirt-shaped sticker. Artist or brand merchandise with buy CTA. Sizes, pricing, shipping.</p><span class="ftype-tag merch">Shop</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="s-kicker">BandLab Integration</div>
+    <h2 class="s-title">FLYER sits at the <b>top of the funnel.</b></h2>
+    <p class="s-intro">Discovery surface that drives users deeper into BandLab's creation tools. Every interaction on FLYER is a potential Studio session.</p>
+    <div class="eco-grid">
+      <div class="eco-diagram">
+        <div class="eco-center">
+          <h3>FLYER</h3>
+          <p>Discovery + Social Layer</p>
+        </div>
+        <div class="eco-spokes">
+          <div class="eco-spoke"><h4><span class="dot" style="background:var(--red)"></span>Studio</h4><p>"Open in Studio" on every song flyer. Discover → Create pipeline.</p></div>
+          <div class="eco-spoke"><h4><span class="dot" style="background:var(--cyan)"></span>Sounds</h4><p>Loops + samples from BandLab Sounds power the lightweight creation tools.</p></div>
+          <div class="eco-spoke"><h4><span class="dot" style="background:var(--purple)"></span>Live</h4><p>BandLab Live streams surface as LIVE event flyers with real-time viewer counts.</p></div>
+          <div class="eco-spoke"><h4><span class="dot" style="background:var(--yellow)"></span>Distribution</h4><p>Releases posted as flyers auto-distribute via BandLab's pipeline to DSPs.</p></div>
+          <div class="eco-spoke"><h4><span class="dot" style="background:var(--green)"></span>Social</h4><p>Cross-post flyers to BandLab feed. Share from Studio publish flow to FLYER wall.</p></div>
+          <div class="eco-spoke"><h4><span class="dot" style="background:var(--orange)"></span>Membership</h4><p>Premium flyer features (custom shapes, analytics, priority placement) drive upgrades.</p></div>
+        </div>
+      </div>
+      <div class="eco-detail">
+        <div class="eco-item">
+          <h4>Discovery → Creation <span>Primary loop</span></h4>
+          <p>User discovers a track on the FLYER wall. Clicks "Open in BandLab Studio." Remixes it. Posts their version as a new flyer. The fork references the original — building a visible collaboration chain on the wall.</p>
+          <div class="flow">FLYER wall → click flyer → "Open in Studio" → remix → publish → new flyer on wall</div>
+        </div>
+        <div class="eco-item">
+          <h4>Studio → Wall <span>Publish flow</span></h4>
+          <p>User finishes a track in BandLab Studio. Publish screen offers "Post to FLYER" as a distribution option alongside Spotify, Apple Music, etc. The flyer is auto-generated from track metadata + AI, or the user designs it manually.</p>
+          <div class="flow">Studio → publish → "Post to FLYER" → auto-generate flyer → live on wall</div>
+        </div>
+        <div class="eco-item">
+          <h4>Live Events <span>Real-time</span></h4>
+          <p>BandLab Live sessions appear as pulsing LIVE event flyers on the wall. Clicking opens the livestream. After the event, the flyer persists as a recording — permanent artifact of a moment.</p>
+          <div class="flow">BandLab Live → auto-create LIVE flyer → pulsing on wall → recording after event ends</div>
+        </div>
+        <div class="eco-item">
+          <h4>Retention Metrics <span>Measurable</span></h4>
+          <p>Every "Open in Studio" click, every remix, every publish-to-FLYER is a trackable retention event. FLYER becomes a measurable driver of Studio DAU and session length.</p>
+          <div class="flow">flyer views → studio opens → remix starts → publish events → re-engagement on wall</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="s-kicker">Caldecott Music Group Synergies</div>
+    <h2 class="s-title">One wall. The whole <b>group.</b></h2>
+    <p class="s-intro">FLYER is a shared surface. Every Caldecott property gets a native presence — editorial, retail, events, and labels all post to the same wall users are already on.</p>
+    <div class="cald-grid">
+      <div class="cald-card">
+        <div class="cald-brand" style="color:var(--red);">NME</div>
+        <div class="cald-sub">Editorial · Reviews · Features</div>
+        <h4>Editorial flyers</h4>
+        <p>NME reviews, features, and news articles posted as flyers in relevant city districts. "NME Pick" badge on featured artist flyers. Drives traffic from FLYER to NME and vice versa. Album review flyers auto-generated from NME content API.</p>
+      </div>
+      <div class="cald-card">
+        <div class="cald-brand" style="color:var(--yellow);">Swee Lee</div>
+        <div class="cald-sub">Retail · Instruments · Gear</div>
+        <h4>Merch + gear flyers</h4>
+        <p>T-shirt-shaped merch flyers and gear promo flyers linking to Swee Lee's storefront. "Shop the sound" — hear a track, buy the guitar that made it. Cross-sell from music discovery to instrument retail.</p>
+      </div>
+      <div class="cald-card">
+        <div class="cald-brand" style="color:var(--cyan);">BandLab Live</div>
+        <div class="cald-sub">Events · Venues · Streaming</div>
+        <h4>Live event flyers</h4>
+        <p>Caldecott venue events auto-posted as live event flyers with ticket purchase integration. Post-event recording flyers persist as archive. Venue-branded walls in partner cities become permanent FLYER installations.</p>
+      </div>
+      <div class="cald-card">
+        <div class="cald-brand" style="color:var(--purple);">Label Partners</div>
+        <div class="cald-sub">Releases · A&R · Catalogue</div>
+        <h4>Label release flyers</h4>
+        <p>Labels under the Caldecott umbrella auto-post new releases as flyers in relevant cities. A&R teams use FLYER engagement data (plays, remixes, forks) as discovery signals for signing decisions.</p>
+      </div>
+      <div class="cald-card">
+        <div class="cald-brand" style="color:var(--green);">BandLab for Education</div>
+        <div class="cald-sub">Schools · Workshops · Programmes</div>
+        <h4>Classroom walls</h4>
+        <p>Private FLYER walls for classrooms — students post collaborative music projects as flyers visible to their cohort. Teachers curate and feature. Feeds into the public wall when students graduate their work.</p>
+      </div>
+      <div class="cald-card">
+        <div class="cald-brand" style="color:var(--orange);">Brand Partners</div>
+        <div class="cald-sub">Advertising · Sponsorship · Co-brand</div>
+        <h4>Promo flyer slots</h4>
+        <p>Brands post visually distinct promo flyers (reserved shapes, red PROMO frame). Sold as placements per city per time period. Non-intrusive — they're ON the wall, not interrupting it. Scalable revenue stream.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="s-kicker">Partner Integrations</div>
+    <h2 class="s-title">Open platform. <b>Embedded</b> everywhere.</h2>
+    <p class="s-intro">FLYER embeds the music services users already pay for. No walled garden — any audio source, any ticketing platform, any merch provider.</p>
+    <div class="partner-row">
+      <div class="partner"><h4>Spotify + Apple Music</h4><p>Official oEmbed players inline on song and release flyers. 30s preview for free users, full playback for Premium. Chart data seeds the wall's baseline content per city.</p></div>
+      <div class="partner"><h4>Ticketmaster / Eventbrite</h4><p>Event flyers deep-link to ticket purchase. Ticket CTA on the expand page. Post-purchase: "I'm going" badge appears on user's flyer profile.</p></div>
+      <div class="partner"><h4>Shopify / Printful</h4><p>Merch t-shirt flyers link to Shopify storefronts. Print-on-demand via Printful for artist-designed merch. Commission per sale flows back to FLYER.</p></div>
+      <div class="partner"><h4>Google Maps / Cultural APIs</h4><p>City backgrounds, street signs, and atmospheric palettes driven by Google Maps data + cultural datasets. Each city launch partners with local tourism boards for authenticity.</p></div>
+      <div class="partner"><h4>AI Generation</h4><p>Users describe their flyer in natural language → AI generates the design (paper, font, layout, copy). Future: full generative flyer art from audio analysis. Powered by BandLab's AI infrastructure.</p></div>
+      <div class="partner"><h4>HTML5 Games</h4><p>Arcade-machine flyers open playable HTML5 games inline. Music-themed games (Beat Invaders, Drop Cast) drive engagement and retention. SDK for third-party game developers.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="s-kicker">Revenue Model</div>
+    <h2 class="s-title">Four revenue streams. Day <b>one.</b></h2>
+    <div class="rev-grid">
+      <div class="rev"><div class="rev-val">01</div><h4>Promo Slots</h4><p>Brands buy promo flyer placement per city per time period. Visually distinct, non-intrusive. Scalable CPM model. Premium positions (top of wall, first on swipe) at higher rates.</p></div>
+      <div class="rev"><div class="rev-val">02</div><h4>Premium Features</h4><p>Custom flyer shapes, analytics dashboard, priority wall placement, AI-generated designs, verified badges. Upsell to BandLab Membership tier.</p></div>
+      <div class="rev"><div class="rev-val">03</div><h4>Merch Commission</h4><p>Percentage on every merch sale through t-shirt flyers. Powered by Shopify/Printful integration. Artist sets price, FLYER takes platform fee.</p></div>
+      <div class="rev"><div class="rev-val">04</div><h4>Ticket Commission</h4><p>Referral fee on event ticket sales originating from FLYER event flyers. Trackable via UTM + deep links to Ticketmaster/Eventbrite.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-section">
+  <div class="wrap">
+    <div class="cta-title">Ready to see<br>the <b>wall?</b></div>
+    <p class="cta-sub">The prototype is live. 6 cities, 60+ flyers, playable games, real Spotify embeds.</p>
+    <a class="hero-cta" href="flyer-wall.html">Open the FLYER prototype</a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">FLYER · BandLab · Caldecott Music Group · Confidential · 2026</div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>FLYER Game Engine Demos</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--red:#f12c18;--cyan:#29dbe5;--purple:#b400ff;--yellow:#fcc931;--green:#00c37d;--bg:#010101;--surface:#0a0c0e;--ink:#fff;--ink-dim:rgba(194,215,242,.55);--font-d:'Space Grotesk',system-ui,sans-serif;--font-m:'JetBrains Mono',monospace}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-d);min-height:100vh;overflow-x:hidden}
+header{text-align:center;padding:48px 20px 12px}
+header h1{font-size:clamp(28px,5vw,48px);font-weight:700;letter-spacing:-.02em;background:linear-gradient(90deg,var(--red),var(--cyan),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+header p{font-family:var(--font-m);font-size:13px;color:var(--ink-dim);margin-top:6px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:24px;max-width:1080px;margin:28px auto;padding:0 20px}
+@media(max-width:740px){.grid{grid-template-columns:1fr;max-width:520px}}
+.card{background:var(--surface);border:1px solid rgba(255,255,255,.07);border-radius:14px;overflow:hidden;position:relative}
+.card-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px}
+.card-head h2{font-size:16px;font-weight:600}
+.tag{font-family:var(--font-m);font-size:10px;padding:3px 8px;border-radius:4px;background:rgba(255,255,255,.08);color:var(--ink-dim);letter-spacing:.06em}
+.canvas-wrap{position:relative;width:100%;aspect-ratio:5/4;cursor:pointer}
+.canvas-wrap canvas{width:100%;height:100%;display:block}
+.overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(1,1,1,.6);backdrop-filter:blur(4px);transition:opacity .3s}
+.overlay.hidden{opacity:0;pointer-events:none}
+.overlay span{font-family:var(--font-m);font-size:13px;color:var(--ink-dim);border:1px solid rgba(255,255,255,.2);padding:8px 20px;border-radius:8px;transition:border-color .2s}
+.overlay:hover span{border-color:var(--cyan)}
+.overlay .keys{font-size:10px;margin-top:8px;color:rgba(194,215,242,.35)}
+footer{text-align:center;padding:24px 20px 48px;font-family:var(--font-m);font-size:12px;color:var(--ink-dim)}
+footer a{color:var(--cyan);text-decoration:none}
+footer a:hover{text-decoration:underline}
+footer p{margin:6px 0}
+</style>
+</head>
+<body>
+<header>
+  <h1>FLYER Game Engine Demos</h1>
+  <p>Built with Claude</p>
+</header>
+<div class="grid">
+  <div class="card">
+    <div class="card-head"><h2>Rhythm Runner</h2><span class="tag">2D · PLATFORMER</span></div>
+    <div class="canvas-wrap" id="wrap0"><canvas id="g0"></canvas><div class="overlay" id="ov0"><span>Click to play</span><div class="keys">SPACE / tap to jump</div></div></div>
+  </div>
+  <div class="card">
+    <div class="card-head"><h2>Vinyl Spinner</h2><span class="tag">2.5D · RHYTHM</span></div>
+    <div class="canvas-wrap" id="wrap1"><canvas id="g1"></canvas><div class="overlay" id="ov1"><span>Click to play</span><div class="keys">Click / tap the notes</div></div></div>
+  </div>
+  <div class="card">
+    <div class="card-head"><h2>Sound Tunnel</h2><span class="tag">3D · TUNNEL RUNNER</span></div>
+    <div class="canvas-wrap" id="wrap2"><canvas id="g2"></canvas><div class="overlay" id="ov2"><span>Click to play</span><div class="keys">← → / mouse to steer</div></div></div>
+  </div>
+  <div class="card">
+    <div class="card-head"><h2>Beat Catcher</h2><span class="tag">2D · RHYTHM</span></div>
+    <div class="canvas-wrap" id="wrap3"><canvas id="g3"></canvas><div class="overlay" id="ov3"><span>Click to play</span><div class="keys">A S D F / tap columns</div></div></div>
+  </div>
+</div>
+<footer>
+  <p>All games run in-browser as single HTML files. No plugins, no downloads.</p>
+  <p><a href="flyer-wall.html">← Back to The Wall</a></p>
+</footer>
+<script>
+// ── Shared utilities ──
+const C={red:'#f12c18',cyan:'#29dbe5',purple:'#b400ff',yellow:'#fcc931',green:'#00c37d'};
+const actx=new (window.AudioContext||window.webkitAudioContext)();
+function beep(freq=440,dur=.08,vol=.15){const o=actx.createOscillator(),g=actx.createGain();o.connect(g);g.connect(actx.destination);o.frequency.value=freq;g.gain.value=vol;o.start();g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+dur);o.stop(actx.currentTime+dur)}
+function setupCanvas(id){const c=document.getElementById(id),cx=c.getContext('2d');const r=c.parentElement.getBoundingClientRect();c.width=r.width*2;c.height=r.height*2;cx.scale(2,2);return{c,cx,w:r.width,h:r.height}}
+const games=[null,null,null,null];
+
+// ── GAME 0: Rhythm Runner ──
+function initGame0(){
+  const{c,cx,w,h}=setupCanvas('g0');
+  let running=false,raf,score=0,lives=3,speed=3,t=0;
+  const py=h-60,pw=22,ph=28;let pvy=0,pj=false,playerY=py;
+  let obs=[];
+  function spawnOb(){const gold=Math.random()>.35;obs.push({x:w+20,y:py+4,gold,sym:gold?'♪':'♫'})}
+  function tick(){
+    if(!running)return;
+    t++;cx.fillStyle='#0a0c0e';cx.fillRect(0,0,w,h);
+    // ground
+    cx.fillStyle='#181d20';cx.fillRect(0,py+ph+4,w,h);
+    for(let i=0;i<w;i+=32){cx.fillStyle=i%64<32?'#222529':'#181d20';cx.fillRect(i,py+ph+4,32,2)}
+    // player
+    pvy+=.7;playerY+=pvy;if(playerY>=py){playerY=py;pvy=0;pj=false}
+    cx.fillStyle=C.cyan;cx.fillRect(40,playerY,pw,ph);cx.fillStyle='#fff';cx.fillRect(48,playerY+6,4,4);cx.fillRect(54,playerY+6,4,4);
+    // obstacles
+    if(t%Math.max(28,50-Math.floor(score/5))===0)spawnOb();
+    speed=3+score*.08;
+    for(let i=obs.length-1;i>=0;i--){
+      const o=obs[i];o.x-=speed;
+      cx.font='bold 24px serif';cx.fillStyle=o.gold?C.yellow:C.red;cx.fillText(o.sym,o.x,o.y+20);
+      if(o.x<60&&o.x>30&&playerY+ph>o.y&&playerY<o.y+24){
+        if(o.gold){score++;beep(660,.06)}else{lives--;beep(180,.15)}
+        obs.splice(i,1);continue}
+      if(o.x<-30)obs.splice(i,1);
+    }
+    // HUD
+    cx.font='600 13px "Space Grotesk"';cx.fillStyle='#fff';cx.fillText('Score: '+score,12,20);
+    cx.fillStyle=C.red;cx.fillText('♥'.repeat(lives),w-60,20);
+    if(lives<=0){cx.font='600 22px "Space Grotesk"';cx.fillStyle='#fff';cx.fillText('GAME OVER',w/2-60,h/2);running=false;return}
+    raf=requestAnimationFrame(tick);
+  }
+  function jump(){if(!pj&&running){pvy=-11;pj=true;beep(520,.05)}}
+  c.parentElement.addEventListener('click',e=>{if(!running){running=true;score=0;lives=3;obs=[];playerY=py;pvy=0;speed=3;t=0;document.getElementById('ov0').classList.add('hidden');actx.resume();tick()}else jump()});
+  window.addEventListener('keydown',e=>{if(e.code==='Space'&&running){e.preventDefault();jump()}});
+  games[0]={stop(){running=false;cancelAnimationFrame(raf)}};
+}
+
+// ── GAME 1: Vinyl Spinner ──
+function initGame1(){
+  const{c,cx,w,h}=setupCanvas('g1');
+  let running=false,raf,score=0,combo=0,angle=0,spinSpeed=.02;
+  let notes=[];
+  function spawnNote(){const a=Math.random()*Math.PI*2,r=40+Math.random()*30;notes.push({x:w/2+Math.cos(a)*r,y:h/2+Math.sin(a)*r*.55,vx:Math.cos(a)*.6,vy:Math.sin(a)*.8-1,size:22,alive:true,age:0,col:[C.red,C.cyan,C.purple,C.yellow][Math.floor(Math.random()*4)]})}
+  function tick(){
+    if(!running)return;
+    cx.fillStyle='#0a0c0e';cx.fillRect(0,0,w,h);
+    angle+=spinSpeed;spinSpeed=.02+score*.001;
+    // record
+    const rx=w/2,ry=h/2,rr=80;
+    cx.save();cx.translate(rx,ry);
+    cx.beginPath();cx.ellipse(0,0,rr,rr*.55,0,0,Math.PI*2);cx.fillStyle='#1a1a1a';cx.fill();cx.strokeStyle='#333';cx.lineWidth=1;cx.stroke();
+    for(let i=1;i<=4;i++){cx.beginPath();cx.ellipse(0,0,rr*i/5,rr*.55*i/5,0,0,Math.PI*2);cx.strokeStyle='rgba(255,255,255,.06)';cx.stroke()}
+    // grooves rotating
+    for(let i=0;i<8;i++){const a=angle+i*Math.PI/4;cx.beginPath();cx.moveTo(Math.cos(a)*15,Math.sin(a)*15*.55);cx.lineTo(Math.cos(a)*rr*.9,Math.sin(a)*rr*.9*.55);cx.strokeStyle='rgba(255,255,255,.04)';cx.stroke()}
+    // label
+    cx.beginPath();cx.ellipse(0,0,18,18*.55,0,0,Math.PI*2);cx.fillStyle=C.red;cx.fill();
+    cx.restore();
+    // tonearm
+    cx.save();cx.translate(rx+rr+10,ry-rr*.4);cx.rotate(.3);cx.fillStyle='#444';cx.fillRect(0,0,4,70);cx.beginPath();cx.arc(2,70,5,0,Math.PI*2);cx.fillStyle='#666';cx.fill();cx.restore();
+    // notes
+    if(Math.random()<.04+score*.003)spawnNote();
+    for(let i=notes.length-1;i>=0;i--){
+      const n=notes[i];n.x+=n.vx;n.y+=n.vy;n.age++;
+      if(n.y<-20||n.x<-20||n.x>w+20||n.age>180){if(n.alive)combo=0;notes.splice(i,1);continue}
+      if(!n.alive)continue;
+      cx.font='20px serif';cx.fillStyle=n.col;cx.globalAlpha=Math.max(0,1-n.age/180);cx.fillText('♪',n.x,n.y);cx.globalAlpha=1;
+    }
+    // HUD
+    cx.font='600 13px "Space Grotesk"';cx.fillStyle='#fff';cx.fillText('Score: '+score,12,20);
+    if(combo>1){cx.fillStyle=C.yellow;cx.fillText(combo+'x combo',12,38)}
+    raf=requestAnimationFrame(tick);
+  }
+  function hitTest(mx,my){for(let i=notes.length-1;i>=0;i--){const n=notes[i];if(n.alive&&Math.abs(mx-n.x)<20&&Math.abs(my-n.y)<20){n.alive=false;score++;combo++;beep(440+combo*40,.06);return}}combo=0}
+  function getPos(e){const r=c.getBoundingClientRect();const t=e.touches?e.touches[0]:e;return{x:t.clientX-r.left,y:t.clientY-r.top}}
+  c.parentElement.addEventListener('click',e=>{if(!running){running=true;score=0;combo=0;notes=[];angle=0;spinSpeed=.02;document.getElementById('ov1').classList.add('hidden');actx.resume();tick()}else{const p=getPos(e);hitTest(p.x,p.y)}});
+  c.addEventListener('touchstart',e=>{if(running){e.preventDefault();const p=getPos(e);hitTest(p.x,p.y)}},{passive:false});
+  games[1]={stop(){running=false;cancelAnimationFrame(raf)}};
+}
+
+// ── GAME 2: Sound Tunnel ──
+function initGame2(){
+  const{c,cx,w,h}=setupCanvas('g2');
+  let running=false,raf,score=0,t=0,px=w/2;
+  let orbs=[],curCol=0;
+  const cols=[C.red,C.cyan,C.purple,C.yellow];
+  let mouseX=w/2,keys={l:false,r:false};
+  function spawnOrb(){const a=Math.random()*Math.PI*2,d=20+Math.random()*40,ci=Math.floor(Math.random()*4);orbs.push({x:w/2+Math.cos(a)*d,y:h/2+Math.sin(a)*d,z:30,ci,sz:6})}
+  function tick(){
+    if(!running)return;t++;
+    cx.fillStyle='#010101';cx.fillRect(0,0,w,h);
+    // tunnel rings
+    const pulse=Math.sin(t*.08)*.15+1;
+    for(let i=20;i>=1;i--){
+      const s=i/20,r=Math.max(10,220*s*pulse);
+      cx.beginPath();cx.ellipse(w/2,h/2,r,r*.85,0,0,Math.PI*2);
+      cx.strokeStyle=`rgba(${i%2?'41,219,229':'177,0,255'},${.05+s*.12})`;cx.lineWidth=1.5;cx.stroke();
+    }
+    // player cursor
+    if(keys.l)px-=4;if(keys.r)px+=4;
+    px+=(mouseX-px)*.1;px=Math.max(20,Math.min(w-20,px));
+    curCol=(curCol+1);if(t%120===0)curCol=Math.floor(Math.random()*4);
+    const pcol=cols[curCol%4];
+    cx.beginPath();cx.arc(px,h-40,10,0,Math.PI*2);cx.fillStyle=pcol;cx.fill();
+    cx.beginPath();cx.arc(px,h-40,12,0,Math.PI*2);cx.strokeStyle='rgba(255,255,255,.3)';cx.lineWidth=1;cx.stroke();
+    cx.font='600 9px "JetBrains Mono"';cx.fillStyle='#fff';cx.textAlign='center';cx.fillText(cols[curCol%4]===C.red?'R':cols[curCol%4]===C.cyan?'C':cols[curCol%4]===C.purple?'P':'Y',px,h-37);cx.textAlign='left';
+    // orbs
+    if(t%Math.max(12,30-Math.floor(score/4))===0)spawnOrb();
+    for(let i=orbs.length-1;i>=0;i--){
+      const o=orbs[i];o.z-=.18+score*.004;
+      const s=Math.max(.01,1-o.z/30),sc=s*8;
+      const sx=w/2+(o.x-w/2)*s*5,sy=h/2+(o.y-h/2)*s*5;
+      if(o.z<=1){
+        // check collision with player
+        if(Math.abs(sx-px)<25&&sy>h-70){
+          if(o.ci===curCol%4){score+=10;beep(660,.05)}else{score=Math.max(0,score-5);beep(150,.12)}
+        }
+        orbs.splice(i,1);continue;
+      }
+      cx.beginPath();cx.arc(sx,sy,4+sc,0,Math.PI*2);cx.fillStyle=cols[o.ci];cx.globalAlpha=Math.min(1,s*2);cx.fill();cx.globalAlpha=1;
+    }
+    // HUD
+    cx.font='600 13px "Space Grotesk"';cx.fillStyle='#fff';cx.fillText('Score: '+score,12,20);
+    cx.font='10px "JetBrains Mono"';cx.fillStyle='rgba(255,255,255,.35)';cx.fillText('Match the colour!',12,36);
+    raf=requestAnimationFrame(tick);
+  }
+  c.addEventListener('mousemove',e=>{const r=c.getBoundingClientRect();mouseX=e.clientX-r.left});
+  c.addEventListener('touchmove',e=>{e.preventDefault();const r=c.getBoundingClientRect();mouseX=e.touches[0].clientX-r.left},{passive:false});
+  window.addEventListener('keydown',e=>{if(e.code==='ArrowLeft')keys.l=true;if(e.code==='ArrowRight')keys.r=true});
+  window.addEventListener('keyup',e=>{if(e.code==='ArrowLeft')keys.l=false;if(e.code==='ArrowRight')keys.r=false});
+  c.parentElement.addEventListener('click',()=>{if(!running){running=true;score=0;t=0;orbs=[];px=w/2;mouseX=w/2;document.getElementById('ov2').classList.add('hidden');actx.resume();tick()}});
+  games[2]={stop(){running=false;cancelAnimationFrame(raf)}};
+}
+
+// ── GAME 3: Beat Catcher ──
+function initGame3(){
+  const{c,cx,w,h}=setupCanvas('g3');
+  let running=false,raf,score=0,combo=0,t=0;
+  const colW=w/4,hitY=h-50,cols=[C.red,C.cyan,C.purple,C.yellow],keyMap={KeyA:0,KeyS:1,KeyD:2,KeyF:3};
+  let notes=[],flashes=[],pressed=[false,false,false,false];
+  function spawnNote(){const col=Math.floor(Math.random()*4);notes.push({col,y:-20,speed:2.5+score*.01})}
+  function flashCol(col,txt,good){flashes.push({col,txt,y:hitY-20,age:0,good})}
+  function tick(){
+    if(!running)return;t++;
+    cx.fillStyle='#0a0c0e';cx.fillRect(0,0,w,h);
+    // columns
+    for(let i=0;i<4;i++){
+      cx.fillStyle=pressed[i]?'rgba(255,255,255,.06)':'rgba(255,255,255,.02)';cx.fillRect(i*colW,0,colW,h);
+      cx.strokeStyle='rgba(255,255,255,.05)';cx.strokeRect(i*colW,0,colW,h);
+      // hit zone
+      cx.fillStyle=pressed[i]?cols[i]:'rgba(255,255,255,.08)';cx.fillRect(i*colW,hitY-4,colW,8);
+      // key labels
+      cx.font='600 12px "JetBrains Mono"';cx.fillStyle='rgba(255,255,255,.2)';cx.textAlign='center';cx.fillText(['A','S','D','F'][i],i*colW+colW/2,h-14);
+    }
+    cx.textAlign='left';
+    // spawn
+    if(t%Math.max(18,40-Math.floor(score/10))===0)spawnNote();
+    // notes
+    for(let i=notes.length-1;i>=0;i--){
+      const n=notes[i];n.y+=n.speed;
+      cx.beginPath();cx.arc(n.col*colW+colW/2,n.y,12,0,Math.PI*2);cx.fillStyle=cols[n.col];cx.fill();
+      cx.beginPath();cx.arc(n.col*colW+colW/2,n.y,12,0,Math.PI*2);cx.strokeStyle='rgba(255,255,255,.15)';cx.lineWidth=1;cx.stroke();
+      if(n.y>h+20){combo=0;flashCol(n.col,'MISS',false);notes.splice(i,1)}
+    }
+    // flashes
+    for(let i=flashes.length-1;i>=0;i--){
+      const f=flashes[i];f.age++;f.y-=1;
+      cx.font='bold 11px "Space Grotesk"';cx.fillStyle=f.good?C.green:C.red;cx.globalAlpha=Math.max(0,1-f.age/30);cx.textAlign='center';cx.fillText(f.txt,f.col*colW+colW/2,f.y);cx.globalAlpha=1;cx.textAlign='left';
+      if(f.age>30)flashes.splice(i,1);
+    }
+    // HUD
+    cx.font='600 13px "Space Grotesk"';cx.fillStyle='#fff';cx.fillText('Score: '+score,12,20);
+    if(combo>1){cx.fillStyle=C.yellow;cx.fillText(combo+'x',12,38)}
+    raf=requestAnimationFrame(tick);
+  }
+  function hitCol(col){
+    pressed[col]=true;setTimeout(()=>pressed[col]=false,100);
+    let best=null,bestD=999;
+    for(let i=0;i<notes.length;i++){if(notes[i].col===col){const d=Math.abs(notes[i].y-hitY);if(d<bestD){bestD=d;best=i}}}
+    if(best!==null&&bestD<40){
+      const mult=1+(combo>4?2:combo>2?1:0);
+      if(bestD<12){score+=10*mult;combo++;flashCol(col,'PERFECT',true);beep(660,.05)}
+      else if(bestD<28){score+=5*mult;combo++;flashCol(col,'GOOD',true);beep(550,.05)}
+      else{score+=2;combo=0;flashCol(col,'OK',true);beep(440,.05)}
+      notes.splice(best,1);
+    }
+  }
+  window.addEventListener('keydown',e=>{if(e.code in keyMap&&running){e.preventDefault();hitCol(keyMap[e.code])}});
+  c.addEventListener('touchstart',e=>{if(!running)return;e.preventDefault();const r=c.getBoundingClientRect();for(const t of e.changedTouches){const col=Math.floor((t.clientX-r.left)/(r.width/4));if(col>=0&&col<4)hitCol(col)}},{passive:false});
+  c.parentElement.addEventListener('click',e=>{if(!running){running=true;score=0;combo=0;t=0;notes=[];flashes=[];document.getElementById('ov3').classList.add('hidden');actx.resume();tick()}else{const r=c.getBoundingClientRect();const col=Math.floor((e.clientX-r.left)/(r.width/4));if(col>=0&&col<4)hitCol(col)}});
+  games[3]={stop(){running=false;cancelAnimationFrame(raf)}};
+}
+
+// ── Init on load ──
+window.addEventListener('DOMContentLoaded',()=>{initGame0();initGame1();initGame2();initGame3()});
+// Handle resize
+window.addEventListener('resize',()=>{for(let i=0;i<4;i++){const c=document.getElementById('g'+i),r=c.parentElement.getBoundingClientRect();c.width=r.width*2;c.height=r.height*2;c.getContext('2d').scale(2,2)}});
+</script>
+</body>
+</html>

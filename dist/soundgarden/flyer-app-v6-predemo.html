@@ -1,0 +1,2623 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>FLYER by BandLab</title>
+<link rel="stylesheet" href="bandlab.css" />
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&family=Abril+Fatface&family=Bebas+Neue&family=Bungee&family=Caveat:wght@400;700&family=Monoton&family=Permanent+Marker&family=Press+Start+2P&family=Rubik+Mono+One&family=Unica+One&family=Syne:wght@400;700;800&family=Shrikhand&family=Staatliches&family=VT323&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   GLOBAL RESET & LAYOUT
+   ============================================================ */
+html { height: 100%; overflow: hidden; }
+body { height: 100%; overflow: hidden; background: #010101; display: flex; flex-direction: column; }
+
+/* ============================================================
+   CSS CUSTOM PROPERTIES (app-level tokens)
+   ============================================================ */
+:root {
+  --topbar-h: 72px;
+  --filter-h: 52px;
+  --subnav-h: 52px;
+  --chat-w: 320px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
+}
+
+/* ============================================================
+   TOP BAR
+   ============================================================ */
+.topbar {
+  position: fixed; top: 0; left: 0; right: 0;
+  height: var(--topbar-h);
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px 32px 20px;
+  padding-top: max(16px, var(--safe-top));
+  background: linear-gradient(180deg,
+    rgba(1,1,1,0.96) 0%,
+    rgba(1,1,1,0.94) 40%,
+    rgba(1,1,1,0.7) 80%,
+    rgba(1,1,1,0) 100%);
+  z-index: 100;
+  pointer-events: none;
+}
+.topbar > * { pointer-events: auto; }
+.logo {
+  display: flex; align-items: center; gap: 14px;
+  color: var(--ink); line-height: 1;
+}
+.logo-mark {
+  position: relative; width: 36px; height: 32px; flex-shrink: 0;
+}
+.logo-mark::before, .logo-mark::after {
+  content: ''; position: absolute;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.6);
+}
+.logo-mark::before {
+  left: 0; top: 6px; width: 17px; height: 24px;
+  transform: rotate(-8deg); background: rgba(255,255,255,0.55);
+}
+.logo-mark::after {
+  right: 0; top: 0; width: 21px; height: 27px;
+  transform: rotate(7deg); background: #ffffff;
+}
+.logo-name {
+  font-family: var(--font-display); font-size: 36px; font-weight: 700;
+  letter-spacing: -0.015em; text-transform: uppercase; color: #fff; line-height: 0.85;
+}
+.logo-sub {
+  font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+  letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-faint);
+  align-self: flex-end; padding-bottom: 4px; margin-left: -4px;
+}
+.location { font-family: var(--font-display); font-size: 20px; font-weight: 500; color: var(--ink); letter-spacing: -0.01em; }
+.location em { font-style: normal; color: var(--bl-red); }
+.location-sub {
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--ink-faint); margin-top: 3px;
+  text-align: center; font-weight: 500;
+}
+.topbar-center { text-align: center; }
+.topbar-right { display: flex; gap: 8px; align-items: center; }
+.post-btn {
+  padding: 10px 20px; background: var(--bl-red); color: #fff;
+  font-family: var(--font-display); font-size: 13px; font-weight: 600;
+  letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer; border: 0;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.post-btn::before { content: '+'; font-size: 18px; font-weight: 400; line-height: 1; }
+.post-btn:hover { background: #ff3c25; }
+.travel-btn {
+  padding: 10px 18px; background: rgba(194,215,242,0.06);
+  border: 1px solid var(--rule-strong); color: var(--ink);
+  font-family: var(--font-display); font-size: 13px; font-weight: 500;
+  letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 8px; transition: all 150ms ease;
+}
+.travel-btn:hover { background: rgba(194,215,242,0.12); border-color: var(--ink-dim); }
+.travel-btn::before {
+  content: ''; width: 10px; height: 10px;
+  background: radial-gradient(circle, #fff 35%, transparent 38%);
+  border: 2px solid var(--bl-red); border-radius: 50%; box-sizing: border-box;
+}
+.hamburger-btn {
+  display: none; width: 40px; height: 40px; background: rgba(194,215,242,0.06);
+  border: 1px solid var(--rule-strong); color: var(--ink); font-size: 20px;
+  cursor: pointer; align-items: center; justify-content: center;
+}
+
+/* ============================================================
+   FILTER CHIPS
+   ============================================================ */
+.filters {
+  position: fixed; top: var(--topbar-h); left: 0; right: 0;
+  z-index: 95; display: flex; justify-content: center;
+  padding: 6px 10px; pointer-events: none;
+}
+.filter-bar {
+  display: flex; gap: 4px; padding: 6px 8px;
+  background: rgba(1,1,1,0.82); backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px); border: 1px solid var(--rule-strong);
+  pointer-events: auto; overflow-x: auto; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.filter-bar::-webkit-scrollbar { display: none; }
+.fc-chip {
+  padding: 8px 14px; background: transparent; border: 1px solid transparent;
+  color: var(--ink-dim); font-family: var(--font-mono); font-size: 10px;
+  font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+  cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+  transition: all 150ms ease; white-space: nowrap; flex-shrink: 0;
+}
+.fc-chip:hover { color: var(--ink); background: rgba(194,215,242,0.06); }
+.fc-chip.active { background: var(--bl-red); border-color: var(--bl-red); color: #fff; }
+.fc-chip .fc-ic { font-size: 12px; opacity: 0.9; }
+
+/* ============================================================
+   MAIN CONTAINER (wall + chat)
+   ============================================================ */
+.wall-container {
+  position: fixed; inset: 0; display: flex;
+}
+
+/* ============================================================
+   WALL
+   ============================================================ */
+.wall {
+  flex: 1; position: relative; overflow: hidden; background: #0a0806;
+  touch-action: pan-x;
+}
+.wall-tile {
+  --px: 0px; --py: 0px;
+  position: absolute; inset: 0; pointer-events: none; background-color: #0a0806;
+}
+.wall-tile::after {
+  content: ''; position: absolute; inset: 0;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.5  0 0 0 0 0.4  0 0 0 0 0.3  0 0 0 0.32 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  background-position: var(--px) var(--py);
+  mix-blend-mode: overlay; opacity: 0.55; pointer-events: none;
+}
+.wall-vignette {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 50% 50%, transparent 35%, rgba(0,0,0,0.28) 75%, rgba(0,0,0,0.55) 100%),
+    linear-gradient(180deg, rgba(0,0,0,0.18), transparent 25%, transparent 75%, rgba(0,0,0,0.22));
+  pointer-events: none; z-index: 50;
+}
+.wall-track {
+  position: absolute; top: 0; left: 0; height: 100%;
+  display: flex; transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  will-change: transform;
+}
+.wall-page {
+  position: relative; width: 100vw; height: 100%; flex-shrink: 0;
+  overflow: hidden; contain: layout style paint;
+}
+.wall-page.page-inactive, .wall-page.page-inactive * {
+  animation-play-state: paused !important; will-change: auto !important;
+}
+
+/* ============================================================
+   CITY BACKGROUNDS
+   ============================================================ */
+.bg-shoreditch .wall-tile {
+  background-color: #d8d0b8;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='80' viewBox='0 0 160 80'><rect width='160' height='80' fill='%23ddd5bd'/><g stroke='%23888068' stroke-width='2' fill='none'><path d='M0 0 L160 0 M0 40 L160 40 M0 80 L160 80 M80 0 L80 40 M40 40 L40 80 M120 40 L120 80'/></g><g fill='%23e8e1cc' opacity='0.6'><rect x='2' y='2' width='76' height='36'/><rect x='82' y='2' width='76' height='36'/><rect x='-38' y='42' width='76' height='36'/><rect x='42' y='42' width='76' height='36'/><rect x='122' y='42' width='76' height='36'/></g></svg>");
+  background-position: var(--px) var(--py); background-size: 160px 80px; background-repeat: repeat;
+}
+.bg-shoreditch .wall-vignette { background: radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.5) 100%); }
+.bg-shimokitazawa .wall-tile {
+  background-color: #5a4228;
+  background-image: repeating-linear-gradient(90deg, rgba(0,0,0,0) 0, rgba(0,0,0,0.12) 1px, rgba(255,255,255,0.02) 2px, rgba(0,0,0,0) 5px, rgba(0,0,0,0.06) 7px, rgba(255,255,255,0.01) 10px, rgba(0,0,0,0) 16px), repeating-linear-gradient(90deg, rgba(0,0,0,0) 0, rgba(0,0,0,0) 120px, rgba(0,0,0,0.5) 121px, rgba(0,0,0,0.15) 123px, rgba(0,0,0,0) 125px);
+  background-position: var(--px) var(--py); background-repeat: repeat;
+}
+.bg-shimokitazawa .wall-vignette { background: radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.5) 100%); }
+.bg-bushwick .wall-tile {
+  background-color: #5a1808;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='120' viewBox='0 0 240 120'><defs><filter id='nb'><feTurbulence type='fractalNoise' baseFrequency='2' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.35 0'/></filter></defs><rect width='240' height='120' fill='%23651810'/><g><rect x='0' y='0' width='112' height='28' fill='%238a2818' stroke='%23180200' stroke-width='2'/><rect x='120' y='0' width='112' height='28' fill='%23701c10' stroke='%23180200' stroke-width='2'/><rect x='-56' y='32' width='112' height='28' fill='%23822818' stroke='%23180200' stroke-width='2'/><rect x='64' y='32' width='112' height='28' fill='%23952e1e' stroke='%23180200' stroke-width='2'/><rect x='184' y='32' width='112' height='28' fill='%23681c10' stroke='%23180200' stroke-width='2'/><rect x='0' y='64' width='112' height='28' fill='%23752618' stroke='%23180200' stroke-width='2'/><rect x='120' y='64' width='112' height='28' fill='%238a3218' stroke='%23180200' stroke-width='2'/><rect x='-56' y='96' width='112' height='28' fill='%23802618' stroke='%23180200' stroke-width='2'/><rect x='64' y='96' width='112' height='28' fill='%23682018' stroke='%23180200' stroke-width='2'/><rect x='184' y='96' width='112' height='28' fill='%23852e18' stroke='%23180200' stroke-width='2'/></g><rect width='240' height='120' filter='url(%23nb)' opacity='0.6'/></svg>");
+  background-position: var(--px) var(--py); background-size: 240px 120px; background-repeat: repeat;
+}
+.bg-bushwick .wall-vignette { background: radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.5) 100%); }
+.bg-echopark .wall-tile {
+  background-color: #c0956a;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400'><defs><filter id='nep'><feTurbulence type='fractalNoise' baseFrequency='1.8' numOctaves='4' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.85  0 0 0 0 0.65  0 0 0 0 0.45  0 0 0 0.45 0'/></filter></defs><rect width='100%25' height='100%25' filter='url(%23nep)'/></svg>");
+  background-position: var(--px) var(--py); background-size: 400px 400px; background-repeat: repeat;
+}
+.bg-echopark .wall-vignette { background: radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(0,0,0,0.25) 80%, rgba(0,0,0,0.45) 100%); }
+.bg-capetown .wall-tile {
+  background-color: #6a5a48;
+  background-image: repeating-linear-gradient(90deg, rgba(0,0,0,0.4) 0 2px, rgba(255,255,255,0.12) 2px 4px, rgba(255,255,255,0.04) 4px 16px, rgba(0,0,0,0.3) 16px 20px, rgba(255,255,255,0.08) 20px 22px, rgba(0,0,0,0) 22px 32px);
+  background-position: var(--px) var(--py); background-repeat: repeat;
+}
+.bg-capetown .wall-vignette { background: radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.5) 100%); }
+.bg-jakarta .wall-tile {
+  background-color: #58584e;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400'><defs><filter id='njk'><feTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='4' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.45  0 0 0 0 0.45  0 0 0 0 0.4  0 0 0 0.4 0'/></filter></defs><rect width='100%25' height='100%25' filter='url(%23njk)'/></svg>");
+  background-position: var(--px) var(--py); background-size: 400px 400px; background-repeat: repeat;
+}
+.bg-jakarta .wall-vignette { background: radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.5) 100%); }
+
+/* ============================================================
+   WAYPOINTS — street signs per city
+   ============================================================ */
+.waypoint {
+  position: absolute; padding: 10px 20px 9px; font-size: 14px; font-weight: 700;
+  letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap;
+  pointer-events: none; box-shadow: 0 2px 5px rgba(0,0,0,0.5), 0 10px 24px rgba(0,0,0,0.42);
+  transform-origin: center; line-height: 1; min-width: 170px; text-align: center;
+}
+.waypoint::before, .waypoint::after {
+  content: ''; position: absolute; width: 4px; height: 4px; border-radius: 50%;
+  background: rgba(0,0,0,0.55); box-shadow: inset 0 0 0 0.5px rgba(255,255,255,0.25);
+}
+.waypoint::before { left: 6px; top: 6px; }
+.waypoint::after { right: 6px; bottom: 6px; }
+.waypoint .wp-sub { display: block; font-size: 8px; font-weight: 500; letter-spacing: 0.14em; margin-bottom: 3px; }
+.wp-london { background: #fcfbf5; color: #0a0806; border: 2px solid #050505; font-family: 'Inter', sans-serif; padding: 20px 22px 10px; }
+.wp-london .wp-sub { position: absolute; top: 3px; left: 4px; right: 4px; background: #c41818; color: #fff; padding: 3px 0 2px; text-align: center; font-size: 7px; letter-spacing: 0.14em; margin: 0; }
+.wp-tokyo { background: #0f5c3a; color: #fff; font-family: 'Staatliches', 'Inter', sans-serif; border: 2px solid #0f5c3a; box-shadow: inset 0 0 0 2px #fff, inset 0 0 0 4px #0f5c3a, 0 2px 5px rgba(0,0,0,0.5), 0 10px 24px rgba(0,0,0,0.42); padding: 14px 22px 11px; }
+.wp-tokyo .wp-sub { font-size: 9px; opacity: 0.8; letter-spacing: 0.2em; }
+.wp-nyc { background: #14532c; color: #fff; font-family: 'Staatliches', sans-serif; border: 2px solid #fff; box-shadow: inset 0 0 0 4px #14532c, inset 0 0 0 5px #fff, 0 2px 5px rgba(0,0,0,0.5), 0 10px 24px rgba(0,0,0,0.42); padding: 14px 22px 12px; font-size: 15px; }
+.wp-la { background: #1a4a7c; color: #fff; font-family: 'Inter', sans-serif; font-weight: 600; border-radius: 5px; border: 1px solid rgba(255,255,255,0.35); box-shadow: inset 0 1px 0 rgba(255,255,255,0.25), inset 0 -1px 0 rgba(0,0,0,0.3), 0 2px 5px rgba(0,0,0,0.5), 0 10px 24px rgba(0,0,0,0.42); padding: 14px 22px 13px; }
+.wp-capetown { background: #fcfbf5; color: #b21818; border: 3px solid #b21818; font-family: 'Archivo Black', sans-serif; padding: 13px 20px 12px; font-size: 13px; letter-spacing: 0.05em; }
+.wp-jakarta { background: #fff; color: #0a0806; font-family: 'Inter', sans-serif; font-weight: 700; border: 2px solid #1a5a8a; box-shadow: inset 0 0 0 3px #fff, inset 0 0 0 5px #1a5a8a, 0 2px 5px rgba(0,0,0,0.5), 0 10px 24px rgba(0,0,0,0.42); padding: 14px 22px 12px; }
+
+/* ============================================================
+   FLYER BASE
+   ============================================================ */
+.flyer {
+  position: absolute; left: var(--x); top: var(--y);
+  width: var(--w); height: var(--h);
+  transform: translate(-50%, -50%) rotate(var(--rot));
+  box-shadow: 0 1px 2px rgba(0,0,0,0.4), 0 6px 14px rgba(0,0,0,0.55), 0 20px 36px rgba(0,0,0,0.35);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1), z-index 0s 0.35s;
+  cursor: pointer; overflow: visible; will-change: transform;
+}
+.flyer > .inner { position: absolute; inset: 0; overflow: hidden; }
+.flyer.age-light .inner { filter: sepia(0.12) saturate(0.95); }
+.flyer.age-mid .inner { filter: sepia(0.22) saturate(0.85) brightness(0.92); }
+.flyer.age-heavy .inner { filter: sepia(0.35) saturate(0.72) brightness(0.85); }
+@keyframes flyerPulse {
+  0% { transform: translate(-50%,-50%) rotate(var(--rot)) scale(1); }
+  15% { transform: translate(-50%,-50%) rotate(var(--rot)) scale(1.06); }
+  30% { transform: translate(-50%,-50%) rotate(var(--rot)) scale(0.97); }
+  50% { transform: translate(-50%,-50%) rotate(var(--rot)) scale(1.03); }
+  100% { transform: translate(-50%,-50%) rotate(var(--rot)) scale(1); }
+}
+@keyframes flyerGlow {
+  0%,100% { box-shadow: 0 1px 2px rgba(0,0,0,0.4), 0 6px 14px rgba(0,0,0,0.55), 0 20px 36px rgba(0,0,0,0.35); }
+  35% { box-shadow: 0 1px 2px rgba(0,0,0,0.4), 0 6px 14px rgba(0,0,0,0.55), 0 20px 36px rgba(0,0,0,0.35), 0 0 25px rgba(241,44,24,0.3); }
+}
+.flyer.pulse-now {
+  animation: flyerPulse 0.55s ease-out, flyerGlow 0.55s ease-out !important;
+  z-index: 180 !important;
+}
+.flyer:hover {
+  transform: translate(-50%, -50%) rotate(0deg) scale(1.12);
+  z-index: 200 !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.5), 0 24px 50px rgba(0,0,0,0.7), 0 60px 120px rgba(241,44,24,0.25);
+  transition-delay: 0s;
+}
+.flyer:hover .inner { filter: none; }
+
+/* ---- Paper textures ---- */
+.flyer .inner::before {
+  content: ''; position: absolute; inset: 0;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.5' numOctaves='2'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.12 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  mix-blend-mode: multiply; opacity: 0.6; pointer-events: none;
+}
+
+/* ---- 29 Paper colours ---- */
+.paper-cream    { background: linear-gradient(180deg, #faf4e1, #f1e8ce); color: #1a1208; }
+.paper-white    { background: #ffffff; color: #0a0806; }
+.paper-kraft    { background: linear-gradient(180deg, #c7a074, #a9845a); color: #1a1208; }
+.paper-black    { background: #050505; color: #f4eedd; }
+.paper-charcoal { background: linear-gradient(180deg, #2a2a2a, #1a1a1a); color: #f4eedd; }
+.paper-red      { background: var(--bl-red); color: #fff; }
+.paper-crimson  { background: #8b1a0d; color: #fff; }
+.paper-yellow   { background: var(--bl-yellow); color: #1a1208; }
+.paper-mustard  { background: #c99720; color: #1a1208; }
+.paper-blue     { background: var(--bl-blue); color: #fff; }
+.paper-navy     { background: #132044; color: #f4eedd; }
+.paper-cyan     { background: var(--bl-cyan); color: #0a0806; }
+.paper-mint     { background: #8fe8c8; color: #0a0806; }
+.paper-teal     { background: #167771; color: #f4eedd; }
+.paper-purple   { background: var(--bl-purple); color: #fff; }
+.paper-lavender { background: #b8a7dc; color: #0a0806; }
+.paper-orange   { background: var(--bl-orange); color: #0a0806; }
+.paper-pink     { background: #ff5c9a; color: #fff; }
+.paper-magenta  { background: #d91e7a; color: #fff; }
+.paper-lime     { background: #c4e835; color: #0a0806; }
+.paper-green    { background: var(--bl-green); color: #0a0806; }
+.paper-forest   { background: #0d3a1f; color: #f4eedd; }
+.paper-tan      { background: #d9c4a0; color: #1a1208; }
+.paper-bone     { background: #e8e1d0; color: #1a1208; }
+.paper-newsprint{ background: linear-gradient(180deg, #e9e0c8, #d6cba8); color: #1a1208; }
+.paper-photocopy{ background: #f6f3e8; color: #050505; filter: contrast(1.2); }
+.paper-riso-rb  { background: radial-gradient(circle at 30% 40%, rgba(47,147,246,0.9) 0, transparent 60%), radial-gradient(circle at 70% 65%, rgba(241,44,24,0.92) 0, transparent 65%), #f4eedd; color: #0a0806; }
+.paper-riso-yp  { background: radial-gradient(circle at 30% 40%, rgba(252,201,49,0.9) 0, transparent 60%), radial-gradient(circle at 70% 65%, rgba(180,0,255,0.85) 0, transparent 65%), #f4eedd; color: #0a0806; }
+
+/* ============================================================
+   SIZE PRESETS
+   ============================================================ */
+.sz-xs { --w: 140px; --h: 170px; }
+.sz-s  { --w: 180px; --h: 240px; }
+.sz-m  { --w: 220px; --h: 300px; }
+.sz-l  { --w: 260px; --h: 360px; }
+.sz-xl { --w: 300px; --h: 420px; }
+.sz-sq { --w: 220px; --h: 220px; }
+.sz-sticker { --w: 140px; --h: 140px; }
+.sz-wide { --w: 280px; --h: 200px; }
+.sz-banner { --w: 320px; --h: 90px; }
+.sz-arcade { --w: 170px; --h: 280px; }
+.sz-tshirt { --w: 200px; --h: 200px; }
+.sz-cassette { --w: 240px; --h: 150px; }
+.sz-bubble { --w: 200px; --h: 190px; }
+.sz-glyph { --w: 130px; --h: 130px; }
+.sz-tv { --w: 260px; --h: 230px; }
+
+/* ============================================================
+   TYPE-SPECIFIC LAYOUTS
+   ============================================================ */
+.type-song .player { opacity: 0.55 !important; transform: translateY(0) !important; pointer-events: auto; background: linear-gradient(180deg, transparent, rgba(0,0,0,0.65)) !important; }
+.type-song:hover .player { opacity: 1 !important; }
+.type-release .type-badge { position: absolute; bottom: 6px; left: 6px; z-index: 6; padding: 3px 8px 2px; background: rgba(0,0,0,0.72); backdrop-filter: blur(4px); color: #fff; font-family: var(--font-mono); font-size: 8px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
+.type-event .c .kicker { background: var(--bl-red) !important; color: #fff !important; display: inline-block !important; padding: 5px 10px 4px !important; margin: -2px -4px 10px !important; font-size: 10px !important; font-weight: 700 !important; letter-spacing: 0.08em !important; opacity: 1 !important; font-family: var(--font-mono) !important; }
+.type-message .player { display: none !important; }
+.type-message .c { justify-content: center; }
+.type-badge { display: none; }
+.type-release .type-badge { display: block; }
+
+/* ============================================================
+   SHAPE VARIANTS
+   ============================================================ */
+.shape-rect .inner { /* default */ }
+.shape-circle .inner { border-radius: 50%; }
+.shape-circle { box-shadow: none; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.5)) drop-shadow(0 16px 28px rgba(0,0,0,0.4)); }
+.shape-hex .inner { clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); }
+.shape-hex { box-shadow: none; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.5)) drop-shadow(0 16px 28px rgba(0,0,0,0.4)); }
+.shape-diamond .inner { clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); }
+.shape-diamond { box-shadow: none; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.5)) drop-shadow(0 16px 28px rgba(0,0,0,0.4)); }
+
+/* SVG shapes */
+.shape-arcade { box-shadow: none; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.6)) drop-shadow(0 0 24px rgba(0,255,80,0.3)) drop-shadow(0 20px 36px rgba(0,0,0,0.5)); }
+.shape-arcade .inner { background: none !important; clip-path: none; }
+.shape-arcade .inner::before { display: none; }
+.shape-arcade svg.shape-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.shape-arcade .c { position: absolute; left: 50%; top: 18%; transform: translateX(-50%); width: 50%; text-align: center; z-index: 3; padding: 0; }
+.shape-tshirt { box-shadow: none; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5)) drop-shadow(0 18px 30px rgba(0,0,0,0.4)); }
+.shape-tshirt .inner { background: none !important; clip-path: none; }
+.shape-tshirt .inner::before { display: none; }
+.shape-tshirt svg.shape-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.shape-tshirt .c { position: absolute; left: 50%; top: 38%; transform: translateX(-50%); width: 55%; text-align: center; z-index: 3; padding: 0; }
+.shape-thumb { box-shadow: none; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5)) drop-shadow(0 16px 28px rgba(0,0,0,0.4)); }
+.shape-thumb .inner { background: none !important; clip-path: none; }
+.shape-thumb .inner::before { display: none; }
+.shape-thumb svg.shape-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.shape-thumb .c { position: absolute; left: 50%; top: 56%; transform: translate(-50%, -50%); width: 60%; text-align: center; z-index: 3; padding: 0; }
+.shape-flame { box-shadow: none; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5)) drop-shadow(0 16px 28px rgba(241,44,24,0.35)); }
+.shape-flame .inner { background: none !important; clip-path: none; }
+.shape-flame .inner::before { display: none; }
+.shape-flame svg.shape-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.shape-flame .c { position: absolute; left: 50%; top: 62%; transform: translate(-50%, -50%); width: 70%; text-align: center; z-index: 3; padding: 0; }
+.shape-bubble .inner { background: none !important; clip-path: none; }
+.shape-bubble .inner::before { display: none; }
+.shape-bubble svg.shape-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.shape-bubble .c { position: absolute; left: 8%; top: 6%; right: 8%; bottom: 30%; z-index: 3; padding: 14px 12px; display: flex; flex-direction: column; justify-content: center; }
+.shape-bubble { box-shadow: none; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.5)) drop-shadow(0 16px 28px rgba(0,0,0,0.4)); }
+.shape-bubble .player { display: none !important; }
+.flyer.shape-thumb, .flyer.shape-flame, .flyer.shape-arcade, .flyer.shape-tshirt, .flyer.shape-bubble { background: none !important; }
+.shape-thumb .player, .shape-flame .player, .shape-arcade .player, .shape-tshirt .player { display: none !important; }
+
+/* TV shape */
+.shape-tv { box-shadow: none; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.6)) drop-shadow(0 0 24px rgba(241,44,24,0.2)) drop-shadow(0 20px 36px rgba(0,0,0,0.5)); }
+.shape-tv .inner { background: none !important; clip-path: none; }
+.shape-tv .inner::before { display: none; }
+.shape-tv svg.shape-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.shape-tv .c { position: absolute; left: 8%; top: 14%; right: 8%; bottom: 22%; z-index: 3; padding: 10px; display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
+.shape-tv .screen-glow { position: absolute; left: 8%; top: 14%; right: 8%; bottom: 22%; z-index: 2; border-radius: 2px; overflow: hidden; }
+.shape-tv .screen-glow .sg-inner { position: absolute; inset: 0; background: linear-gradient(135deg, #f12c18, #b400ff, #29dbe5, #fcc931, #f12c18); background-size: 400% 400%; animation: videoShift 5s ease-in-out infinite; }
+.shape-tv .screen-glow .sg-scan { position: absolute; inset: 0; background: repeating-linear-gradient(0deg, transparent 0 2px, rgba(0,0,0,0.1) 2px 3px, transparent 3px 5px); animation: scanroll 1.5s linear infinite; }
+.flyer.shape-tv { background: none !important; }
+.shape-tv .player { display: none !important; }
+
+/* Cassette shape */
+.shape-cassette .inner { clip-path: polygon(4% 14%, 96% 14%, 96% 86%, 4% 86%); border-radius: 4px; }
+.shape-cassette { filter: drop-shadow(0 3px 6px rgba(0,0,0,0.5)) drop-shadow(0 18px 30px rgba(0,0,0,0.4)); box-shadow: none; }
+.shape-cassette .cassette-spool { position: absolute; width: 20%; aspect-ratio: 1; top: 40%; border-radius: 50%; background: radial-gradient(circle, #0a0806 30%, #2a1a10 33%, #0a0806 60%); box-shadow: inset 0 0 0 2px rgba(255,255,255,0.2); z-index: 3; }
+.shape-cassette .cassette-spool.left { left: 18%; }
+.shape-cassette .cassette-spool.right { right: 18%; }
+.shape-cassette .cassette-spool::after { content: ''; position: absolute; inset: 25%; border-radius: 50%; background: repeating-conic-gradient(rgba(255,255,255,0.3) 0deg 20deg, transparent 20deg 40deg); }
+.shape-cassette .cassette-window { position: absolute; left: 4%; right: 4%; top: 14%; height: 12%; background: rgba(0,0,0,0.75); z-index: 3; }
+
+/* ============================================================
+   CURL CORNERS
+   ============================================================ */
+.flyer.curl-br .inner { clip-path: polygon(0 0, 100% 0, 100% calc(100% - 26px), calc(100% - 26px) 100%, 0 100%); }
+.flyer.curl-br .inner::after { content: ''; position: absolute; right: -2px; bottom: -2px; width: 42px; height: 42px; background: linear-gradient(135deg, transparent 48%, rgba(0,0,0,0.55) 49%, rgba(0,0,0,0.35) 52%, rgba(245,235,200,0.85) 54%, rgba(200,180,140,0.95) 70%); filter: drop-shadow(-3px -3px 4px rgba(0,0,0,0.4)); pointer-events: none; }
+.flyer.curl-tr .inner { clip-path: polygon(0 0, calc(100% - 26px) 0, 100% 26px, 100% 100%, 0 100%); }
+.flyer.curl-tr .inner::after { content: ''; position: absolute; right: -2px; top: -2px; width: 42px; height: 42px; background: linear-gradient(225deg, transparent 48%, rgba(0,0,0,0.55) 49%, rgba(0,0,0,0.35) 52%, rgba(245,235,200,0.85) 54%, rgba(200,180,140,0.95) 70%); filter: drop-shadow(-3px 3px 4px rgba(0,0,0,0.4)); pointer-events: none; }
+
+/* ============================================================
+   CONTENT WRAPPER
+   ============================================================ */
+.flyer .c {
+  position: relative; z-index: 2; width: 100%; height: 100%;
+  padding: 16px 14px; display: flex; flex-direction: column;
+}
+
+/* ============================================================
+   TYPOGRAPHY STYLE VARIANTS
+   ============================================================ */
+.s-gig .kicker { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.15em; text-transform: uppercase; opacity: 0.8; margin-bottom: 10px; }
+.s-gig .title { font-family: 'Anton', sans-serif; font-size: 56px; line-height: 0.85; letter-spacing: -0.01em; text-transform: uppercase; margin-bottom: auto; }
+.s-gig .title.sm { font-size: 44px; }
+.s-gig .support { font-family: 'Space Grotesk', sans-serif; font-size: 11px; font-weight: 500; line-height: 1.4; margin-top: 10px; }
+.s-gig .footer { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; padding-top: 10px; border-top: 1px solid currentColor; margin-top: 12px; display: flex; justify-content: space-between; opacity: 0.85; }
+.s-type .c { justify-content: space-between; padding: 22px 18px; }
+.s-type .kicker { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; opacity: 0.75; }
+.s-type .title { font-family: 'Archivo Black', sans-serif; font-size: 52px; line-height: 0.9; letter-spacing: -0.035em; }
+.s-type .title.tiny { font-size: 34px; }
+.s-type .footer { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.7; }
+.s-serif .c { justify-content: center; align-items: center; text-align: center; padding: 28px 16px; }
+.s-serif .kicker { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase; opacity: 0.6; margin-bottom: 14px; }
+.s-serif .title { font-family: 'Abril Fatface', serif; font-size: 46px; line-height: 0.95; letter-spacing: -0.015em; }
+.s-serif .support { font-family: 'Space Grotesk', sans-serif; font-style: italic; font-size: 12px; margin-top: 12px; opacity: 0.8; }
+.s-monoton .c { justify-content: center; padding: 22px 16px; }
+.s-monoton .title { font-family: 'Monoton', cursive; font-size: 52px; line-height: 0.95; letter-spacing: 0.02em; text-align: center; }
+.s-monoton .title.sm { font-size: 38px; }
+.s-monoton .support { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; margin-top: 16px; text-align: center; opacity: 0.75; }
+.s-bungee .c { justify-content: center; padding: 20px 14px; }
+.s-bungee .title { font-family: 'Bungee', cursive; font-size: 38px; line-height: 0.95; text-transform: uppercase; text-align: center; }
+.s-bungee .title.sm { font-size: 28px; }
+.s-bungee .support { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; margin-top: 14px; text-align: center; opacity: 0.85; }
+.s-zine .c { padding: 18px 16px; }
+.s-zine .title { font-family: 'Permanent Marker', cursive; font-size: 40px; line-height: 0.95; transform: rotate(-2deg); margin-bottom: 8px; }
+.s-zine .title.sm { font-size: 30px; }
+.s-zine .scribble { font-family: 'Caveat', cursive; font-size: 22px; line-height: 1.1; font-weight: 700; margin-top: auto; }
+.s-zine .kicker { font-family: 'Caveat', cursive; font-size: 22px; font-weight: 700; }
+.s-punk .c { padding: 20px 16px; }
+.s-punk .kicker { font-family: 'Permanent Marker', cursive; font-size: 20px; transform: rotate(-3deg); margin-bottom: 4px; }
+.s-punk .title { font-family: 'Staatliches', sans-serif; font-size: 50px; line-height: 0.9; text-transform: uppercase; letter-spacing: -0.01em; margin-bottom: 12px; }
+.s-punk .title.sm { font-size: 36px; }
+.s-punk .support { font-family: 'Bebas Neue', sans-serif; font-size: 14px; line-height: 1.2; letter-spacing: 0.04em; text-transform: uppercase; }
+.s-punk .footer { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; margin-top: auto; padding-top: 8px; border-top: 2px solid currentColor; }
+.s-rave .c { padding: 14px 12px; justify-content: space-between; }
+.s-rave .kicker { font-family: 'Rubik Mono One', sans-serif; font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; }
+.s-rave .title { font-family: 'Bungee', cursive; font-size: 30px; line-height: 0.95; text-align: center; text-transform: uppercase; margin: 8px 0; }
+.s-rave .support { font-family: 'JetBrains Mono', monospace; font-size: 8px; line-height: 1.5; letter-spacing: 0.04em; }
+.s-rave .footer { font-family: 'Bebas Neue', sans-serif; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; text-align: center; padding-top: 8px; border-top: 1px dashed currentColor; }
+.s-sticker .inner { border-radius: 6px; }
+.s-sticker .c { padding: 10px 12px; justify-content: center; align-items: center; text-align: center; }
+.s-sticker .title { font-family: 'Shrikhand', cursive; font-size: 26px; line-height: 0.95; letter-spacing: -0.01em; }
+.s-sticker .title.sm { font-size: 20px; }
+.s-sticker .support { font-family: 'JetBrains Mono', monospace; font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase; margin-top: 4px; opacity: 0.75; }
+.s-bill .c { padding: 16px 14px; justify-content: space-between; }
+.s-bill .kicker { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.7; margin-bottom: 8px; }
+.s-bill .lineup { font-family: 'Unica One', sans-serif; font-size: 22px; line-height: 1.05; text-transform: uppercase; letter-spacing: 0.02em; }
+.s-bill .lineup .hdl { font-size: 34px; line-height: 0.95; font-weight: normal; display: block; }
+.s-bill .footer { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.85; padding-top: 8px; border-top: 1px solid currentColor; }
+.s-pixel .c { padding: 16px 14px; justify-content: center; text-align: center; }
+.s-pixel .kicker { font-family: 'Press Start 2P', cursive; font-size: 8px; margin-bottom: 14px; opacity: 0.8; }
+.s-pixel .title { font-family: 'Press Start 2P', cursive; font-size: 14px; line-height: 1.4; }
+.s-pixel .footer { font-family: 'Press Start 2P', cursive; font-size: 7px; margin-top: 14px; opacity: 0.7; }
+.s-sleeve .c { padding: 0; }
+.s-sleeve .art { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+.s-sleeve .disc { width: 64%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, #1a1208 15%, #2a1810 18%, #0a0806 22%, #0a0806 60%, #0f0a05 65%); box-shadow: 0 0 0 1px rgba(255,255,255,0.15), inset 0 0 40px rgba(0,0,0,0.7); position: relative; }
+.s-sleeve .disc::before { content: ''; position: absolute; inset: 0; border-radius: 50%; background: repeating-radial-gradient(circle, transparent 0 2px, rgba(255,255,255,0.04) 2px 3px); pointer-events: none; }
+.s-sleeve .disc::after { content: ''; position: absolute; left: 50%; top: 50%; width: 14%; aspect-ratio: 1; background: var(--bl-red); border-radius: 50%; transform: translate(-50%, -50%); }
+.s-sleeve .caption { position: absolute; left: 0; right: 0; bottom: 0; padding: 12px 14px; background: linear-gradient(180deg, transparent, rgba(0,0,0,0.85)); font-family: 'Syne', sans-serif; font-weight: 800; font-size: 16px; line-height: 1.05; letter-spacing: -0.015em; color: #fff; }
+.s-glyph .title { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 0.08em; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.6); line-height: 1; }
+.s-glyph .support { font-family: 'JetBrains Mono', monospace; font-size: 8px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.8); margin-top: 4px; }
+.s-cassette .c { padding: 30px 22px 32px; justify-content: center; text-align: center; }
+.s-cassette .kicker { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.75; margin-bottom: 6px; }
+.s-cassette .title { font-family: 'Permanent Marker', cursive; font-size: 24px; line-height: 0.95; }
+.s-cassette .support { font-family: 'Caveat', cursive; font-size: 16px; font-weight: 700; margin-top: 6px; opacity: 0.85; }
+
+/* ============================================================
+   PHOTO BACKGROUNDS
+   ============================================================ */
+.photo-concert .inner { background: radial-gradient(circle at 35% 30%, rgba(241,44,24,0.45), transparent 50%), radial-gradient(circle at 70% 65%, rgba(41,219,229,0.3), transparent 50%), radial-gradient(circle at 50% 85%, rgba(180,0,255,0.22), transparent 45%), linear-gradient(180deg, #0a0a1a, #050510) !important; color: #fff !important; }
+.photo-landscape .inner { background: radial-gradient(ellipse at 50% 88%, rgba(255,200,100,0.4), transparent 45%), radial-gradient(ellipse at 50% 25%, rgba(100,140,200,0.28), transparent 50%), linear-gradient(180deg, #1a2a4a 0%, #0a1020 50%, #080810) !important; color: #fff !important; }
+.photo-crowd .inner { background: radial-gradient(circle at 50% 40%, rgba(255,255,255,0.15), transparent 40%), radial-gradient(circle at 30% 70%, rgba(241,44,24,0.3), transparent 40%), radial-gradient(circle at 70% 60%, rgba(252,201,49,0.25), transparent 40%), linear-gradient(180deg, #12080a, #0a0608) !important; color: #fff !important; }
+
+/* ============================================================
+   INDICATORS — NEW, LIVE, VIDEO, PROMO
+   ============================================================ */
+.new-tag { position: absolute; top: -8px; right: -8px; z-index: 10; padding: 4px 8px; background: var(--bl-red); color: #fff; font-family: var(--font-mono); font-size: 9px; font-weight: 700; letter-spacing: 0.14em; transform: rotate(6deg); box-shadow: 0 3px 6px rgba(0,0,0,0.45); }
+.new-tag::after { content: ''; position: absolute; left: -3px; top: 50%; width: 0; height: 0; border: 5px solid transparent; border-right-color: var(--bl-red); transform: translateY(-50%); }
+.flyer.live { animation: liveRing 2.2s ease-in-out infinite; }
+@keyframes liveRing {
+  0%, 100% { box-shadow: 0 1px 2px rgba(0,0,0,0.4), 0 6px 14px rgba(0,0,0,0.55), 0 20px 36px rgba(0,0,0,0.35), 0 0 0 2px rgba(241,44,24,0.85), 0 0 30px rgba(241,44,24,0.5); }
+  50% { box-shadow: 0 1px 2px rgba(0,0,0,0.4), 0 6px 14px rgba(0,0,0,0.55), 0 20px 36px rgba(0,0,0,0.35), 0 0 0 3px rgba(241,44,24,1), 0 0 60px rgba(241,44,24,0.75); }
+}
+.live-stamp { position: absolute; top: 10px; left: 10px; z-index: 10; padding: 4px 8px; background: var(--bl-red); color: #fff; font-family: var(--font-mono); font-size: 9px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; display: flex; align-items: center; gap: 6px; }
+.live-stamp::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #fff; animation: liveDot 1.2s ease-in-out infinite; }
+@keyframes liveDot { 0%,100%{opacity:0.4} 50%{opacity:1} }
+.flyer.promo::before { content: 'PROMO · BANDLAB'; position: absolute; top: -1px; left: -1px; right: -1px; z-index: 6; padding: 3px 8px; background: var(--bl-red); color: #fff; font-family: var(--font-mono); font-size: 8px; font-weight: 700; letter-spacing: 0.16em; text-align: center; }
+.flyer.promo .c { padding-top: 28px; }
+.video-flyer .inner { background: linear-gradient(135deg, #f12c18 0%, #b400ff 25%, #29dbe5 50%, #fcc931 75%, #f12c18 100%) !important; background-size: 400% 400% !important; animation: videoShift 6s ease-in-out infinite !important; }
+.video-flyer .inner .c { position: relative; z-index: 3; text-shadow: 0 2px 12px rgba(0,0,0,0.7); }
+@keyframes videoShift { 0% { background-position: 0% 50%; } 25% { background-position: 100% 0%; } 50% { background-position: 100% 50%; } 75% { background-position: 0% 100%; } 100% { background-position: 0% 50%; } }
+.video-flyer .inner::before { background: repeating-linear-gradient(0deg, transparent 0 2px, rgba(0,0,0,0.12) 2px 3px, transparent 3px 6px) !important; mix-blend-mode: normal !important; opacity: 0.6 !important; display: block !important; animation: scanroll 2s linear infinite; }
+@keyframes scanroll { from { background-position: 0 0; } to { background-position: 0 6px; } }
+.video-badge { position: absolute; top: 10px; right: 10px; z-index: 8; padding: 4px 10px; background: rgba(241,44,24,0.9); color: #fff; font-family: var(--font-mono); font-size: 9px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; display: flex; align-items: center; gap: 6px; }
+.video-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #fff; animation: pulse 1.5s ease-in-out infinite; }
+.online-event { border: 2px dashed rgba(41,219,229,0.55) !important; }
+.online-event .c .kicker { background: var(--bl-cyan) !important; color: #0a0806 !important; }
+.flyer.off-city { display: none !important; }
+.flyer.dimmed { opacity: 0.12 !important; filter: grayscale(1) brightness(0.5) !important; pointer-events: none !important; transition: opacity 0.45s ease, filter 0.45s ease !important; }
+
+/* ============================================================
+   HOVER PLAYER
+   ============================================================ */
+.flyer .player { position: absolute; left: 0; right: 0; bottom: 0; padding: 8px 10px; background: linear-gradient(180deg, transparent, rgba(0,0,0,0.92)); display: flex; align-items: center; gap: 8px; opacity: 0; transform: translateY(10px); transition: opacity 0.35s, transform 0.35s; z-index: 5; pointer-events: none; }
+.flyer:hover .player { opacity: 1; transform: translateY(0); transition-delay: 0.1s; }
+.flyer .play-btn { width: 22px; height: 22px; flex-shrink: 0; background: var(--bl-red); display: flex; align-items: center; justify-content: center; }
+.flyer .play-btn::before { content: ''; width: 0; height: 0; border-left: 7px solid #fff; border-top: 5px solid transparent; border-bottom: 5px solid transparent; margin-left: 2px; }
+.flyer .waveform { flex: 1; display: flex; align-items: center; gap: 2px; height: 18px; }
+.flyer .waveform span { flex: 1; background: #fff; min-width: 1px; opacity: 0.75; }
+.flyer .dur { font-family: var(--font-mono); font-size: 9px; color: rgba(255,255,255,0.7); letter-spacing: 0.06em; flex-shrink: 0; }
+
+/* ============================================================
+   EMOJI REACTIONS
+   ============================================================ */
+.reactions { position: absolute; bottom: -16px; left: 6px; display: flex; gap: 4px; z-index: 8; }
+.reaction { padding: 2px 7px; background: rgba(10,12,14,0.88); backdrop-filter: blur(6px); border: 1px solid rgba(194,215,242,0.12); border-radius: 12px; font-size: 12px; line-height: 1.3; color: var(--ink-dim); white-space: nowrap; pointer-events: none; }
+.reaction .rc { font-size: 10px; margin-left: 3px; font-family: var(--font-mono); }
+
+/* ============================================================
+   ANIMATIONS
+   ============================================================ */
+@keyframes flameFlicker { 0%, 100% { transform: scale(1) rotate(0deg); filter: brightness(1); } 25% { transform: scale(1.02) rotate(0.6deg); filter: brightness(1.08); } 50% { transform: scale(0.995) rotate(-0.5deg); filter: brightness(0.95); } 70% { transform: scale(1.015) rotate(0.4deg); filter: brightness(1.05); } }
+.shape-flame .shape-svg { transform-origin: 50% 65%; animation: flameFlicker 1.3s ease-in-out infinite; }
+@keyframes thumbBob { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-3px) rotate(-1deg); } }
+.shape-thumb .shape-svg { transform-origin: 50% 60%; animation: thumbBob 2.8s ease-in-out infinite; }
+@keyframes spoolSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.shape-cassette .cassette-spool::after { animation: spoolSpin 5s linear infinite; }
+.flyer.promo.shape-cassette .cassette-spool::after { animation: spoolSpin 3.5s linear infinite; }
+@keyframes promoBreathe { 0%, 100% { box-shadow: 0 1px 2px rgba(0,0,0,0.4), 0 6px 14px rgba(0,0,0,0.55), 0 20px 36px rgba(0,0,0,0.35), 0 0 0 0 rgba(241,44,24,0.5); } 50% { box-shadow: 0 1px 2px rgba(0,0,0,0.4), 0 6px 14px rgba(0,0,0,0.55), 0 20px 36px rgba(0,0,0,0.35), 0 0 40px 4px rgba(241,44,24,0.25); } }
+.flyer.promo:not(.shape-cassette):not(.shape-thumb):not(.shape-flame) { animation: promoBreathe 4s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:.4} 50%{opacity:1} }
+
+/* Tape scraps */
+.tape-scrap { position: absolute; width: 44px; height: 16px; background: rgba(245,235,200,0.55); box-shadow: 0 2px 4px rgba(0,0,0,0.4), inset 0 0 8px rgba(0,0,0,0.08); border-left: 1px solid rgba(0,0,0,0.1); border-right: 1px solid rgba(0,0,0,0.1); }
+
+/* Expanded clone */
+.expanded-clone { pointer-events: none !important; }
+.expanded-clone, .expanded-clone * { animation: none !important; }
+
+/* ============================================================
+   NAV ARROWS + SUB INDICATOR
+   ============================================================ */
+.nav-arrow {
+  position: fixed; top: 50%; transform: translateY(-50%); z-index: 85;
+  width: 48px; height: 72px; display: flex; align-items: center; justify-content: center;
+  background: rgba(1,1,1,0.65); backdrop-filter: blur(12px);
+  border: 1px solid var(--rule-strong); color: var(--ink); font-size: 28px;
+  cursor: pointer; transition: all 180ms ease; font-family: var(--font-display);
+  font-weight: 300; line-height: 1;
+}
+.nav-arrow:hover { background: rgba(1,1,1,0.9); border-color: var(--ink-dim); color: #fff; }
+.nav-arrow.left { left: 12px; }
+.nav-arrow.right { right: 12px; }
+.nav-arrow.disabled { opacity: 0.15; pointer-events: none; }
+.sub-nav {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 88;
+  display: flex; gap: 4px; padding: 6px 8px;
+  background: rgba(1,1,1,0.82); backdrop-filter: blur(14px);
+  border: 1px solid var(--rule-strong);
+}
+.sub-dot {
+  padding: 8px 14px; font-family: var(--font-mono); font-size: 10px; font-weight: 500;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint);
+  cursor: pointer; border: 1px solid transparent; transition: all 180ms ease; white-space: nowrap;
+}
+.sub-dot.active { color: var(--ink); background: rgba(194,215,242,0.08); border-color: var(--rule-strong); }
+.sub-dot:hover:not(.active) { color: var(--ink-dim); }
+
+/* ============================================================
+   BOTTOM STRIP
+   ============================================================ */
+.bottomstrip {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 18px 32px; padding-bottom: calc(18px + var(--safe-bottom));
+  background: linear-gradient(0deg, rgba(1,1,1,0.85), rgba(1,1,1,0));
+  z-index: 80; font-family: var(--font-mono); font-size: 9px;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint);
+  font-weight: 500; pointer-events: none;
+}
+.bottomstrip > div { pointer-events: auto; }
+.bottomstrip .counter { display: flex; align-items: center; gap: 10px; }
+.bottomstrip .counter .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--bl-red); box-shadow: 0 0 10px var(--bl-red); animation: pulse 1.8s ease-in-out infinite; }
+
+/* ============================================================
+   EXPAND OVERLAY
+   ============================================================ */
+#expand-overlay {
+  position: fixed; top: 0; left: 0; bottom: 0; z-index: 500;
+  right: 0;
+  background: rgba(1,1,1,0); backdrop-filter: blur(0px);
+  pointer-events: none; transition: background 0.5s ease, backdrop-filter 0.5s ease;
+}
+#expand-overlay.open { pointer-events: auto; background: rgba(1,1,1,0.85); }
+.expand-panel {
+  position: fixed; right: calc(var(--chat-w) + 32px); top: 50%; transform: translateY(-50%) translateX(40px);
+  z-index: 530; width: 360px; max-height: 85vh; overflow-y: auto;
+  background: rgba(10,12,14,0.92); backdrop-filter: blur(16px);
+  border: 1px solid rgba(194,215,242,0.18); padding: 28px 28px 24px;
+  opacity: 0; transition: opacity 0.4s ease 0.2s, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.2s;
+}
+.expand-panel::-webkit-scrollbar { width: 4px; }
+.expand-panel::-webkit-scrollbar-track { background: transparent; }
+.expand-panel::-webkit-scrollbar-thumb { background: rgba(194,215,242,0.2); border-radius: 2px; }
+#expand-overlay.open .expand-panel { opacity: 1; transform: translateY(-50%) translateX(0); }
+.expand-panel .ep-kicker { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--bl-red); margin-bottom: 10px; font-weight: 600; }
+.expand-panel h2 { font-family: var(--font-display); font-weight: 600; font-size: 28px; line-height: 1.05; letter-spacing: -0.02em; color: var(--ink); margin-bottom: 6px; }
+.expand-panel .ep-artist { font-family: var(--font-body); font-size: 14px; color: var(--ink-mid); margin-bottom: 20px; }
+.expand-panel .ep-player { background: rgba(194,215,242,0.04); border: 1px solid var(--rule); padding: 14px 16px; margin-bottom: 20px; }
+.expand-panel .ep-wave { display: flex; align-items: flex-end; gap: 2px; height: 32px; margin-bottom: 8px; }
+.expand-panel .ep-wave span { flex: 1; background: linear-gradient(180deg, var(--bl-red) 0%, var(--bl-red) var(--p, 50%), rgba(194,215,242,0.25) var(--p, 50%), rgba(194,215,242,0.25) 100%); min-width: 1px; }
+.expand-panel .ep-controls { display: flex; align-items: center; gap: 14px; font-family: var(--font-mono); font-size: 10px; color: var(--ink-faint); letter-spacing: 0.06em; }
+.expand-panel .ep-play { width: 32px; height: 32px; background: var(--bl-red); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.expand-panel .ep-play::before { content: ''; width: 0; height: 0; border-left: 10px solid #fff; border-top: 7px solid transparent; border-bottom: 7px solid transparent; margin-left: 3px; }
+.expand-panel .ep-meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; padding: 14px 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); margin-bottom: 18px; }
+.expand-panel .ep-meta .k { font-family: var(--font-mono); font-size: 8px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 3px; font-weight: 500; }
+.expand-panel .ep-meta .v { font-family: var(--font-display); font-size: 18px; font-weight: 600; color: var(--ink); }
+.expand-panel .ep-section { margin-bottom: 18px; }
+.expand-panel .ep-sec-title { font-family: var(--font-mono); font-size: 9px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--rule); }
+.expand-panel .ep-sec-body { font-size: 13px; line-height: 1.55; color: var(--ink-dim); }
+.expand-panel .ep-tracklist { display: flex; flex-direction: column; gap: 2px; }
+.expand-panel .ep-track { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px dashed var(--rule); font-size: 13px; color: var(--ink); }
+.expand-panel .ep-track:last-child { border-bottom: none; }
+.expand-panel .ep-track-num { font-family: var(--font-mono); font-size: 10px; font-weight: 500; color: var(--ink-faint); width: 20px; flex-shrink: 0; letter-spacing: 0.06em; }
+.expand-panel .ep-track-dur { margin-left: auto; font-family: var(--font-mono); font-size: 10px; color: var(--ink-faint); letter-spacing: 0.06em; }
+.expand-panel .ep-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.expand-panel .ep-detail-grid .k { font-family: var(--font-mono); font-size: 9px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 4px; }
+.expand-panel .ep-detail-grid .v { font-family: var(--font-display); font-size: 16px; font-weight: 500; color: var(--ink); }
+.expand-panel .ep-lineup { display: flex; flex-direction: column; gap: 6px; }
+.expand-panel .ep-lineup-act { font-family: var(--font-display); font-size: 14px; font-weight: 500; color: var(--ink); padding: 6px 0; border-bottom: 1px dashed var(--rule); }
+.expand-panel .ep-lineup-act.headliner { font-size: 20px; font-weight: 600; color: var(--bl-red); border-bottom: 1px solid var(--rule-strong); padding-bottom: 8px; }
+.expand-panel .ep-lineup-act:last-child { border-bottom: none; }
+.expand-panel .ep-live-banner { display: flex; align-items: center; gap: 10px; padding: 14px 16px; background: rgba(241,44,24,0.1); border: 1px solid rgba(241,44,24,0.3); margin: 16px 0; font-family: var(--font-mono); font-size: 11px; font-weight: 600; letter-spacing: 0.1em; color: var(--bl-red); }
+.expand-panel .ep-live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--bl-red); box-shadow: 0 0 12px var(--bl-red); animation: liveDot 1.2s ease-in-out infinite; flex-shrink: 0; }
+.expand-panel .ep-actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.expand-panel .ep-btn { padding: 12px; background: rgba(194,215,242,0.06); border: 1px solid var(--rule); color: var(--ink); font-family: var(--font-mono); font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; text-align: center; transition: all 150ms ease; }
+.expand-panel .ep-btn:hover { background: rgba(194,215,242,0.12); border-color: var(--ink-dim); }
+.expand-panel .ep-btn.primary { background: var(--bl-red); border-color: var(--bl-red); grid-column: 1 / -1; padding: 14px; }
+.expand-panel .ep-btn.primary:hover { background: #ff3c25; }
+.expand-close { position: fixed; top: 28px; right: calc(var(--chat-w) + 28px); z-index: 540; width: 44px; height: 44px; background: rgba(10,12,14,0.9); border: 1px solid var(--rule-strong); color: var(--ink); font-family: var(--font-display); font-size: 18px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s ease 0.25s; }
+#expand-overlay.open .expand-close { opacity: 1; }
+.expand-close:hover { background: var(--bl-red); border-color: var(--bl-red); }
+
+/* ============================================================
+   TUBE MAP MODAL
+   ============================================================ */
+.tube-map { position: fixed; inset: 0; background: rgba(1,1,1,0.97); backdrop-filter: blur(18px); z-index: 600; display: none; flex-direction: column; padding: 40px 60px 30px; }
+.tube-map.open { display: flex; }
+.tm-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; padding-bottom: 18px; border-bottom: 1px solid var(--rule); }
+.tm-title { font-family: var(--font-display); font-size: 36px; font-weight: 300; letter-spacing: -0.035em; color: var(--ink); line-height: 0.95; }
+.tm-title em { font-style: normal; color: var(--bl-red); font-weight: 500; }
+.tm-sub { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-faint); margin-top: 10px; font-weight: 500; }
+.tm-close { width: 44px; height: 44px; background: rgba(194,215,242,0.06); border: 1px solid var(--rule-strong); color: var(--ink); font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 150ms ease; }
+.tm-close:hover { background: var(--bl-red); border-color: var(--bl-red); }
+.tm-body { flex: 1; min-height: 0; display: grid; grid-template-columns: 1fr 240px; gap: 36px; }
+.tm-svg-wrap { position: relative; height: 100%; display: flex; align-items: center; justify-content: center; }
+.tm-svg { width: 100%; height: 100%; max-width: 1200px; max-height: 620px; }
+.tm-side { display: flex; flex-direction: column; gap: 24px; overflow-y: auto; }
+.tm-legend h3, .tm-stations-list h3 { font-family: var(--font-mono); font-size: 9px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--rule); }
+.tm-legend-item { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; font-family: var(--font-display); font-size: 14px; font-weight: 500; color: var(--ink); }
+.tm-legend-item .tm-ll { display: inline-block; width: 28px; height: 5px; flex-shrink: 0; }
+.tm-legend-item .tm-lsub { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-faint); font-weight: 500; margin-left: 8px; }
+.tm-station-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px dashed var(--rule); cursor: pointer; transition: color 150ms ease; }
+.tm-station-item:hover { color: var(--bl-red); }
+.tm-station-item .sdot { width: 9px; height: 9px; border-radius: 50%; background: #fff; border: 2px solid var(--ink); flex-shrink: 0; }
+.tm-station-item.here .sdot { background: var(--bl-red); border-color: var(--bl-red); box-shadow: 0 0 0 3px rgba(241,44,24,0.25); }
+.tm-station-item .sname { font-family: var(--font-display); font-size: 15px; font-weight: 500; color: var(--ink); letter-spacing: -0.005em; }
+.tm-station-item.here .sname { color: var(--bl-red); }
+.tm-station-item .ssub { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-left: auto; font-weight: 500; }
+.tm-footer { margin-top: 16px; text-align: center; font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-faint); }
+.tm-line { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.tm-station-group { cursor: pointer; }
+.tm-station-group .tm-station-ring { fill: #fff; transition: r 200ms ease; }
+.tm-station-group:hover .tm-station-ring { r: 14; }
+.tm-station-group .tm-station-core { fill: #010101; }
+.tm-station-group.here .tm-station-core { fill: var(--bl-red); }
+.tm-you-pulse { fill: var(--bl-red); opacity: 0.3; animation: tmPulse 2.4s ease-in-out infinite; }
+@keyframes tmPulse { 0%, 100% { r: 16; opacity: 0.6; } 50% { r: 28; opacity: 0.1; } }
+.tm-label { font-family: var(--font-display); font-size: 22px; font-weight: 600; fill: var(--ink); pointer-events: none; letter-spacing: -0.015em; }
+.tm-label-sub { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500; fill: var(--ink-faint); letter-spacing: 0.14em; pointer-events: none; }
+
+/* ============================================================
+   POST MODAL
+   ============================================================ */
+.post-modal { position: fixed; inset: 0; z-index: 700; display: none; align-items: center; justify-content: center; }
+.post-modal.open { display: flex; }
+.pm-backdrop { position: absolute; inset: 0; background: rgba(1,1,1,0.88); backdrop-filter: blur(16px); }
+.pm-panel { position: relative; z-index: 2; width: 480px; max-width: 95vw; max-height: 90vh; background: var(--surface-2); border: 1px solid var(--rule-strong); display: flex; flex-direction: column; overflow: hidden; }
+.pm-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid var(--rule); }
+.pm-title { font-family: var(--font-display) !important; font-size: 22px !important; font-weight: 600 !important; letter-spacing: -0.01em !important; color: var(--ink) !important; }
+.pm-close { width: 36px; height: 36px; background: var(--ink-mute); border: 1px solid var(--rule); color: var(--ink); font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.pm-close:hover { background: var(--bl-red); border-color: var(--bl-red); }
+.pm-steps { display: flex; border-bottom: 1px solid var(--rule); }
+.pm-step { flex: 1; display: flex; align-items: center; gap: 10px; padding: 12px 18px; font-family: var(--font-mono); font-size: 10px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-faint); border-right: 1px solid var(--rule); }
+.pm-step:last-child { border-right: none; }
+.pm-step.active { color: var(--ink); background: rgba(194,215,242,0.04); }
+.pm-step.done { color: var(--bl-green); }
+.pm-step-num { width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; background: var(--ink-mute); font-size: 11px; font-weight: 700; color: var(--ink-dim); }
+.pm-step.active .pm-step-num { background: var(--bl-red); color: #fff; }
+.pm-step.done .pm-step-num { background: var(--bl-green); color: #fff; }
+.pm-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; min-height: 280px; overflow-y: auto; }
+.pm-field { display: flex; flex-direction: column; gap: 8px; }
+.pm-label { font-family: var(--font-mono); font-size: 9px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-faint); }
+.pm-input { padding: 12px 14px; background: var(--surface-0); border: 1px solid var(--rule-strong); color: var(--ink); font-family: var(--font-body); font-size: 14px; outline: none; }
+.pm-input:focus { border-color: var(--bl-red); }
+.pm-textarea { padding: 12px 14px; background: var(--surface-0); border: 1px solid var(--rule-strong); color: var(--ink); font-family: var(--font-body); font-size: 13px; min-height: 70px; resize: vertical; outline: none; }
+.pm-textarea:focus { border-color: var(--bl-red); }
+.pm-divider { text-align: center; position: relative; color: var(--ink-faint); font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; }
+.pm-divider::before { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: var(--rule); }
+.pm-divider span { position: relative; background: var(--surface-2); padding: 0 14px; }
+.pm-option-btn { padding: 14px; background: rgba(194,215,242,0.04); border: 1px dashed var(--rule-strong); color: var(--ink-dim); font-family: var(--font-body); font-size: 14px; cursor: pointer; text-align: left; transition: all 150ms ease; }
+.pm-option-btn:hover { background: rgba(194,215,242,0.08); color: var(--ink); border-color: var(--ink-dim); }
+.pm-swatches { display: flex; flex-wrap: wrap; gap: 6px; }
+.pm-swatch { width: 28px; height: 28px; border: 2px solid transparent; cursor: pointer; transition: all 120ms ease; }
+.pm-swatch:hover { transform: scale(1.15); }
+.pm-swatch.active { border-color: #fff; box-shadow: 0 0 0 1px var(--bl-red); }
+.pm-shapes { display: flex; gap: 6px; flex-wrap: wrap; }
+.pm-shape-btn { padding: 8px 14px; background: rgba(194,215,242,0.04); border: 1px solid var(--rule); color: var(--ink-dim); font-family: var(--font-mono); font-size: 10px; font-weight: 500; cursor: pointer; transition: all 120ms ease; }
+.pm-shape-btn:hover { color: var(--ink); border-color: var(--ink-dim); }
+.pm-shape-btn.active { background: var(--bl-red); border-color: var(--bl-red); color: #fff; }
+.pm-ai-btn { align-self: flex-end; padding: 10px 18px; background: rgba(194,215,242,0.06); border: 1px solid var(--rule-strong); color: var(--ink); font-family: var(--font-display); font-size: 13px; font-weight: 500; cursor: pointer; transition: all 150ms ease; }
+.pm-ai-btn:hover { background: var(--bl-red); border-color: var(--bl-red); }
+.pm-row { display: flex; gap: 18px; }
+.pm-fonts { display: flex; flex-wrap: wrap; gap: 6px; }
+.pm-font-btn { padding: 6px 12px; background: rgba(194,215,242,0.04); border: 1px solid var(--rule); color: var(--ink-dim); font-size: 16px; cursor: pointer; transition: all 120ms ease; line-height: 1.1; }
+.pm-font-btn:hover { color: var(--ink); border-color: var(--ink-dim); }
+.pm-font-btn.active { background: var(--bl-red); border-color: var(--bl-red); color: #fff; }
+.pm-preview { display: flex; align-items: center; justify-content: center; min-height: 200px; background: rgba(0,0,0,0.3); border: 1px dashed var(--rule); padding: 24px; }
+
+/* ============================================================
+   CHAT SIDEBAR
+   ============================================================ */
+.chat-sidebar {
+  width: var(--chat-w); flex-shrink: 0; display: flex; flex-direction: column;
+  background: rgba(1,1,1,0.55); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border-left: 1px solid rgba(194,215,242,0.08);
+  z-index: 560; position: fixed; right: 0; top: 0; bottom: 0;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: auto;
+}
+.chat-sidebar.collapsed { transform: translateX(100%); }
+/* collapsed handled by transform above */
+.chat-header {
+  padding: 16px 18px; border-bottom: 1px solid rgba(194,215,242,0.08);
+  display: flex; justify-content: space-between; align-items: center;
+  background: rgba(1,1,1,0.4);
+}
+.chat-header-info h3 {
+  font-family: var(--font-display); font-size: 14px; font-weight: 600;
+  color: var(--ink); margin-bottom: 2px;
+}
+.chat-header-info span {
+  font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--ink-faint);
+}
+.chat-collapse {
+  width: 28px; height: 28px; background: rgba(194,215,242,0.06);
+  border: 1px solid var(--rule); color: var(--ink-faint); font-size: 14px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all 150ms ease;
+}
+.chat-collapse:hover { color: var(--ink); border-color: var(--ink-dim); }
+.chat-messages {
+  flex: 1; overflow-y: auto; padding: 12px 16px; display: flex;
+  flex-direction: column; gap: 8px; scrollbar-width: thin;
+  scrollbar-color: rgba(194,215,242,0.15) transparent;
+}
+.chat-messages::-webkit-scrollbar { width: 4px; }
+.chat-messages::-webkit-scrollbar-thumb { background: rgba(194,215,242,0.15); border-radius: 2px; }
+.chat-msg { font-size: 13px; line-height: 1.45; padding: 4px 0; }
+.chat-user { font-weight: 600; margin-right: 6px; font-size: 12px; }
+.chat-text { color: var(--ink-mid); }
+.chat-time { font-family: var(--font-mono); font-size: 9px; color: var(--ink-faint); margin-left: 6px; letter-spacing: 0.04em; }
+.chat-input-wrap {
+  padding: 12px 16px; border-top: 1px solid rgba(194,215,242,0.08);
+  display: flex; gap: 8px; align-items: center;
+  background: rgba(1,1,1,0.4);
+}
+.chat-input {
+  flex: 1; padding: 10px 14px; background: var(--surface-0);
+  border: 1px solid var(--rule-strong); color: var(--ink);
+  font-family: var(--font-body); font-size: 13px; outline: none;
+}
+.chat-input:focus { border-color: var(--bl-red); }
+.chat-input::placeholder { color: var(--ink-faint); }
+.chat-send {
+  width: 36px; height: 36px; background: var(--bl-red); border: none;
+  color: #fff; font-size: 16px; cursor: pointer; display: flex;
+  align-items: center; justify-content: center; flex-shrink: 0;
+  transition: background 150ms ease;
+}
+.chat-send:hover { background: #ff3c25; }
+.chat-toggle { display: none !important; }
+.chat-drag-handle {
+  display: none;
+  width: 40px; height: 4px; background: rgba(194,215,242,0.3);
+  border-radius: 2px; margin: 8px auto 4px;
+}
+.chat-tab {
+  position: absolute; left: -36px; top: 50%; transform: translateY(-50%);
+  width: 36px; height: 56px;
+  background: rgba(1,1,1,0.8); backdrop-filter: blur(8px);
+  border: 1px solid rgba(194,215,242,0.12); border-right: none;
+  border-radius: 8px 0 0 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; cursor: pointer;
+  transition: all 180ms ease; z-index: 1;
+  color: var(--ink);
+}
+.chat-tab:hover { background: rgba(1,1,1,0.95); }
+.chat-sidebar.collapsed .chat-tab { left: -36px; }
+.chat-tab .chat-badge {
+  position: absolute; top: 4px; left: 2px; width: 16px; height: 16px;
+  background: var(--bl-red); border-radius: 50%; font-size: 8px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; color: #fff;
+  font-family: var(--font-mono);
+}
+
+/* ============================================================
+   RESPONSIVE — TABLET (768–1024px)
+   ============================================================ */
+@media (max-width: 1024px) {
+  :root { --chat-w: 300px; }
+  .chat-sidebar { position: fixed; right: 0; top: 0; bottom: 0; z-index: 200; box-shadow: -4px 0 24px rgba(0,0,0,0.5); }
+  .chat-sidebar.collapsed { transform: translateX(100%); margin-right: 0; }
+  .chat-sidebar:not(.collapsed) { transform: translateX(0); }
+  .topbar { padding: 16px 20px 20px; }
+  .logo-sub { display: none; }
+  .nav-arrow { width: 42px; height: 60px; }
+  .nav-arrow.right { right: 10px; }
+  .nav-arrow.left { left: 10px; }
+}
+
+/* ============================================================
+   RESPONSIVE — MOBILE (<768px)
+   ============================================================ */
+@media (max-width: 767px) {
+  :root { --topbar-h: 56px; --chat-w: 100vw; }
+  .topbar { padding: 16px 14px 20px; }
+  .topbar-center { display: none; }
+  .logo-name { font-size: 24px; }
+  .logo-sub { display: none; }
+  .hamburger-btn { display: flex; }
+  .travel-btn span.travel-label { display: none; }
+  .travel-btn { padding: 10px 12px; }
+  .post-btn { padding: 10px 14px; font-size: 0; gap: 0; }
+  .post-btn::before { font-size: 22px; }
+  .filters { top: var(--topbar-h); padding: 4px 8px; justify-content: flex-start; }
+  .filter-bar { overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .filter-bar::-webkit-scrollbar { display: none; }
+  .fc-chip { padding: 7px 10px; font-size: 9px; }
+  .wall-page .flyer { transform: translate(-50%, -50%) rotate(var(--rot)) scale(0.85); }
+  .wall-page .flyer:hover { transform: translate(-50%, -50%) rotate(0deg) scale(0.95); }
+  .nav-arrow { display: none; }
+  .sub-nav { bottom: calc(16px + var(--safe-bottom)); left: 8px; right: 8px; transform: none; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .sub-dot { padding: 7px 10px; font-size: 9px; }
+  .bottomstrip { display: none; }
+  /* Chat as bottom sheet */
+  .chat-sidebar {
+    position: fixed; left: 0; right: 0; bottom: 0; top: auto;
+    width: 100% !important; height: 55vh; max-height: 55vh;
+    transform: translateY(100%);
+    border-left: none; border-top: 1px solid rgba(194,215,242,0.1);
+    border-radius: 16px 16px 0 0;
+    z-index: 560;
+  }
+  .chat-sidebar:not(.collapsed) { transform: translateY(0); }
+  .chat-sidebar .chat-drag-handle {
+    display: block; width: 40px; height: 4px; background: var(--ink-faint);
+    border-radius: 2px; margin: 10px auto 6px;
+  }
+  /* Mini radio bar when chat is collapsed on mobile */
+  .radio-mini {
+    display: flex;
+    position: fixed; left: 0; right: 0; bottom: 0;
+    padding: 8px 16px; background: rgba(1,1,1,0.9);
+    backdrop-filter: blur(12px); border-top: 1px solid rgba(194,215,242,0.08);
+    z-index: 92; align-items: center; gap: 10px;
+    font-size: 12px; color: var(--ink-dim);
+  }
+  .radio-mini .rm-art { width: 32px; height: 32px; border-radius: 4px; flex-shrink: 0; }
+  .radio-mini .rm-info { flex: 1; }
+  .radio-mini .rm-title { font-family: var(--font-display); font-size: 12px; font-weight: 600; color: var(--ink); }
+  .radio-mini .rm-artist { font-size: 10px; color: var(--ink-faint); }
+  /* Expand overlay as bottom sheet on mobile */
+  .expand-panel {
+    position: fixed; left: 0; right: 0; bottom: 0; top: auto;
+    width: 100%; max-height: 60vh; transform: translateY(100%);
+    border-radius: 16px 16px 0 0;
+  }
+  #expand-overlay.open .expand-panel { transform: translateY(0); }
+  .expand-close { top: auto; bottom: calc(60vh + 10px); right: 16px; }
+}
+
+/* Chat drag handle hidden on desktop */
+.chat-drag-handle { display: none; }
+
+/* ============================================================
+   VIEWER COUNT PILL
+   ============================================================ */
+.viewer-count {
+  position: fixed; top: calc(var(--topbar-h) + var(--filter-h) + 8px); left: 50%; transform: translateX(-50%); z-index: 92;
+  padding: 6px 16px; background: rgba(1,1,1,0.7); backdrop-filter: blur(8px);
+  border: 1px solid rgba(194,215,242,0.1); border-radius: 20px;
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.08em;
+  color: var(--ink-dim); display: flex; align-items: center; gap: 8px;
+}
+.vc-dot { width: 6px; height: 6px; border-radius: 50%; background: #f12c18;
+  box-shadow: 0 0 8px #f12c18; animation: pulse 1.8s ease-in-out infinite; }
+
+/* ============================================================
+   CHAT BADGES
+   ============================================================ */
+.chat-badge-icon { font-size: 10px; margin-right: 2px; }
+
+/* ============================================================
+   EMOTE PICKER
+   ============================================================ */
+.emote-picker-wrap { position: relative; }
+.emote-btn {
+  width: 36px; height: 36px; background: rgba(194,215,242,0.06);
+  border: 1px solid var(--rule-strong); color: var(--ink); font-size: 16px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; transition: all 150ms ease;
+}
+.emote-btn:hover { background: rgba(194,215,242,0.12); border-color: var(--ink-dim); }
+.emote-picker {
+  display: none; position: absolute; bottom: 44px; left: 0;
+  padding: 8px; background: rgba(10,12,14,0.95); backdrop-filter: blur(12px);
+  border: 1px solid rgba(194,215,242,0.15); border-radius: 8px;
+  gap: 4px; flex-wrap: wrap; width: 200px; z-index: 600;
+}
+.emote-picker.open { display: flex; }
+.emote {
+  font-size: 20px; padding: 4px 6px; cursor: pointer; border-radius: 4px;
+  transition: background 120ms ease;
+}
+.emote:hover { background: rgba(194,215,242,0.12); }
+
+/* ============================================================
+   FLOATING EMOJI
+   ============================================================ */
+.floating-emoji {
+  position: fixed; z-index: 555; font-size: 28px; pointer-events: none;
+  animation: floatUp 3.5s ease-out forwards;
+}
+@keyframes floatUp {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  50% { opacity: 0.8; transform: translateY(-120px) scale(1.1); }
+  100% { opacity: 0; transform: translateY(-280px) scale(0.7); }
+}
+
+/* ============================================================
+   PINNED MESSAGE
+   ============================================================ */
+.chat-pinned {
+  padding: 10px 14px; margin: 0 12px 4px; background: rgba(241,44,24,0.08);
+  border-left: 2px solid #f12c18; font-size: 12px; line-height: 1.45;
+  color: var(--ink-mid); font-family: var(--font-body);
+}
+
+
+/* ============================================================
+   GIFT MESSAGE
+   ============================================================ */
+.chat-msg.gift {
+  background: rgba(252,201,49,0.1); border: 1px solid rgba(252,201,49,0.2);
+  padding: 8px 10px; border-radius: 4px; margin: 4px 0;
+}
+.chat-msg.gift .chat-text { color: #fcc931; font-weight: 600; }
+
+/* ============================================================
+   CHAT RADIO
+   ============================================================ */
+.chat-radio {
+  border-top: 1px solid rgba(194,215,242,0.08);
+  background: rgba(1,1,1,0.3);
+}
+.radio-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 16px; font-family: var(--font-mono);
+  font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--ink-faint); font-weight: 600;
+}
+.radio-icon { font-size: 14px; }
+.radio-title { flex: 1; }
+.radio-listeners { color: var(--bl-red); }
+.radio-now-playing {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 16px;
+}
+.radio-art {
+  width: 40px; height: 40px; flex-shrink: 0;
+  border-radius: 4px;
+  background: linear-gradient(135deg, var(--bl-red), var(--bl-purple));
+}
+.radio-track-info { flex: 1; min-width: 0; }
+.radio-track-name {
+  font-family: var(--font-display); font-size: 13px; font-weight: 600;
+  color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.radio-track-artist {
+  font-size: 11px; color: var(--ink-dim); margin-top: 1px;
+}
+.radio-votes { display: flex; gap: 4px; flex-shrink: 0; }
+.radio-vote {
+  padding: 4px 8px; background: rgba(194,215,242,0.06);
+  border: 1px solid rgba(194,215,242,0.1); color: var(--ink-dim);
+  font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px;
+  transition: all 150ms ease; font-family: var(--font-mono);
+}
+.radio-vote:hover { background: rgba(194,215,242,0.12); color: var(--ink); }
+.radio-vote.voted { border-color: var(--bl-red); color: var(--bl-red); }
+.radio-progress-wrap { padding: 4px 16px 8px; }
+.radio-progress {
+  height: 3px; background: rgba(194,215,242,0.1); border-radius: 2px; overflow: hidden;
+}
+.radio-bar {
+  height: 100%; background: var(--bl-red); border-radius: 2px;
+  width: 0%; transition: width 1s linear;
+}
+.radio-times {
+  display: flex; justify-content: space-between; margin-top: 4px;
+  font-family: var(--font-mono); font-size: 9px; color: var(--ink-faint);
+  letter-spacing: 0.04em;
+}
+.radio-queue { padding: 0 16px 8px; }
+.radio-queue-title {
+  font-family: var(--font-mono); font-size: 9px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint);
+  margin-bottom: 6px; display: flex; justify-content: space-between;
+}
+.radio-queue-item {
+  display: flex; align-items: center; gap: 8px; padding: 6px 0;
+  border-bottom: 1px dashed rgba(194,215,242,0.06); font-size: 12px;
+}
+.radio-queue-item:last-child { border-bottom: none; }
+.rqi-num { font-family: var(--font-mono); font-size: 9px; color: var(--ink-faint); width: 16px; }
+.rqi-art { width: 28px; height: 28px; border-radius: 3px; flex-shrink: 0; }
+.rqi-info { flex: 1; min-width: 0; }
+.rqi-name { font-family: var(--font-display); font-size: 12px; font-weight: 500; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rqi-artist { font-size: 10px; color: var(--ink-faint); }
+.rqi-votes { font-family: var(--font-mono); font-size: 10px; color: var(--ink-faint); }
+.radio-add-btn {
+  display: block; width: calc(100% - 32px); margin: 4px 16px 12px;
+  padding: 10px; background: rgba(194,215,242,0.04);
+  border: 1px dashed rgba(194,215,242,0.15); color: var(--ink-dim);
+  font-family: var(--font-mono); font-size: 11px; font-weight: 500;
+  cursor: pointer; text-align: center; transition: all 150ms ease;
+}
+.radio-add-btn:hover { background: rgba(194,215,242,0.08); color: var(--ink); border-color: var(--ink-dim); }
+
+/* Radio mini bar (mobile only, visible via media query) */
+.radio-mini { display: none; }
+
+/* ============================================================
+   TUBE MAP RESPONSIVE
+   ============================================================ */
+@media (max-width: 900px) {
+  .tube-map { padding: 20px; }
+  .tm-body { grid-template-columns: 1fr; }
+  .tm-side { max-height: 200px; }
+  .tm-title { font-size: 28px; }
+}
+</style>
+</head>
+<body class="bg-shoreditch">
+
+<!-- TOP BAR -->
+<header class="topbar">
+  <div class="logo">
+    <a href="flyer-home.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:16px;">
+      <span class="logo-mark"></span>
+      <span class="logo-name">FLYER</span>
+      <span class="logo-sub">by BandLab</span>
+    </a>
+  </div>
+  <div class="topbar-center">
+    <div class="location" id="loc-label"><em>Shoreditch</em> / London</div>
+    <div class="location-sub" id="loc-sub">3,421 flyers on this wall</div>
+  </div>
+  <div class="topbar-right">
+    <button class="travel-btn" onclick="window.location.href='flyer-home.html'" style="font-size:12px;">Home</button>
+    <button class="travel-btn" id="travel-btn"><span class="travel-label">Travel</span></button>
+    <button class="post-btn" id="post-btn-top">Post a flyer</button>
+  </div>
+</header>
+
+<!-- VIEWER COUNT -->
+<div class="viewer-count" id="viewer-count">
+  <span class="vc-dot"></span>
+  <span id="vc-text">14 watching · Brick Lane</span>
+</div>
+
+<!-- FILTER CHIPS -->
+<nav class="filters">
+  <div class="filter-bar">
+    <button class="fc-chip active" data-filter="all">All</button>
+    <button class="fc-chip" data-filter="area"><span class="fc-ic">&#9673;</span>My area</button>
+    <button class="fc-chip" data-filter="favs"><span class="fc-ic">&#9829;</span>My favs</button>
+    <button class="fc-chip" data-filter="new"><span class="fc-ic">&#10022;</span>New</button>
+    <button class="fc-chip" data-filter="popular"><span class="fc-ic">&#8593;</span>Popular</button>
+    <button class="fc-chip" data-filter="live"><span class="fc-ic">&#9889;</span>Live now</button>
+    <button class="fc-chip" data-filter="promos"><span class="fc-ic">&#8960;</span>Promos</button>
+    <button class="fc-chip" data-filter="games"><span class="fc-ic">&#127918;</span>Games</button>
+  </div>
+</nav>
+
+<!-- MAIN: wall + chat -->
+<main class="wall-container">
+  <div class="wall" id="wall">
+    <div class="wall-tile" id="wall-tile"></div>
+    <div class="wall-track" id="wall-track"></div>
+    <div class="wall-vignette"></div>
+  </div>
+  <aside class="chat-sidebar" id="chat-sidebar">
+    <div class="chat-tab" id="chat-tab">&#128172;<span class="chat-badge" id="chat-badge" style="display:none;">0</span></div>
+    <div class="chat-drag-handle"></div>
+    <div class="chat-header">
+      <div class="chat-header-info">
+        <h3 id="chat-title">Wall chat &middot; Brick Lane</h3>
+        <span id="chat-online">14 here</span>
+      </div>
+      <button class="chat-collapse" id="chat-collapse-btn">&#10005;</button>
+    </div>
+    <div class="chat-pinned" id="chat-pinned"></div>
+    <div class="chat-messages" id="chat-messages"></div>
+    <div class="chat-radio" id="chat-radio">
+      <div class="radio-header">
+        <span class="radio-icon">&#128251;</span>
+        <span class="radio-title" id="radio-title">WALL RADIO</span>
+        <span class="radio-listeners" id="radio-listeners">23 listening</span>
+      </div>
+      <div class="radio-now-playing">
+        <div class="radio-art" id="radio-art"></div>
+        <div class="radio-track-info">
+          <div class="radio-track-name" id="radio-track-name">Midnight Drift</div>
+          <div class="radio-track-artist" id="radio-track-artist">Hale Moon</div>
+        </div>
+        <div class="radio-votes">
+          <button class="radio-vote up" id="radio-up">&#128077; <span id="radio-up-count">18</span></button>
+          <button class="radio-vote down" id="radio-down">&#128078; <span id="radio-down-count">3</span></button>
+        </div>
+      </div>
+      <div class="radio-progress-wrap">
+        <div class="radio-progress"><div class="radio-bar" id="radio-bar"></div></div>
+        <div class="radio-times"><span id="radio-elapsed">1:24</span><span id="radio-duration">3:42</span></div>
+      </div>
+      <div class="radio-queue" id="radio-queue">
+        <div class="radio-queue-title">Up next <span class="radio-queue-count" id="radio-queue-count">3 tracks</span></div>
+      </div>
+      <button class="radio-add-btn" id="radio-add-btn">+ Add a track to the queue</button>
+    </div>
+    <div class="chat-input-wrap">
+      <div class="emote-picker-wrap">
+        <button class="emote-btn" id="emote-btn">&#128512;</button>
+        <div class="emote-picker" id="emote-picker">
+          <span class="emote" data-e="&#128293;">&#128293;</span>
+          <span class="emote" data-e="&#10084;&#65039;">&#10084;&#65039;</span>
+          <span class="emote" data-e="&#127925;">&#127925;</span>
+          <span class="emote" data-e="&#129304;">&#129304;</span>
+          <span class="emote" data-e="&#128128;">&#128128;</span>
+          <span class="emote" data-e="&#128079;">&#128079;</span>
+          <span class="emote" data-e="&#128588;">&#128588;</span>
+          <span class="emote" data-e="&#128175;">&#128175;</span>
+          <span class="emote" data-e="&#128525;">&#128525;</span>
+          <span class="emote" data-e="&#127926;">&#127926;</span>
+        </div>
+      </div>
+      <input class="chat-input" id="chat-input" type="text" placeholder="Say something..." autocomplete="off" />
+      <button class="chat-send" id="chat-send">&#9654;</button>
+    </div>
+  </aside>
+</main>
+
+
+<!-- RADIO MINI BAR (mobile only) -->
+<div class="radio-mini" id="radio-mini">
+  <div class="rm-art" id="rm-art" style="background:linear-gradient(135deg,#f12c18,#b400ff);"></div>
+  <div class="rm-info">
+    <div class="rm-title" id="rm-title">Midnight Drift</div>
+    <div class="rm-artist" id="rm-artist">Hale Moon</div>
+  </div>
+  <span style="font-size:14px;color:var(--bl-red);">&#9654;</span>
+</div>
+
+<!-- NAV -->
+<div class="nav-arrow left" id="nav-left">&#8249;</div>
+<div class="nav-arrow right" id="nav-right">&#8250;</div>
+<div class="sub-nav" id="sub-indicator"></div>
+
+<!-- BOTTOM STRIP -->
+<div class="bottomstrip">
+  <div class="counter"><div class="dot"></div>LIVE &middot; 14,208 flyers today</div>
+</div>
+
+<!-- EXPAND OVERLAY -->
+<div id="expand-overlay">
+  <div class="expand-panel" id="expand-panel"></div>
+  <button class="expand-close" id="expand-close">&#10005;</button>
+</div>
+
+<!-- TUBE MAP MODAL -->
+<div id="tube-map" class="tube-map">
+  <div class="tm-header">
+    <div>
+      <div class="tm-title">The <em>Flyer</em> Network</div>
+      <div class="tm-sub">6 stations &middot; 4 lines &middot; live scenes</div>
+    </div>
+    <button class="tm-close" id="tm-close">&#10005;</button>
+  </div>
+  <div class="tm-body">
+    <div class="tm-svg-wrap">
+      <svg class="tm-svg" id="tm-svg" viewBox="0 0 900 600"></svg>
+    </div>
+    <div class="tm-side">
+      <div class="tm-legend">
+        <h3>Lines</h3>
+        <div class="tm-legend-item"><span class="tm-ll" style="background:#f12c18"></span>Bass Line<span class="tm-lsub">low end</span></div>
+        <div class="tm-legend-item"><span class="tm-ll" style="background:#fcc931"></span>Dub Line<span class="tm-lsub">echo chamber</span></div>
+        <div class="tm-legend-item"><span class="tm-ll" style="background:#b400ff"></span>House Line<span class="tm-lsub">4/4</span></div>
+        <div class="tm-legend-item"><span class="tm-ll" style="background:#29dbe5"></span>Ambient Line<span class="tm-lsub">drift</span></div>
+      </div>
+      <div class="tm-stations-list" id="tm-list"><h3>Stations</h3></div>
+    </div>
+  </div>
+  <div class="tm-footer">Click a station to travel &middot; ESC to close</div>
+</div>
+
+<!-- POST MODAL -->
+<div id="post-modal" class="post-modal">
+  <div class="pm-backdrop"></div>
+  <div class="pm-panel">
+    <div class="pm-header">
+      <h2 class="pm-title">Post a flyer</h2>
+      <button class="pm-close" id="pm-close">&#10005;</button>
+    </div>
+    <div class="pm-steps">
+      <div class="pm-step active" data-step="1"><div class="pm-step-num">1</div><div>Sound</div></div>
+      <div class="pm-step" data-step="2"><div class="pm-step-num">2</div><div>Design</div></div>
+      <div class="pm-step" data-step="3"><div class="pm-step-num">3</div><div>Post</div></div>
+    </div>
+    <div class="pm-body" id="pm-step-1">
+      <div class="pm-field"><label class="pm-label">Link a track</label><input class="pm-input" type="text" placeholder="Paste a Spotify or BandLab URL..." id="pm-url"/></div>
+      <div class="pm-divider"><span>or</span></div>
+      <button class="pm-option-btn" id="pm-record">&#127897; Record a quick loop</button>
+      <button class="pm-option-btn" id="pm-skip">&#128221; Text only (no audio)</button>
+      <div style="flex:1;"></div>
+      <button class="pm-next ep-btn primary" id="pm-next-1">Next &rarr;</button>
+    </div>
+    <div class="pm-body" id="pm-step-2" style="display:none;">
+      <div class="pm-field"><label class="pm-label">Type</label>
+        <div class="pm-shapes" id="pm-types">
+          <button class="pm-shape-btn active" data-type="song">&#9834; Song</button>
+          <button class="pm-shape-btn" data-type="event">&#9673; Event</button>
+          <button class="pm-shape-btn" data-type="release">&#9672; Release</button>
+          <button class="pm-shape-btn" data-type="mixtape">&#128252; Mixtape</button>
+          <button class="pm-shape-btn" data-type="message">&#128172; Message</button>
+        </div>
+      </div>
+      <div class="pm-field"><label class="pm-label">Title</label><input class="pm-input" type="text" placeholder="Your flyer title..." id="pm-title"/></div>
+      <div class="pm-field"><label class="pm-label">Subtitle</label><input class="pm-input" type="text" placeholder="Artist, date, description..." id="pm-subtitle"/></div>
+      <div class="pm-row">
+        <div class="pm-field" style="flex:1;"><label class="pm-label">Paper colour</label><div class="pm-swatches" id="pm-swatches"></div></div>
+        <div class="pm-field" style="flex:1;"><label class="pm-label">Shape</label>
+          <div class="pm-shapes">
+            <button class="pm-shape-btn active" data-shape="shape-rect">&#9645; Rect</button>
+            <button class="pm-shape-btn" data-shape="shape-circle">&#9679; Circle</button>
+            <button class="pm-shape-btn" data-shape="shape-bubble">&#128172; Bubble</button>
+            <button class="pm-shape-btn" data-shape="shape-cassette">&#128252; Tape</button>
+          </div>
+        </div>
+      </div>
+      <div class="pm-field"><label class="pm-label">Font</label><div class="pm-fonts" id="pm-fonts"></div></div>
+      <div class="pm-field"><label class="pm-label">&#10024; AI assist</label><textarea class="pm-textarea" placeholder="Describe what you want..." id="pm-ai"></textarea><button class="pm-ai-btn" id="pm-ai-gen">&#10024; Generate</button></div>
+      <div style="display:flex;gap:8px;margin-top:auto;">
+        <button class="pm-back ep-btn" id="pm-back-2">&larr; Back</button>
+        <button class="pm-next ep-btn primary" id="pm-next-2" style="flex:1;">Next &rarr;</button>
+      </div>
+    </div>
+    <div class="pm-body" id="pm-step-3" style="display:none;">
+      <div class="pm-preview" id="pm-preview"></div>
+      <p style="font-size:13px;color:var(--ink-dim);text-align:center;margin:16px 0;">Your flyer will appear on the <strong style="color:var(--ink);">current wall</strong>.</p>
+      <div style="display:flex;gap:8px;margin-top:auto;">
+        <button class="pm-back ep-btn" id="pm-back-3">&larr; Back</button>
+        <button class="pm-next ep-btn primary" id="pm-post" style="flex:1;">&#128204; Post to wall</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// SVG SHAPE DEFINITIONS
+// ============================================================
+const SVG_THUMB = `<svg class="shape-svg" viewBox="0 0 100 100" preserveAspectRatio="none"><defs><linearGradient id="thumbGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd84d"/><stop offset="1" stop-color="#f59f1a"/></linearGradient></defs><path d="M 45 8 L 35 14 L 30 24 L 28 36 L 28 42 L 14 42 L 8 48 L 8 86 L 14 92 L 62 92 L 72 86 L 86 52 L 86 44 L 80 38 L 62 38 L 66 20 L 58 10 Z" fill="url(#thumbGrad)" stroke="#1a0f00" stroke-width="2.5" stroke-linejoin="round"/><path d="M 14 48 L 28 48 L 28 86 L 14 86 Z" fill="none" stroke="#1a0f00" stroke-width="1.5"/></svg>`;
+
+const SVG_FLAME = `<svg class="shape-svg" viewBox="0 0 100 100" preserveAspectRatio="none"><defs><radialGradient id="flameGrad" cx="50%" cy="70%" r="60%"><stop offset="0" stop-color="#ffd84d"/><stop offset="0.4" stop-color="#ff6b0a"/><stop offset="1" stop-color="#c41818"/></radialGradient></defs><path d="M 50 6 C 56 22 74 28 68 48 C 64 42 60 40 56 42 C 62 56 82 60 78 80 C 74 94 60 98 50 98 C 38 98 22 92 22 76 C 22 60 38 56 38 44 C 42 50 46 50 50 46 C 48 32 40 24 50 6 Z" fill="url(#flameGrad)" stroke="#2a0606" stroke-width="2.5" stroke-linejoin="round"/><path d="M 44 70 C 46 64 54 64 56 72 C 56 82 48 84 44 80 C 42 76 42 72 44 70 Z" fill="#fff5b0" opacity="0.7"/></svg>`;
+
+const SVG_ARCADE = `<svg class="shape-svg" viewBox="0 0 100 150" preserveAspectRatio="xMidYMid meet"><defs><linearGradient id="cabGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a2a3e"/><stop offset="1" stop-color="#18182a"/></linearGradient></defs><path d="M22 0 L78 0 L82 4 L82 52 L96 58 L96 130 L90 150 L10 150 L4 130 L4 58 L18 52 L18 4 Z" fill="url(#cabGrad)" stroke="#4a4a5a" stroke-width="2.5" stroke-linejoin="round"/><rect x="26" y="6" width="48" height="40" rx="3" fill="#000" stroke="#5a5a6a" stroke-width="1.5"/><rect x="28" y="8" width="44" height="36" rx="2" fill="#0a2a0a"/><g opacity="0.2"><line x1="28" y1="14" x2="72" y2="14" stroke="#0f0" stroke-width="0.6"/><line x1="28" y1="20" x2="72" y2="20" stroke="#0f0" stroke-width="0.6"/><line x1="28" y1="26" x2="72" y2="26" stroke="#0f0" stroke-width="0.6"/><line x1="28" y1="32" x2="72" y2="32" stroke="#0f0" stroke-width="0.6"/><line x1="28" y1="38" x2="72" y2="38" stroke="#0f0" stroke-width="0.6"/></g><rect x="28" y="8" width="44" height="7" fill="rgba(241,44,24,0.25)"/><path d="M14 60 L86 60 L88 64 L88 82 L12 82 L12 64 Z" fill="#1a1a2a" stroke="#3a3a4a" stroke-width="1.2"/><circle cx="32" cy="72" r="6" fill="#2a2a3a" stroke="#555" stroke-width="1"/><rect x="30" y="62" width="4" height="10" rx="1.5" fill="#666"/><circle cx="32" cy="62" r="3.5" fill="#888"/><circle cx="55" cy="69" r="5" fill="#f12c18" stroke="#a01808" stroke-width="0.8"/><circle cx="67" cy="71" r="5" fill="#29dbe5" stroke="#1a9aa0" stroke-width="0.8"/><circle cx="79" cy="69" r="5" fill="#fcc931" stroke="#a08020" stroke-width="0.8"/><g opacity="0.45"><rect x="35" y="92" width="30" height="2.5" rx="1" fill="#444"/><rect x="35" y="98" width="30" height="2.5" rx="1" fill="#444"/><rect x="35" y="104" width="30" height="2.5" rx="1" fill="#444"/><rect x="35" y="110" width="30" height="2.5" rx="1" fill="#444"/></g><rect x="40" y="124" width="20" height="6" rx="2.5" fill="#111" stroke="#555" stroke-width="0.8"/><text x="50" y="122" text-anchor="middle" font-size="5" fill="#666" font-family="monospace" letter-spacing="0.5">INSERT COIN</text></svg>`;
+
+const SVG_TSHIRT = `<svg class="shape-svg" viewBox="0 0 120 115" preserveAspectRatio="xMidYMid meet"><path d="M 2 24 L 28 22 Q 28 10 40 2 L 48 0 Q 56 6 60 6 Q 64 6 72 0 L 80 2 Q 92 10 92 22 L 118 24 Q 116 40 96 36 L 96 112 Q 96 114 94 114 L 26 114 Q 24 114 24 112 L 24 36 Q 4 40 2 24 Z" fill="currentColor" stroke="rgba(0,0,0,0.4)" stroke-width="1.8" stroke-linejoin="round"/><path d="M 48 0 Q 54 10 60 10 Q 66 10 72 0" fill="none" stroke="rgba(0,0,0,0.25)" stroke-width="1.5"/></svg>`;
+
+const SVG_BUBBLE = `<svg class="shape-svg" viewBox="0 0 200 190" preserveAspectRatio="xMidYMid meet"><path d="M 14 0 L 186 0 Q 200 0 200 14 L 200 126 Q 200 140 186 140 L 115 140 L 85 185 L 92 140 L 14 140 Q 0 140 0 126 L 0 14 Q 0 0 14 0 Z" fill="currentColor" stroke="rgba(0,0,0,0.3)" stroke-width="2" stroke-linejoin="round"/></svg>`;
+
+const SVG_TV = `<svg class="shape-svg" viewBox="0 0 160 140" preserveAspectRatio="xMidYMid meet"><defs><linearGradient id="tvBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a2a2a"/><stop offset="1" stop-color="#1a1a1a"/></linearGradient></defs><rect x="4" y="12" width="152" height="100" rx="6" fill="url(#tvBody)" stroke="#444" stroke-width="2"/><rect x="10" y="16" width="140" height="84" rx="3" fill="#000" stroke="#555" stroke-width="1.5"/><rect x="13" y="19" width="134" height="78" rx="2" fill="none"/><line x1="60" y1="12" x2="40" y2="0" stroke="#666" stroke-width="2.5" stroke-linecap="round"/><line x1="100" y1="12" x2="120" y2="0" stroke="#666" stroke-width="2.5" stroke-linecap="round"/><circle cx="40" cy="0" r="3" fill="#888"/><circle cx="120" cy="0" r="3" fill="#888"/><rect x="55" y="112" width="50" height="6" rx="2" fill="#333" stroke="#444" stroke-width="1"/><rect x="45" y="118" width="70" height="5" rx="2" fill="#2a2a2a" stroke="#444" stroke-width="1"/><circle cx="148" cy="96" r="2.5" fill="#f12c18"><animate attributeName="opacity" values="1;0.3;1" dur="2s" repeatCount="indefinite"/></circle><g fill="#444" opacity="0.6"><circle cx="150" cy="40" r="1.2"/><circle cx="150" cy="46" r="1.2"/><circle cx="150" cy="52" r="1.2"/><circle cx="150" cy="58" r="1.2"/></g></svg>`;
+
+// ============================================================
+// FLYER DATA — ALL 86 entries
+// ============================================================
+const FLYERS = [
+  { type:'event', style:'s-gig', paper:'paper-cream', size:'sz-l', shape:'shape-rect', title:'Midnight Drift', artist:'Hale Moon · Paper Sea', venue:'Warehouse 3', html:`<div class="kicker">FRI 14 NOV · WAREHOUSE 3</div><div class="title">MIDNIGHT<br>DRIFT</div><div class="support">w/ HALE MOON · PAPER SEA · ZNG</div><div class="footer"><span>£8 ADV</span><span>22:00</span></div>` },
+  { type:'song', style:'s-type', paper:'paper-red', size:'sz-m', shape:'shape-rect', title:'Bass Church', artist:'Sub Hz Collective', spotifyId:'4uLU6hMCjMI75M1A2tKUQC', html:`<div class="kicker">808 HEAT — SIDE A</div><div class="title">BASS<br>CHURCH</div><div class="footer">brooklyn ※ weekly</div>` },
+  { type:'event', style:'s-punk', paper:'paper-photocopy', size:'sz-m', shape:'shape-rect', title:'Scared of Horses', artist:'burn the menu · glass vowel', html:`<div class="kicker">no encore</div><div class="title">SCARED OF<br>HORSES</div><div class="support">+ burn the menu<br>+ glass vowel<br>+ dial-up</div><div class="footer">sat 18.01 — door £5</div>` },
+  { type:'release', style:'s-serif', paper:'paper-cream', size:'sz-m', shape:'shape-rect', title:'Piano Rooms', artist:'various nocturnes', html:`<div class="kicker">a listening session</div><div class="title">PIANO<br>ROOMS</div><div class="support">nocturnes for an empty church</div>` },
+  { type:'event', style:'s-monoton', paper:'paper-black', size:'sz-m', shape:'shape-rect', title:'Neon Market', artist:'synthwave residency', html:`<div class="title">NEON<br>MARKET</div><div class="support">synthwave · every thursday</div>` },
+  { type:'event', style:'s-bungee', paper:'paper-yellow', size:'sz-m', shape:'shape-rect', title:'Future Funk', artist:'warehouse 12', html:`<div class="title">FUTURE<br>FUNK</div><div class="support">warehouse 12 · 23:00</div>` },
+  { type:'release', style:'s-type', paper:'paper-white', size:'sz-m', shape:'shape-rect', title:'Mono.Chrome.', artist:'minimal techno issue 04', html:`<div class="kicker">minimal techno / issue 04</div><div class="title tiny">MONO.<br>CHROME.</div><div class="footer">berlin → detroit → nyc</div>` },
+  { type:'event', style:'s-gig', paper:'paper-kraft', size:'sz-l', shape:'shape-rect', title:'Half Moon Club', artist:'live quartet', live:true, html:`<div class="kicker">SUN 02 FEB · SMALLS</div><div class="title">HALF<br>MOON<br>CLUB</div><div class="support">live quartet · late set</div><div class="footer"><span>free ent.</span><span>01:00</span></div>` },
+  { type:'event', style:'s-rave', paper:'paper-riso-rb', size:'sz-m', shape:'shape-rect', title:'Warp Factor', artist:'Kato · Lunebeat', html:`<div class="kicker">[[ acid residency ]]</div><div class="title">WARP<br>FACTOR</div><div class="support">DJ SET · KATO · LUNEBEAT · 6DB · ARCSINE · VENDETTA · DOWNTIME</div><div class="footer">↯ saturday ↯ all night</div>` },
+  { type:'message', style:'s-zine', paper:'paper-cream', size:'sz-s', shape:'shape-rect', title:'Skate Beats', artist:'bedroom tape trade', html:`<div class="kicker">demo club!</div><div class="title">skate<br>beats<br>vol.3</div><div class="scribble">lofi bedroom tape trade<br>every weds ✂</div>` },
+  { type:'release', style:'s-serif', paper:'paper-blue', size:'sz-m', shape:'shape-rect', title:'Reykjavik Nocturne', artist:'live drone', html:`<div class="kicker">a nightbloom for strings</div><div class="title">REYKJAVIK<br>NOCTURNE</div><div class="support">live drone · hourly</div>` },
+  { type:'event', style:'s-bill', paper:'paper-black', size:'sz-l', shape:'shape-rect', title:'Crosswalk Sessions', artist:'Nina Wreck + 5', html:`<div class="kicker">the crosswalk sessions · vol. 12</div><div class="lineup"><span class="hdl">NINA WRECK</span>POLARIS<br>MIDKEY<br>THE OFF-RAMP<br>BEANFIELD<br>AN HONEST LIAR</div><div class="footer">mercury lounge · $12</div>` },
+  { type:'song', style:'s-sticker', paper:'paper-red', size:'sz-sticker', shape:'shape-rect', title:'Dub Tapes', artist:'Kingston 93', html:`<div class="title">DUB<br>TAPES</div><div class="support">kingston · 93</div>` },
+  { type:'release', style:'s-bungee', paper:'paper-cyan', size:'sz-m', shape:'shape-rect', title:'City Pop Revival', artist:'tokyo → LA', html:`<div class="title">CITY POP<br>REVIVAL</div><div class="support">tokyo → los angeles · nightly</div>` },
+  { type:'event', style:'s-type', paper:'paper-orange', size:'sz-m', shape:'shape-rect', title:'Lagos After Dark', artist:'afrobeats surge', html:`<div class="kicker">afrobeats surge · fri</div><div class="title">LAGOS<br>AFTER<br>DARK</div><div class="footer">22:00 — late</div>` },
+  { type:'event', style:'s-punk', paper:'paper-white', size:'sz-s', shape:'shape-rect', title:'Distortion Field', artist:'noise / hardcore / punk', html:`<div class="kicker">diy basement gig</div><div class="title sm">DISTORTION<br>FIELD</div><div class="support">noise / hardcore / punk</div><div class="footer">byo ear plugs</div>` },
+  { type:'event', style:'s-gig', paper:'paper-purple', size:'sz-m', shape:'shape-rect', title:'Overtone', artist:'drone / long-form', html:`<div class="kicker">MON 09 DEC · THE LOOP</div><div class="title sm">OVERTONE</div><div class="support">drone / long-form</div><div class="footer"><span>donation</span><span>20:00</span></div>` },
+  { type:'release', style:'s-serif', paper:'paper-cream', size:'sz-sq', shape:'shape-rect', title:'Ghost Chorus', artist:'faraway voices', html:`<div class="kicker">issue 07</div><div class="title">GHOST<br>CHORUS</div><div class="support">an EP by faraway voices</div>` },
+  { type:'message', style:'s-zine', paper:'paper-yellow', size:'sz-s', shape:'shape-rect', title:'New Moon Drone', artist:'dream logic', html:`<div class="title sm">new moon<br>drone</div><div class="scribble">crickets ★ pedal steel ★ dream logic</div>` },
+  { type:'event', style:'s-monoton', paper:'paper-cream', size:'sz-m', shape:'shape-rect', title:'Generations', artist:'a soul festival', html:`<div class="title sm">GENERATIONS</div><div class="support">a soul festival · sunday</div>` },
+  { type:'release', style:'s-sleeve', paper:'paper-kraft', size:'sz-sq', shape:'shape-rect', title:'Slow Leak', artist:'downtempo mix 04', html:`<div class="art"><div class="disc"></div></div><div class="caption">SLOW LEAK — downtempo mix 04</div>` },
+  { type:'song', style:'s-pixel', paper:'paper-black', size:'sz-s', shape:'shape-rect', title:'Ghetto Tech', artist:'180 BPM', spotifyId:'7GhIk7Il098yCjg4BQjzvb', html:`<div class="kicker">* new *</div><div class="title">GHETTO<br>TECH<br>FOREVER</div><div class="footer">// 180 BPM //</div>` },
+  { type:'event', style:'s-gig', paper:'paper-red', size:'sz-m', shape:'shape-rect', title:'Crate Diggers', artist:'vinyl-only all nighter', html:`<div class="kicker">SAT 21 DEC · BUSHWICK</div><div class="title sm">CRATE<br>DIGGERS</div><div class="support">vinyl-only all nighter</div><div class="footer"><span>$15</span><span>until 6am</span></div>` },
+  { type:'event', style:'s-type', paper:'paper-cream', size:'sz-m', shape:'shape-rect', title:'True North', artist:'ambient lab', html:`<div class="kicker">ambient lab · res.</div><div class="title tiny">TRUE<br>NORTH</div><div class="footer">mondays — weekly</div>` },
+  { type:'song', style:'s-sticker', paper:'paper-cyan', size:'sz-sticker', shape:'shape-rect', title:'Kyoto Drift', artist:'jdm citypop', html:`<div class="title sm">KYOTO<br>DRIFT</div><div class="support">jdm citypop</div>` },
+  { type:'release', style:'s-serif', paper:'paper-newsprint', size:'sz-m', shape:'shape-rect', title:'Mellow Tones', artist:'chamber ensemble', html:`<div class="kicker">a chamber ensemble</div><div class="title">MELLOW<br>TONES</div><div class="support">strings for late afternoons</div>` },
+  { type:'event', style:'s-bungee', paper:'paper-red', size:'sz-s', shape:'shape-rect', title:'The Loop', artist:'techno late', html:`<div class="title sm">THE<br>LOOP</div><div class="support">techno · late</div>` },
+  { type:'event', style:'s-rave', paper:'paper-black', size:'sz-m', shape:'shape-rect', title:'Jozi To You', artist:'amapiano nights', live:true, html:`<div class="kicker">⟿⟿ amapiano nights ⟿⟿</div><div class="title">JOZI<br>TO YOU</div><div class="support">weekly residency · johannesburg bloc collective · special guests TBA</div><div class="footer">free entry before midnight</div>` },
+  { type:'event', style:'s-punk', paper:'paper-yellow', size:'sz-s', shape:'shape-rect', title:'Brixton Jungle', artist:'dnb / jungle / tear-outs', html:`<div class="kicker">photocopied w/ love</div><div class="title sm">BRIXTON<br>JUNGLE</div><div class="support">dnb / jungle / tear-outs</div><div class="footer">fri @ basement</div>` },
+  { type:'release', style:'s-sleeve', paper:'paper-black', size:'sz-sq', shape:'shape-rect', title:'First Light', artist:'morning ambient vol.2', html:`<div class="art"><div class="disc"></div></div><div class="caption">FIRST LIGHT — morning ambient vol.2</div>` },
+  { type:'event', style:'s-gig', paper:'paper-orange', size:'sz-m', shape:'shape-rect', title:'Sunbleach', artist:'surf / shoegaze / lo-fi', html:`<div class="kicker">THU 12 · BUSHWICK LOT</div><div class="title sm">SUNBLEACH</div><div class="support">surf / shoegaze / lo-fi</div><div class="footer"><span>pay what you can</span><span>19:00</span></div>` },
+  { type:'event', style:'s-type', paper:'paper-cyan', size:'sz-s', shape:'shape-rect', title:'Break Beats', artist:'open decks', html:`<div class="kicker">bushwick bloc</div><div class="title tiny">BREAK<br>BEATS</div><div class="footer">open decks · tuesdays</div>` },
+  { type:'message', style:'s-zine', paper:'paper-white', size:'sz-s', shape:'shape-rect', title:'Bedroom Pop', artist:'open tape night', html:`<div class="title sm">bedroom<br>pop</div><div class="scribble">an open tape night<br>bring your songs ♡</div>` },
+  // Speech bubbles
+  { type:'message', style:'s-zine', paper:'paper-lime', size:'sz-bubble', shape:'shape-bubble', title:'Who has the tape', shapeColor:'#c4e835', html:`<div class="kicker">hey ↯</div><div class="scribble" style="font-size:18px;line-height:1.15;">who has the<br>tape from last<br>night's set ??</div>` },
+  { type:'message', style:'s-punk', paper:'paper-pink', size:'sz-bubble', shape:'shape-bubble', title:'First gig Friday', shapeColor:'#ff5c9a', html:`<div class="kicker" style="font-size:14px;">ANNOUNCEMENT</div><div class="title sm" style="font-size:22px;margin-top:6px;">FIRST<br>GIG<br>FRIDAY</div>` },
+  { type:'message', style:'s-zine', paper:'paper-cyan', size:'sz-bubble', shape:'shape-bubble', title:'Bass face', shapeColor:'#29dbe5', html:`<div class="title sm" style="font-size:26px;line-height:0.95;">I came<br>for the<br>bass</div>` },
+  // Cassettes
+  { type:'release', style:'s-cassette', paper:'paper-tan', size:'sz-cassette', shape:'shape-cassette', title:'Summer Mix 94', artist:'various', html:`<div class="kicker">SIDE A · 45 MIN</div><div class="title">Summer Mix '94</div><div class="support">mixed by Lil Radio</div>` },
+  { type:'release', style:'s-cassette', paper:'paper-mint', size:'sz-cassette', shape:'shape-cassette', title:'Dub Experiments', artist:'Solar Flux', html:`<div class="kicker">SIDE A · 60 MIN</div><div class="title">Dub Experiments</div><div class="support">by solar flux</div>` },
+  // Thumbs
+  { type:'message', style:'s-glyph', paper:'paper-yellow', size:'sz-glyph', shape:'shape-thumb', title:'endorsed', html:`<div class="title">ENDORSED</div>` },
+  { type:'message', style:'s-glyph', paper:'paper-yellow', size:'sz-glyph', shape:'shape-thumb', title:'cosign', html:`<div class="title">COSIGN</div>` },
+  // Flames
+  { type:'message', style:'s-glyph', paper:'paper-orange', size:'sz-glyph', shape:'shape-flame', title:'100k plays', html:`<div class="title">100K PLAYS</div>` },
+  { type:'message', style:'s-glyph', paper:'paper-red', size:'sz-glyph', shape:'shape-flame', title:'heat check', html:`<div class="title">HEAT<br>CHECK</div>` },
+  // Songs with shapes
+  { type:'song', style:'s-sticker', paper:'paper-black', size:'sz-sticker', shape:'shape-circle', title:'Echo Chamber', artist:'reverb unit', html:`<div class="title sm" style="text-align:center;">ECHO</div><div class="support" style="text-align:center;">chamber</div>` },
+  { type:'song', style:'s-bungee', paper:'paper-lime', size:'sz-sticker', shape:'shape-hex', title:'Prism', artist:'crystal bass', html:`<div class="title sm" style="text-align:center;">PRISM</div>` },
+  { type:'song', style:'s-sticker', paper:'paper-magenta', size:'sz-sticker', shape:'shape-diamond', title:'Carbon', artist:'factory floor', html:`<div class="title sm" style="text-align:center;padding-top:20px;">CARBON</div>` },
+  { type:'song', style:'s-sticker', paper:'paper-orange', size:'sz-sticker', shape:'shape-circle', title:'Siren', artist:'deep signal', html:`<div class="title sm" style="text-align:center;">SIREN</div><div class="support" style="text-align:center;">deep signal</div>` },
+  // Album releases
+  { type:'release', style:'s-sleeve', paper:'paper-black', size:'sz-sq', shape:'shape-rect', title:'After Hours', artist:'The Weeknd', spotifyAlbumId:'4yP0hdKOZPNshxUOjY0cZj', html:`<div class="art" style="background:linear-gradient(135deg,#0a0a2e,#1a0a4e 50%,#2a1060);display:flex;align-items:center;justify-content:center;"><div style="width:55px;height:55px;border-radius:50%;background:radial-gradient(circle,#f0e0a0,#c0a060);opacity:0.7;"></div></div><div class="caption">AFTER HOURS — Night Drive</div>` },
+  { type:'release', style:'s-sleeve', paper:'paper-white', size:'sz-sq', shape:'shape-rect', title:'Tropicana', artist:'Sol', spotifyAlbumId:'2noRn2Aes5aoNVsU6iWThc', html:`<div class="art" style="background:linear-gradient(180deg,#ff6b35,#ff3366 60%,#5533ff);"></div><div class="caption">TROPICANA — Sol</div>` },
+  { type:'release', style:'s-sleeve', paper:'paper-charcoal', size:'sz-sq', shape:'shape-rect', title:'Concrete Poetry', artist:'Urban Studies', html:`<div class="art" style="background:linear-gradient(180deg,#5a5a5a,#3a3a3a 40%,#1a1a1a);display:flex;align-items:center;justify-content:center;"><div style="font-family:Archivo Black;font-size:30px;color:rgba(255,255,255,0.12);text-align:center;line-height:0.9;">CON<br>CRETE</div></div><div class="caption">CONCRETE POETRY — Urban Studies</div>` },
+  { type:'release', style:'s-sleeve', paper:'paper-black', size:'sz-sq', shape:'shape-rect', title:'Neon Rain', artist:'Pulse Drift', html:`<div class="art" style="background:linear-gradient(135deg,#0a2040,#1a0840 40%,#f12c18 90%);"></div><div class="caption">NEON RAIN — Pulse Drift</div>` },
+  // More events
+  { type:'event', style:'s-gig', paper:'paper-cream', size:'sz-l', shape:'shape-rect', title:'All Night Long', artist:'warehouse collective', venue:'Warehouse 9', html:`<div class="kicker">SAT 28 DEC · WAREHOUSE 9</div><div class="title">ALL<br>NIGHT<br>LONG</div><div class="support">12 hour set · bring water</div><div class="footer"><span>£12</span><span>22:00 — 10:00</span></div>` },
+  { type:'event', style:'s-type', paper:'paper-cyan', size:'sz-m', shape:'shape-rect', title:'Studio Sessions Live', artist:'BandLab', online:true, html:`<div class="kicker">◎ ONLINE · THU 20:00 UTC</div><div class="title tiny">STUDIO<br>SESSIONS<br>LIVE</div><div class="footer">bandlab.com/live · free</div>` },
+  { type:'event', style:'s-type', paper:'paper-blue', size:'sz-m', shape:'shape-rect', title:'Beatmakers Summit', artist:'global producers', online:true, html:`<div class="kicker">◎ ONLINE · SAT 16:00 UTC</div><div class="title tiny">BEAT<br>MAKERS<br>SUMMIT</div><div class="footer">24hr global jam · free</div>` },
+  // Banners
+  { type:'event', style:'s-type', paper:'paper-red', size:'sz-banner', shape:'shape-rect', title:'Now Playing', artist:'midnight set', html:`<div class="c" style="flex-direction:row;align-items:center;gap:14px;padding:12px 18px;justify-content:space-between;"><div style="font-family:JetBrains Mono,monospace;font-size:9px;letter-spacing:0.16em;opacity:0.85;">NOW PLAYING</div><div style="font-family:Anton,sans-serif;font-size:26px;line-height:0.85;text-transform:uppercase;">MIDNIGHT SET</div><div style="font-size:14px;opacity:0.75;">▶</div></div>` },
+  { type:'message', style:'s-punk', paper:'paper-yellow', size:'sz-banner', shape:'shape-rect', title:'Open Mic Tonight', html:`<div class="c" style="flex-direction:row;align-items:center;gap:14px;padding:12px 18px;justify-content:space-between;"><div style="font-family:Permanent Marker,cursive;font-size:22px;line-height:0.95;">OPEN MIC TONIGHT</div><div style="font-family:Caveat,cursive;font-size:16px;font-weight:700;white-space:nowrap;">sign up ↓</div></div>` },
+  // Photo backgrounds
+  { type:'song', style:'s-gig', paper:'paper-black', size:'sz-m', shape:'shape-rect', title:'Nightfall', artist:'void echo', photo:'concert', spotifyId:'3n3Ppam7vgaVa1iaRUc9Lp', html:`<div class="kicker" style="opacity:0.75;">live recording</div><div class="title sm" style="text-shadow:0 2px 20px rgba(0,0,0,0.8);">NIGHT<br>FALL</div><div class="support" style="opacity:0.75;">captured at warehouse 3</div>` },
+  { type:'release', style:'s-serif', paper:'paper-black', size:'sz-m', shape:'shape-rect', title:'Golden Hour', artist:'ambient collective', photo:'landscape', html:`<div class="kicker" style="opacity:0.7;">field recordings</div><div class="title" style="text-shadow:0 2px 20px rgba(0,0,0,0.8);">GOLDEN<br>HOUR</div><div class="support" style="opacity:0.7;">dawn sessions · vol. 8</div>` },
+  { type:'event', style:'s-gig', paper:'paper-black', size:'sz-l', shape:'shape-rect', title:'Summer Rooftop', artist:'collective', photo:'crowd', html:`<div class="kicker" style="opacity:0.8;">FRI 18 JUL · THE ROOF</div><div class="title" style="text-shadow:0 2px 20px rgba(0,0,0,0.8);">SUMMER<br>ROOFTOP</div><div class="support" style="opacity:0.8;">sunset to sunrise · 3 stages</div><div class="footer"><span>£15</span><span>18:00</span></div>` },
+  // More cassettes
+  { type:'release', style:'s-cassette', paper:'paper-cream', size:'sz-cassette', shape:'shape-cassette', title:'Late Night Tapes vol.2', artist:'various', html:`<div class="kicker">SIDE A · 52 MIN</div><div class="title">Late Night Tapes</div><div class="support">vol. 2 · curated by zng</div>` },
+  { type:'release', style:'s-cassette', paper:'paper-kraft', size:'sz-cassette', shape:'shape-cassette', title:'Commuter Beats', artist:'morning radio', html:`<div class="kicker">SIDE A · 38 MIN</div><div class="title">Commuter Beats</div><div class="support">for the 7:42 train</div>` },
+  // Arcade machines
+  { type:'song', style:'s-pixel', paper:'paper-black', size:'sz-arcade', shape:'shape-arcade', title:'Drop Cast', artist:'BandLab Games', html:`<div class="c" style="justify-content:center;align-items:center;text-align:center;"><div style="font-family:Press Start 2P,cursive;font-size:7px;color:var(--bl-red);margin-bottom:10px;">INSERT COIN</div><div class="title" style="font-size:16px;line-height:1.3;">DROP<br>CAST</div><div style="font-family:Press Start 2P,cursive;font-size:6px;margin-top:14px;opacity:0.55;">TAP TO PLAY</div></div>` },
+  { type:'song', style:'s-pixel', paper:'paper-purple', size:'sz-arcade', shape:'shape-arcade', title:'Beat Invaders', artist:'BandLab Games', html:`<div class="c" style="justify-content:center;align-items:center;text-align:center;"><div style="font-family:Press Start 2P,cursive;font-size:7px;color:var(--bl-green);margin-bottom:10px;">READY?</div><div class="title" style="font-size:14px;line-height:1.3;">BEAT<br>INVADERS</div><div style="font-family:Press Start 2P,cursive;font-size:6px;margin-top:14px;opacity:0.55;">HI: 9,420</div></div>` },
+  // Video/TV flyers
+  { type:'event', style:'s-gig', paper:'paper-black', size:'sz-tv', shape:'shape-tv', title:'NME Stage · The Great Escape', artist:'Mandy Indiana · Girl Scout · Chanpan', venue:'The Old Market, Brighton', video:true, live:true, html:`<div class="kicker" style="font-size:9px;letter-spacing:0.14em;opacity:0.9;">FRI 15 MAY · BRIGHTON</div><div class="title" style="font-size:28px;line-height:0.85;margin:4px 0;">NME<br>STAGE</div><div class="support" style="font-size:9px;line-height:1.3;opacity:0.85;">Mandy, Indiana · Girl Scout<br>Chanpan · Any Young Mechanic</div>` },
+  { type:'event', style:'s-type', paper:'paper-black', size:'sz-tv', shape:'shape-tv', title:'NME 100 Live', artist:'The Kooks · Peaches', video:true, html:`<div class="kicker" style="font-size:9px;letter-spacing:0.14em;opacity:0.9;">NME SPOTLIGHT · MAY 2026</div><div class="title" style="font-size:24px;line-height:0.85;margin:4px 0;">NME 100<br>LIVE</div><div class="support" style="font-size:9px;opacity:0.85;">The Kooks · Peaches · Villanelle</div>` },
+  // Merch t-shirts
+  { type:'promo', style:'s-bungee', paper:'paper-black', size:'sz-tshirt', shape:'shape-tshirt', title:'Tour Merch', artist:'Midnight Drift', tshirtColor:'#0a0806', html:`<div class="title sm" style="font-size:18px;color:#f4eedd;">MIDNIGHT<br>DRIFT</div><div class="support" style="margin-top:6px;color:rgba(244,238,221,0.7);">tour tee · £28</div>` },
+  { type:'promo', style:'s-sticker', paper:'paper-red', size:'sz-tshirt', shape:'shape-tshirt', title:'Flyer Merch', artist:'BandLab', tshirtColor:'#f12c18', html:`<div class="title sm" style="font-size:20px;color:#fff;">FLYER</div><div class="support" style="margin-top:6px;color:rgba(255,255,255,0.8);">by BandLab · limited</div>` },
+  { type:'promo', style:'s-bungee', paper:'paper-purple', size:'sz-tshirt', shape:'shape-tshirt', title:'Bass Church Merch', artist:'Sub Hz', tshirtColor:'#b400ff', html:`<div class="title sm" style="font-size:16px;color:#fff;">BASS<br>CHURCH</div><div class="support" style="margin-top:6px;color:rgba(255,255,255,0.8);">hoodie · $45</div>` },
+  // Localised — Shimokitazawa
+  { type:'event', style:'s-gig', paper:'paper-cream', size:'sz-l', shape:'shape-rect', title:'Shimokita Yoru no Oto', artist:'local bands', html:`<div class="kicker">金 · 5月23日 · 下北沢SHELTER</div><div class="title" style="font-size:38px;">下北沢<br>夜の音</div><div class="support">shimokita night sounds<br>3 bands · ¥2,500 + 1drink</div><div class="footer"><span>OPEN 19:00</span><span>START 19:30</span></div>` },
+  { type:'song', style:'s-serif', paper:'paper-white', size:'sz-m', shape:'shape-rect', title:'Kaze no Uta', artist:'haruka', html:`<div class="kicker">新曲 · NEW SINGLE</div><div class="title">風の歌</div><div class="support">kaze no uta · by haruka<br>streaming now</div>` },
+  { type:'message', style:'s-zine', paper:'paper-yellow', size:'sz-bubble', shape:'shape-bubble', title:'Dare ka band', shapeColor:'#fcc931', html:`<div class="title sm" style="font-size:20px;line-height:1.1;">バンドメンバー<br>募集中！</div><div class="scribble" style="font-size:14px;">looking for a drummer<br>DM me ✌</div>` },
+  { type:'release', style:'s-sleeve', paper:'paper-black', size:'sz-sq', shape:'shape-rect', title:'Mayonaka Radio', artist:'YORU', html:`<div class="art" style="background:linear-gradient(135deg,#1a0a2e,#0a1a3e 50%,#2a0a4e);display:flex;align-items:center;justify-content:center;"><div style="font-family:Abril Fatface;font-size:42px;color:rgba(255,255,255,0.15);">夜</div></div><div class="caption">真夜中ラジオ — YORU</div>` },
+  // Localised — Jakarta
+  { type:'event', style:'s-gig', paper:'paper-orange', size:'sz-l', shape:'shape-rect', title:'Malam Musik Kemang', artist:'various', html:`<div class="kicker">JUM · 30 MEI · KEMANG</div><div class="title" style="font-size:36px;">MALAM<br>MUSIK</div><div class="support">live indie bands + DJ set<br>gratis masuk · free entry</div><div class="footer"><span>BUKA 20:00</span><span>SAMPAI SUBUH</span></div>` },
+  { type:'song', style:'s-type', paper:'paper-cyan', size:'sz-m', shape:'shape-rect', title:'Hujan di Kota', artist:'Awan Senja', html:`<div class="kicker">LAGU BARU · NEW TRACK</div><div class="title tiny">HUJAN<br>DI KOTA</div><div class="footer">Awan Senja · bedroom pop</div>` },
+  { type:'message', style:'s-zine', paper:'paper-lime', size:'sz-bubble', shape:'shape-bubble', title:'Cari kolaborasi', shapeColor:'#c4e835', html:`<div class="title sm" style="font-size:18px;line-height:1.1;">Siapa mau<br>collab? 🎸</div><div class="scribble" style="font-size:13px;">produser + vokalis<br>DM terbuka</div>` },
+  { type:'event', style:'s-punk', paper:'paper-red', size:'sz-m', shape:'shape-rect', title:'Panggung Rakyat', artist:'underground', html:`<div class="kicker">SETIAP SABTU</div><div class="title sm">PANGGUNG<br>RAKYAT</div><div class="support">open mic · semua genre<br>bawa alat musik sendiri</div><div class="footer">Blok M · gratis</div>` },
+  { type:'release', style:'s-sleeve', paper:'paper-charcoal', size:'sz-sq', shape:'shape-rect', title:'Kota Malam', artist:'Rindu', html:`<div class="art" style="background:linear-gradient(180deg,#0a2040,#1a0840 50%,#ff690d);"></div><div class="caption">KOTA MALAM — Rindu</div>` },
+  // Localised — Echo Park
+  { type:'event', style:'s-gig', paper:'paper-yellow', size:'sz-l', shape:'shape-rect', title:'Noche de Garage', artist:'los backyard punks', html:`<div class="kicker">VIERNES · ECHO PARK</div><div class="title" style="font-size:38px;">NOCHE<br>DE<br>GARAGE</div><div class="support">backyard show · 3 bandas<br>trae tu propia chela</div><div class="footer"><span>$5 DOOR</span><span>8PM</span></div>` },
+  { type:'song', style:'s-bungee', paper:'paper-magenta', size:'sz-m', shape:'shape-rect', title:'Fuego Lento', artist:'La Corriente', html:`<div class="title">FUEGO<br>LENTO</div><div class="support">La Corriente · nuevo single</div>` },
+  { type:'message', style:'s-zine', paper:'paper-pink', size:'sz-bubble', shape:'shape-bubble', title:'Quien toca', shapeColor:'#ff5c9a', html:`<div class="title sm" style="font-size:18px;line-height:1.1;">¿Quién toca<br>esta noche?</div><div class="scribble" style="font-size:13px;">who's playing tonight? 🎤</div>` },
+  // Localised — Cape Town
+  { type:'event', style:'s-gig', paper:'paper-cream', size:'sz-l', shape:'shape-rect', title:'Aand Musiek', artist:'Long Street Collective', html:`<div class="kicker">VRYDAG · LONG STREET</div><div class="title" style="font-size:40px;">AAND<br>MUSIEK</div><div class="support">evening music · live jazz + amapiano<br>gratis · free entry</div><div class="footer"><span>20:00</span><span>TOT LAAT</span></div>` },
+  { type:'song', style:'s-type', paper:'paper-green', size:'sz-m', shape:'shape-rect', title:'Umculo Wami', artist:'Themba', html:`<div class="kicker">INGOMA ENTSHA · NEW SONG</div><div class="title tiny">UMCULO<br>WAMI</div><div class="footer">Themba · my music</div>` },
+  { type:'message', style:'s-zine', paper:'paper-cyan', size:'sz-bubble', shape:'shape-bubble', title:'Eish vibes', shapeColor:'#29dbe5', html:`<div class="title sm" style="font-size:20px;line-height:1.1;">Eish, daai<br>beat is 🔥</div><div class="scribble" style="font-size:13px;">that beat is fire · share it</div>` },
+  // UK/US slang
+  { type:'event', style:'s-punk', paper:'paper-black', size:'sz-m', shape:'shape-rect', title:'Proper Mental', artist:'the lads', html:`<div class="kicker">INNIT · EVERY WEDNESDAY</div><div class="title sm">PROPER<br>MENTAL</div><div class="support">grime + jungle · MC showcase<br>£5 on the door · no messing about</div><div class="footer">Dalston · from 10pm</div>` },
+  { type:'event', style:'s-type', paper:'paper-purple', size:'sz-m', shape:'shape-rect', title:'Deadass Good', artist:'BK collective', html:`<div class="kicker">EVERY FRIDAY · BUSHWICK</div><div class="title tiny">DEADASS<br>GOOD</div><div class="footer">hip-hop + open bar · $10</div>` },
+  // Promos
+  { type:'promo', style:'s-type', paper:'paper-charcoal', size:'sz-m', shape:'shape-rect', title:'BandLab Studio AI', html:`<div class="kicker">new in studio</div><div class="title tiny">MAKE IT<br>LOUDER</div><div class="footer">try AI mastering — free</div>` },
+  { type:'release', style:'s-cassette', paper:'paper-red', size:'sz-cassette', shape:'shape-cassette', title:'BandLab Mixtape', artist:'BandLab Creators', html:`<div class="kicker">SIDE A · 40 MIN</div><div class="title">BandLab Mixtape</div><div class="support">creators vol. 1</div>` },
+];
+
+// ============================================================
+// CITY DATA
+// ============================================================
+const SUBS_PER_CITY = {
+  shoreditch:    ['Brick Lane','Old Street','Hoxton Square','Spitalfields','Rivington St'],
+  shimokitazawa: ['Shimokita South','Daizawa','Kitazawa','Ikenoue','Shindaita'],
+  bushwick:      ['Flushing Ave','Myrtle Ave','Wyckoff Ave','Knickerbocker','Jefferson St'],
+  echopark:      ['Sunset Blvd','Echo Park Ave','Mohawk St','Baxter St','Elysian Park'],
+  capetown:      ['Long Street','Bo-Kaap','Woodstock','V&A Waterfront','Observatory'],
+  jakarta:       ['Kemang','Blok M','Senopati','Tebet','Cikini'],
+};
+
+const PLACES = {
+  shoreditch:    { short:'Shoreditch', label:'Shoreditch', region:'London', flyers:3421, recent:18 },
+  shimokitazawa: { short:'Shimokita', label:'Shimokitazawa', region:'Tokyo', flyers:5840, recent:38 },
+  bushwick:      { short:'Bushwick', label:'Bushwick', region:'New York', flyers:4802, recent:27 },
+  echopark:      { short:'Echo Park', label:'Echo Park', region:'Los Angeles', flyers:4120, recent:24 },
+  capetown:      { short:'Cape Town', label:'Cape Town', region:'South Africa', flyers:1694, recent:9 },
+  jakarta:       { short:'Jakarta', label:'Jakarta', region:'Indonesia', flyers:7260, recent:55 },
+};
+
+const STATIONS = {
+  echopark:      { x:100, y:420, name:'ECHO PARK', sub:'los angeles' },
+  bushwick:      { x:280, y:280, name:'BUSHWICK', sub:'new york' },
+  shoreditch:    { x:450, y:140, name:'SHOREDITCH', sub:'london' },
+  shimokitazawa: { x:820, y:150, name:'SHIMOKITAZAWA', sub:'tokyo' },
+  jakarta:       { x:700, y:380, name:'JAKARTA', sub:'indonesia' },
+  capetown:      { x:440, y:500, name:'CAPE TOWN', sub:'south africa' },
+};
+
+const LINES = [
+  { id:'bass', name:'Bass Line', color:'#f12c18', stops:['echopark','bushwick','shoreditch','shimokitazawa'] },
+  { id:'dub', name:'Dub Line', color:'#fcc931', stops:['capetown','bushwick','shoreditch'] },
+  { id:'bedroom', name:'Bedroom Line', color:'#b400ff', stops:['jakarta','shimokitazawa','bushwick'] },
+  { id:'diy', name:'DIY Line', color:'#29dbe5', stops:['shimokitazawa','jakarta','capetown'] },
+];
+
+const WAYPOINTS = {
+  shoreditch:    [{sub:'E2',name:'Brick Lane'},{sub:'EC2A',name:'Old Street'},{sub:'EC2A',name:'Rivington St'},{sub:'N1',name:'Hoxton Square'},{sub:'E1',name:'Spitalfields'}],
+  shimokitazawa: [{sub:'下北沢',name:'Shimokita South'},{sub:'代沢',name:'Daizawa'},{sub:'北沢',name:'Kitazawa'},{sub:'池ノ上',name:'Ikenoue'},{sub:'新代田',name:'Shindaita'}],
+  bushwick:      [{name:'Flushing Ave'},{name:'Myrtle Ave'},{name:'Jefferson St'},{name:'Wyckoff Ave'},{name:'Knickerbocker'}],
+  echopark:      [{name:'Sunset Blvd'},{name:'Echo Park Ave'},{name:'Mohawk St'},{name:'Baxter St'},{name:'Elysian Park'}],
+  capetown:      [{name:'Long Street'},{name:'Bo-Kaap'},{name:'Woodstock'},{name:'V&A Waterfront'},{name:'Observatory'}],
+  jakarta:       [{name:'Kemang'},{name:'Blok M'},{name:'Senopati'},{name:'Tebet'},{name:'Cikini'}],
+};
+
+const CITY_SIGN_CLASS = {
+  shoreditch:'wp-london', shimokitazawa:'wp-tokyo', bushwick:'wp-nyc',
+  echopark:'wp-la', capetown:'wp-capetown', jakarta:'wp-jakarta',
+};
+
+const CITY_BY_TITLE = {
+  'Midnight Drift':'shoreditch','Scared of Horses':'shoreditch','Half Moon Club':'shoreditch',
+  'Brixton Jungle':'shoreditch','Piano Rooms':'shoreditch','Mono.Chrome.':'shoreditch',
+  'Mellow Tones':'shoreditch','Who has the tape':'shoreditch','Echo Chamber':'shoreditch',
+  'After Hours':'shoreditch','All Night Long':'shoreditch','NME Stage · The Great Escape':'shoreditch',
+  'NME 100 Live':'shoreditch','Proper Mental':'shoreditch',
+  'Bass Church':'bushwick','Crate Diggers':'bushwick','Ghetto Tech':'bushwick',
+  'Break Beats':'bushwick','Ghost Chorus':'bushwick','Distortion Field':'bushwick',
+  'Bass face':'bushwick','Carbon':'bushwick','Concrete Poetry':'bushwick',
+  'Nightfall':'bushwick','Deadass Good':'bushwick',
+  'City Pop Revival':'shimokitazawa','Kyoto Drift':'shimokitazawa','Neon Market':'shimokitazawa',
+  'The Loop':'shimokitazawa','Summer Mix 94':'shimokitazawa','Prism':'shimokitazawa',
+  'Neon Rain':'shimokitazawa','Late Night Tapes vol.2':'shimokitazawa',
+  'Shimokita Yoru no Oto':'shimokitazawa','Kaze no Uta':'shimokitazawa',
+  'Dare ka band':'shimokitazawa','Mayonaka Radio':'shimokitazawa',
+  'Sunbleach':'echopark','True North':'echopark','Crosswalk Sessions':'echopark',
+  'Slow Leak':'echopark','First Light':'echopark','Future Funk':'echopark',
+  'Bedroom Pop':'echopark','Tropicana':'echopark','Summer Rooftop':'echopark',
+  'Siren':'echopark','Noche de Garage':'echopark','Fuego Lento':'echopark','Quien toca':'echopark',
+  'Lagos After Dark':'capetown','Jozi To You':'capetown','Dub Tapes':'capetown',
+  'Dub Experiments':'capetown','First gig Friday':'capetown','Golden Hour':'capetown',
+  'Aand Musiek':'capetown','Umculo Wami':'capetown','Eish vibes':'capetown',
+  'Warp Factor':'jakarta','Overtone':'jakarta','New Moon Drone':'jakarta',
+  'Generations':'jakarta','Skate Beats':'jakarta','Commuter Beats':'jakarta',
+  'Malam Musik Kemang':'jakarta','Hujan di Kota':'jakarta','Cari kolaborasi':'jakarta',
+  'Panggung Rakyat':'jakarta','Kota Malam':'jakarta',
+  'Studio Sessions Live':'global','Beatmakers Summit':'global','Now Playing':'global',
+  'Open Mic Tonight':'global','Drop Cast':'global','Beat Invaders':'global',
+  'Tour Merch':'global','Flyer Merch':'global','Bass Church Merch':'global',
+  'BandLab Studio AI':'global','BandLab Mixtape':'global',
+  'Reykjavik Nocturne':'global','endorsed':'global','cosign':'global',
+  '100k plays':'global','heat check':'global',
+};
+FLYERS.forEach(f => { f.cityKey = CITY_BY_TITLE[f.title] || 'global'; });
+
+// ============================================================
+// PLACEMENT — grid with density gradient
+// ============================================================
+function tryPlacePage(pagePlaced, vw, vh) {
+  const padTop = 130, padBot = 100, padSide = 50;
+  const cols = 6, rows = Math.max(3, Math.round((vh - padTop - padBot) / 180));
+  const cellW = (vw - padSide * 2) / cols;
+  const cellH = (vh - padTop - padBot) / rows;
+  const maxPerCell = 3;
+  const total = cols * rows;
+  const cellCounts = new Array(total).fill(0);
+  for (const p of pagePlaced) {
+    const cx = Math.min(cols-1, Math.max(0, Math.floor((p.x - padSide) / cellW)));
+    const cy = Math.min(rows-1, Math.max(0, Math.floor((p.y - padTop) / cellH)));
+    cellCounts[cy * cols + cx]++;
+  }
+  const centerCol = (cols-1)/2, centerRow = (rows-1)/2;
+  let bestIdx = -1, bestScore = Infinity;
+  const shuffled = Array.from({length:total},(_,i)=>i).sort(()=>Math.random()-0.5);
+  for (const idx of shuffled) {
+    if (cellCounts[idx] >= maxPerCell) continue;
+    const col = idx % cols, row = Math.floor(idx / cols);
+    const dist = Math.abs(col-centerCol)/cols + Math.abs(row-centerRow)/rows;
+    const score = cellCounts[idx]*3 + dist + Math.random()*0.5;
+    if (score < bestScore) { bestScore = score; bestIdx = idx; }
+  }
+  if (bestIdx < 0) bestIdx = Math.floor(Math.random()*total);
+  const cellCol = bestIdx % cols, cellRow = Math.floor(bestIdx / cols);
+  const jX = (Math.random()-0.5)*cellW*0.3, jY = (Math.random()-0.5)*cellH*0.3;
+  return {
+    x: Math.max(padSide, Math.min(vw-padSide, padSide + (cellCol+0.5)*cellW + jX)),
+    y: Math.max(padTop, Math.min(vh-padBot, padTop + (cellRow+0.5)*cellH + jY)),
+  };
+}
+
+// ============================================================
+// FLYER RENDERING
+// ============================================================
+const flyerEls = [];
+let currentPage = 0, totalPages = 0, currentCity = 'shoreditch';
+const renderedPages = new Set();
+const pageElements = [];
+let currentCityFlyers = [];
+const locLabel = document.getElementById('loc-label');
+const locSub = document.getElementById('loc-sub');
+
+function createFlyerEl(f, pos, i) {
+  const rot = (Math.random()-0.5)*7;
+  const curl = (f.shape==='shape-rect' && Math.random()<0.28) ? (Math.random()<0.5?'curl-br':'curl-tr') : '';
+  const age = Math.random()<0.2 ? 'age-mid' : (Math.random()<0.35 ? 'age-light' : '');
+  const isNew = Math.random()<0.28;
+  const z = Math.floor(i*2 + Math.random()*6);
+  const promoClass = f.type==='promo' ? 'promo' : '';
+  const liveClass = f.live ? 'live' : '';
+  const typeClass = 'type-'+(f.type||'song');
+  const photoClass = f.photo ? 'photo-'+f.photo : '';
+  const onlineClass = f.online ? 'online-event' : '';
+  const videoClass = f.video ? 'video-flyer' : '';
+
+  const div = document.createElement('div');
+  div.className = `flyer ${f.size} ${f.style} ${f.paper} ${f.shape} ${curl} ${age} ${promoClass} ${liveClass} ${typeClass} ${photoClass} ${onlineClass} ${videoClass}`.replace(/\s+/g,' ').trim();
+  div.style.setProperty('--x', pos.x+'px');
+  div.style.setProperty('--y', pos.y+'px');
+  div.style.setProperty('--rot', rot+'deg');
+  div.style.zIndex = z;
+  if (f.tshirtColor) div.style.color = f.tshirtColor;
+  if (f.shapeColor) div.style.color = f.shapeColor;
+  div.dataset.flyerIdx = FLYERS.indexOf(f);
+  div.dataset.newflyer = isNew ? 'true' : 'false';
+  div.dataset.area = Math.random()<0.35 ? 'home' : 'away';
+  div.dataset.fav = Math.random()<0.22 ? 'true' : 'false';
+  div.dataset.popular = Math.random()<0.3 ? 'true' : 'false';
+
+  const needsWaveform = f.type==='song' || f.type==='release';
+  const waveformBars = needsWaveform ? Array.from({length:20},(_,k)=>{
+    const h = 20+Math.abs(Math.sin(k*0.8+i))*80;
+    return `<span style="height:${h}%"></span>`;
+  }).join('') : '';
+  const dur = needsWaveform ? `${Math.floor(1+Math.random()*4)}:${String(Math.floor(Math.random()*60)).padStart(2,'0')}` : '';
+
+  let shapeSvg = '';
+  if (f.shape==='shape-thumb') shapeSvg = SVG_THUMB;
+  else if (f.shape==='shape-flame') shapeSvg = SVG_FLAME;
+  else if (f.shape==='shape-arcade') shapeSvg = SVG_ARCADE;
+  else if (f.shape==='shape-tshirt') shapeSvg = SVG_TSHIRT;
+  else if (f.shape==='shape-bubble') shapeSvg = SVG_BUBBLE;
+  else if (f.shape==='shape-tv') shapeSvg = SVG_TV;
+
+  let tvExtras = f.shape==='shape-tv' ? '<div class="screen-glow"><div class="sg-inner"></div><div class="sg-scan"></div></div>' : '';
+  let cassetteExtras = f.shape==='shape-cassette' ? '<div class="cassette-spool left"></div><div class="cassette-spool right"></div><div class="cassette-window"></div>' : '';
+  const newTag = isNew && f.type!=='promo' ? '<div class="new-tag">NEW</div>' : '';
+  const liveStamp = (f.live && !f.video) ? '<div class="live-stamp">LIVE</div>' : '';
+  const videoBadge = f.video ? '<div class="video-badge">VIDEO</div>' : '';
+  const typeBadge = f.type==='release' ? '<div class="type-badge">◈ Release</div>' : '';
+
+  const EMOJIS = [['🔥',12],['❤️',8],['👏',5],['🙌',3],['👎',1],['💯',6],['🎵',4],['😍',2],['🤘',3],['💜',4]];
+  const picked = EMOJIS.filter(()=>Math.random()<0.35).slice(0,3);
+  const reactionsHtml = picked.length>0 ? `<div class="reactions">${picked.map(([e,base])=>`<span class="reaction">${e}<span class="rc">${Math.floor(base+Math.random()*base*3)}</span></span>`).join('')}</div>` : '';
+
+  div.innerHTML = `${newTag}${liveStamp}${videoBadge}${typeBadge}${reactionsHtml}<div class="inner">${shapeSvg}${tvExtras}${cassetteExtras}<div class="c">${f.html}</div><div class="player"><div class="play-btn"></div><div class="waveform">${waveformBars}</div><div class="dur">${dur}</div></div></div>`;
+  div.addEventListener('click', e => { e.stopPropagation(); openExpanded(div); });
+  return div;
+}
+
+function renderFlyers(city) {
+  currentCity = city;
+  currentPage = 0;
+  flyerEls.length = 0;
+  renderedPages.clear();
+  pageElements.length = 0;
+  const track = document.getElementById('wall-track');
+  track.innerHTML = '';
+  track.style.transform = 'translateX(0)';
+  const subs = SUBS_PER_CITY[city] || ['Center'];
+  totalPages = subs.length;
+  currentCityFlyers = [];
+  FLYERS.forEach(f => {
+    const copies = f.cityKey===city ? 2 : (f.cityKey==='global' ? 1 : 0);
+    for (let k=0; k<copies; k++) currentCityFlyers.push(f);
+  });
+  subs.forEach((subName, pageIdx) => {
+    const page = document.createElement('div');
+    page.className = 'wall-page page-inactive';
+    track.appendChild(page);
+    pageElements.push({ el:page, subName });
+  });
+  ensurePagesRendered(0);
+  renderSubIndicator(subs);
+  updateNav();
+  applyFilters();
+  updateChat();
+}
+
+function ensurePagesRendered(centerIdx) {
+  for (let i = Math.max(0,centerIdx-1); i <= Math.min(totalPages-1,centerIdx+1); i++) {
+    if (!renderedPages.has(i)) { renderSinglePage(i); renderedPages.add(i); }
+  }
+  pageElements.forEach((pe, idx) => { pe.el.classList.toggle('page-inactive', Math.abs(idx-centerIdx)>1); });
+}
+
+function renderSinglePage(pageIdx) {
+  const pe = pageElements[pageIdx];
+  if (!pe) return;
+  const page = pe.el;
+  const VW = window.innerWidth;
+  const VH = window.innerHeight;
+  for (let t=0; t<6; t++) {
+    const scrap = document.createElement('div');
+    scrap.className = 'tape-scrap';
+    scrap.style.left = (5+Math.random()*90)+'%';
+    scrap.style.top = (5+Math.random()*90)+'%';
+    scrap.style.transform = `translate(-50%,-50%) rotate(${(Math.random()-0.5)*80}deg)`;
+    page.appendChild(scrap);
+  }
+  const shuffled = currentCityFlyers.slice().sort(()=>Math.random()-0.5);
+  const pageFlyers = shuffled.slice(0, 45);
+  const pagePlaced = [];
+  const frag = document.createDocumentFragment();
+  pageFlyers.forEach((f,i) => {
+    const pos = tryPlacePage(pagePlaced, VW, VH);
+    pagePlaced.push(pos);
+    const el = createFlyerEl(f, pos, pageIdx*100+i);
+    frag.appendChild(el);
+    flyerEls.push(el);
+  });
+  page.appendChild(frag);
+  const signCls = CITY_SIGN_CLASS[currentCity] || '';
+  const sign = document.createElement('div');
+  sign.className = 'waypoint '+signCls;
+  const rot = (Math.random()-0.5)*3;
+  sign.style.cssText = `position:absolute;left:${60+Math.random()*80}px;top:${110+Math.random()*40}px;transform:rotate(${rot}deg);z-index:2;`;
+  const wp = (WAYPOINTS[currentCity]||[])[pageIdx];
+  if (wp && wp.sub) sign.innerHTML = `<span class="wp-sub">${wp.sub}</span>${pe.subName}`;
+  else sign.textContent = pe.subName;
+  page.appendChild(sign);
+}
+
+// Debounced resize
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    renderedPages.clear();
+    pageElements.forEach(pe => { pe.el.innerHTML = ''; });
+    flyerEls.length = 0;
+    ensurePagesRendered(currentPage);
+    applyFilters();
+  }, 300);
+});
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function goToPage(idx) {
+  if (idx<0 || idx>=totalPages) return;
+  currentPage = idx;
+  ensurePagesRendered(idx);
+  document.getElementById('wall-track').style.transform = `translateX(-${currentPage*100}vw)`;
+  const tile = document.getElementById('wall-tile');
+  tile.style.setProperty('--px', (-currentPage*180)+'px');
+  tile.style.setProperty('--py', '0px');
+  updateNav();
+  applyFilters();
+  // Update chat sub-location
+  const subs = SUBS_PER_CITY[currentCity]||[];
+  updateChat();
+  updateViewerCount();
+}
+function updateNav() {
+  document.getElementById('nav-left').classList.toggle('disabled', currentPage===0);
+  document.getElementById('nav-right').classList.toggle('disabled', currentPage>=totalPages-1);
+  document.querySelectorAll('.sub-dot').forEach((d,i) => d.classList.toggle('active', i===currentPage));
+  const subs = SUBS_PER_CITY[currentCity]||[];
+  const meta = PLACES[currentCity];
+  if (subs[currentPage] && meta) {
+    locSub.textContent = `${subs[currentPage]} · ${meta.flyers.toLocaleString()} flyers`;
+  }
+}
+function renderSubIndicator(subs) {
+  const el = document.getElementById('sub-indicator');
+  el.innerHTML = '';
+  subs.forEach((name,i) => {
+    const dot = document.createElement('div');
+    dot.className = 'sub-dot'+(i===0?' active':'');
+    dot.textContent = name;
+    dot.addEventListener('click', () => goToPage(i));
+    el.appendChild(dot);
+  });
+}
+
+document.getElementById('nav-left').addEventListener('click', () => goToPage(currentPage-1));
+document.getElementById('nav-right').addEventListener('click', () => goToPage(currentPage+1));
+window.addEventListener('keydown', e => {
+  if (document.getElementById('tube-map').classList.contains('open')) return;
+  if (expandedEl) return;
+  if (e.key==='ArrowLeft') goToPage(currentPage-1);
+  if (e.key==='ArrowRight') goToPage(currentPage+1);
+});
+
+// Touch swipe
+let swipeStartX = 0;
+document.querySelector('.wall').addEventListener('touchstart', e => { swipeStartX = e.touches[0].clientX; }, {passive:true});
+document.querySelector('.wall').addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - swipeStartX;
+  if (Math.abs(dx)>60) { dx>0 ? goToPage(currentPage-1) : goToPage(currentPage+1); }
+}, {passive:true});
+
+// Mouse drag
+let wallDragStart = null;
+document.querySelector('.wall').addEventListener('mousedown', e => { if (!e.target.closest('.flyer')) wallDragStart = e.clientX; });
+window.addEventListener('mouseup', e => {
+  if (wallDragStart !== null) {
+    const dx = e.clientX - wallDragStart;
+    if (Math.abs(dx)>80) { dx>0 ? goToPage(currentPage-1) : goToPage(currentPage+1); }
+    wallDragStart = null;
+  }
+});
+
+// ============================================================
+// FILTER CHIPS
+// ============================================================
+const activeFilters = new Set(['all']);
+document.querySelectorAll('.fc-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    const f = chip.dataset.filter;
+    if (f==='all') { activeFilters.clear(); activeFilters.add('all'); }
+    else { activeFilters.delete('all'); if (activeFilters.has(f)) activeFilters.delete(f); else activeFilters.add(f); if (activeFilters.size===0) activeFilters.add('all'); }
+    document.querySelectorAll('.fc-chip').forEach(c => c.classList.toggle('active', activeFilters.has(c.dataset.filter)));
+    applyFilters();
+  });
+});
+function applyFilters() {
+  flyerEls.forEach(el => {
+    let match = false;
+    if (activeFilters.has('all')) match = true;
+    else {
+      if (activeFilters.has('area') && el.dataset.area==='home') match = true;
+      if (activeFilters.has('favs') && el.dataset.fav==='true') match = true;
+      if (activeFilters.has('new') && el.dataset.newflyer==='true') match = true;
+      if (activeFilters.has('popular') && el.dataset.popular==='true') match = true;
+      if (activeFilters.has('live') && el.classList.contains('live')) match = true;
+      if (activeFilters.has('promos') && el.classList.contains('promo')) match = true;
+      if (activeFilters.has('games') && el.classList.contains('shape-arcade')) match = true;
+    }
+    el.classList.toggle('dimmed', !match);
+  });
+}
+
+// ============================================================
+// CITY TRAVEL
+// ============================================================
+function jumpToPlace(place) {
+  const meta = PLACES[place];
+  if (!meta) return;
+  document.body.className = document.body.className.replace(/bg-\S+/g,'').trim();
+  document.body.classList.add('bg-'+place);
+  locLabel.innerHTML = `<em>${meta.label}</em>${meta.region ? ' / '+meta.region : ''}`;
+  locSub.textContent = `${meta.flyers.toLocaleString()} flyers on this wall · ${meta.recent} posted in the last hour`;
+  renderFlyers(place);
+  updateChat();
+  if (typeof updateViewerCount === 'function') updateViewerCount();
+  closeTubeMap();
+}
+function getCurrentPlace() {
+  const m = document.body.className.match(/bg-(\w+)/);
+  return m ? m[1] : 'shoreditch';
+}
+
+// ============================================================
+// TUBE MAP
+// ============================================================
+function openTubeMap() { renderTubeMap(); document.getElementById('tube-map').classList.add('open'); }
+function closeTubeMap() { document.getElementById('tube-map').classList.remove('open'); }
+document.getElementById('travel-btn').addEventListener('click', openTubeMap);
+document.getElementById('tm-close').addEventListener('click', closeTubeMap);
+window.addEventListener('keydown', e => { if (e.key==='Escape' && document.getElementById('tube-map').classList.contains('open')) closeTubeMap(); });
+
+const stationGenres = {
+  shoreditch:'grime · garage · post-punk', shimokitazawa:'indie rock · noise · shoegaze',
+  bushwick:'hip-hop · punk · DIY', echopark:'bedroom pop · latino punk · lo-fi',
+  capetown:'amapiano · jazz · gqom', jakarta:'dangdut remix · indie pop · bedroom beats',
+};
+
+function renderTubeMap() {
+  const svg = document.getElementById('tm-svg');
+  svg.innerHTML = '';
+  const NS = 'http://www.w3.org/2000/svg';
+  const current = getCurrentPlace();
+  // Grid
+  const grid = document.createElementNS(NS,'g'); grid.setAttribute('opacity','0.06');
+  for (let x=0;x<=900;x+=60){const l=document.createElementNS(NS,'line');l.setAttribute('x1',x);l.setAttribute('y1','0');l.setAttribute('x2',x);l.setAttribute('y2','600');l.setAttribute('stroke','#c2d7f2');l.setAttribute('stroke-width','0.5');grid.appendChild(l);}
+  for (let y=0;y<=600;y+=60){const l=document.createElementNS(NS,'line');l.setAttribute('x1','0');l.setAttribute('y1',y);l.setAttribute('x2','900');l.setAttribute('y2',y);l.setAttribute('stroke','#c2d7f2');l.setAttribute('stroke-width','0.5');grid.appendChild(l);}
+  svg.appendChild(grid);
+  const lineCounts = {}; Object.keys(STATIONS).forEach(id => lineCounts[id]=0);
+  LINES.forEach(line => line.stops.forEach(id => lineCounts[id]++));
+  // Lines
+  LINES.forEach((line,li) => {
+    const offset = (li-(LINES.length-1)/2)*14;
+    for (let i=0;i<line.stops.length-1;i++){
+      const a=STATIONS[line.stops[i]], b=STATIONS[line.stops[i+1]];
+      const dx=b.x-a.x, dy=b.y-a.y, len=Math.sqrt(dx*dx+dy*dy);
+      const nx=-dy/len*offset, ny=dx/len*offset;
+      const path=document.createElementNS(NS,'path');
+      path.setAttribute('d',`M${a.x+nx},${a.y+ny} L${b.x+nx},${b.y+ny}`);
+      path.setAttribute('stroke',line.color); path.setAttribute('stroke-width','5');
+      path.setAttribute('stroke-opacity','0.45'); path.setAttribute('class','tm-line');
+      svg.appendChild(path);
+    }
+  });
+  // Stations
+  Object.entries(STATIONS).forEach(([id,s]) => {
+    const isI = lineCounts[id]>=3;
+    const g = document.createElementNS(NS,'g');
+    g.setAttribute('class','tm-station-group'+(id===current?' here':''));
+    g.setAttribute('transform',`translate(${s.x},${s.y})`);
+    g.addEventListener('click', () => jumpToPlace(id));
+    if (id===current){const p=document.createElementNS(NS,'circle');p.setAttribute('class','tm-you-pulse');p.setAttribute('r','24');g.appendChild(p);}
+    if (isI){const o=document.createElementNS(NS,'circle');o.setAttribute('r','17');o.setAttribute('fill','none');o.setAttribute('stroke','#fff');o.setAttribute('stroke-width','3');g.appendChild(o);}
+    const ring=document.createElementNS(NS,'circle');ring.setAttribute('r',isI?'13':'10');ring.setAttribute('class','tm-station-ring');g.appendChild(ring);
+    const core=document.createElementNS(NS,'circle');core.setAttribute('r','4');core.setAttribute('class','tm-station-core');g.appendChild(core);
+    const side=(id==='echopark'||id==='capetown')?-1:1;
+    const lx=side*26, anch=side<0?'end':'start';
+    const nm=document.createElementNS(NS,'text');nm.setAttribute('class','tm-label');nm.setAttribute('x',lx);nm.setAttribute('y',-8);nm.setAttribute('text-anchor',anch);nm.textContent=s.name;g.appendChild(nm);
+    const sb=document.createElementNS(NS,'text');sb.setAttribute('class','tm-label-sub');sb.setAttribute('x',lx);sb.setAttribute('y',8);sb.setAttribute('text-anchor',anch);sb.textContent=s.sub;g.appendChild(sb);
+    // Info card
+    const meta=PLACES[id];
+    if(meta){
+      const cardG=document.createElementNS(NS,'g');
+      const cw=155,ch=44,cx2=side<0?lx-cw:lx;
+      cardG.setAttribute('transform',`translate(${cx2},20)`);
+      const bg2=document.createElementNS(NS,'rect');bg2.setAttribute('width',cw);bg2.setAttribute('height',ch);bg2.setAttribute('rx','2');bg2.setAttribute('fill','rgba(255,255,255,0.035)');bg2.setAttribute('stroke','rgba(194,215,242,0.1)');bg2.setAttribute('stroke-width','1');cardG.appendChild(bg2);
+      const t1=document.createElementNS(NS,'text');t1.setAttribute('x','8');t1.setAttribute('y','16');t1.setAttribute('font-family',"'JetBrains Mono',monospace");t1.setAttribute('font-size','9');t1.setAttribute('font-weight','600');t1.setAttribute('fill','rgba(194,215,242,0.7)');t1.textContent=`${meta.flyers.toLocaleString()} flyers`;cardG.appendChild(t1);
+      const t2=document.createElementNS(NS,'text');t2.setAttribute('x','8');t2.setAttribute('y','32');t2.setAttribute('font-family',"'Inter',sans-serif");t2.setAttribute('font-size','9');t2.setAttribute('fill','rgba(194,215,242,0.4)');t2.textContent=stationGenres[id]||'';cardG.appendChild(t2);
+      g.appendChild(cardG);
+    }
+    svg.appendChild(g);
+  });
+  // Station list sidebar
+  const list = document.getElementById('tm-list');
+  list.innerHTML = '<h3>Stations</h3>';
+  Object.entries(STATIONS).forEach(([id,s]) => {
+    const item = document.createElement('div');
+    const meta = PLACES[id];
+    item.className = 'tm-station-item'+(id===current?' here':'');
+    item.innerHTML = `<span class="sdot"></span><span class="sname">${s.name}</span><span class="ssub">${meta?meta.flyers.toLocaleString():''}</span>`;
+    item.addEventListener('click', () => jumpToPlace(id));
+    list.appendChild(item);
+  });
+}
+
+// ============================================================
+// EXPAND OVERLAY
+// ============================================================
+const overlay = document.getElementById('expand-overlay');
+const panel = document.getElementById('expand-panel');
+const closeBtn = document.getElementById('expand-close');
+let expandedEl = null, expandedSource = null;
+
+function openExpanded(el) {
+  if (expandedEl) closeExpanded(true);
+  const origW = el.offsetWidth, origH = el.offsetHeight;
+  const rect = el.getBoundingClientRect();
+  const sCX = rect.left+rect.width/2, sCY = rect.top+rect.height/2;
+  const rot = getComputedStyle(el).getPropertyValue('--rot').trim()||'0deg';
+
+  const clone = el.cloneNode(true);
+  clone.classList.add('expanded-clone');
+  clone.style.cssText = `position:fixed;left:${sCX-origW/2}px;top:${sCY-origH/2}px;width:${origW}px;height:${origH}px;margin:0;transform-origin:center;transform:rotate(${rot}) scale(1);transition:left 0.55s cubic-bezier(0.16,1,0.3,1),top 0.55s cubic-bezier(0.16,1,0.3,1),transform 0.55s cubic-bezier(0.16,1,0.3,1);z-index:520;box-shadow:0 40px 100px rgba(0,0,0,0.8);animation:none!important;`;
+  document.body.appendChild(clone);
+  el.style.visibility = 'hidden';
+  expandedEl = clone; expandedSource = el;
+  overlay.classList.add('open');
+
+  const f = FLYERS[parseInt(el.dataset.flyerIdx)];
+  const plays = Math.floor(100+Math.random()*9900);
+  const likes = Math.floor(10+Math.random()*490);
+  const remixes = Math.floor(Math.random()*40);
+  const waveBars = Array.from({length:48},(_,k)=>{const h=20+Math.abs(Math.sin(k*0.5+1))*80;return `<span style="height:${h}%;--p:35%;"></span>`;}).join('');
+  const metaBlock = `<div class="ep-meta"><div><div class="k">Plays</div><div class="v">${plays.toLocaleString()}</div></div><div><div class="k">Likes</div><div class="v">${likes}</div></div><div><div class="k">Remixes</div><div class="v">${remixes}</div></div></div>`;
+
+  let pc = '';
+  if (f.shape==='shape-arcade') {
+    pc = `<div class="ep-kicker" style="color:var(--bl-red);">ARCADE · LIVE COMPETITION</div><h2>${f.title||'Game'}</h2><div class="ep-artist">${f.artist||'BandLab Games'}</div><div class="ep-section"><div class="ep-sec-title">This week's leaderboard</div><div class="ep-tracklist"><div class="ep-track" style="color:var(--bl-yellow);font-weight:600;"><span class="ep-track-num">1</span><span>beatroot</span><span class="ep-track-dur" style="color:var(--bl-yellow);">12,480</span></div><div class="ep-track"><span class="ep-track-num">2</span><span>loopweaver</span><span class="ep-track-dur">9,420</span></div><div class="ep-track"><span class="ep-track-num">3</span><span>synthgarden</span><span class="ep-track-dur">7,110</span></div></div></div><div class="ep-actions"><button class="ep-btn primary" onclick="launchGame()">PLAY NOW</button></div>`;
+  } else if (f.shape==='shape-tshirt') {
+    pc = `<div class="ep-kicker">MERCH</div><h2>${f.title||'Merch'}</h2><div class="ep-artist">${f.artist||''}</div><div class="ep-section"><div class="ep-sec-title">Product details</div><div class="ep-detail-grid"><div><div class="k">Type</div><div class="v">T-shirt</div></div><div><div class="k">Price</div><div class="v">£28</div></div></div></div><div class="ep-actions"><button class="ep-btn primary">Buy now</button></div>`;
+  } else if (f.video) {
+    pc = `<div class="ep-kicker" style="color:var(--bl-red);">VIDEO · ${f.live?'LIVE NOW':'EVENT'}</div><h2>${f.title||'Video'}</h2><div class="ep-artist">${f.artist||''}</div><div style="margin:16px 0;background:#000;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;"><div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(241,44,24,0.3),rgba(180,0,255,0.25),rgba(41,219,229,0.2));background-size:400% 400%;animation:videoShift 6s ease-in-out infinite;"></div><div style="position:relative;font-size:48px;opacity:0.9;z-index:2;">▶</div></div>${metaBlock}<div class="ep-actions"><button class="ep-btn primary">Get tickets</button><button class="ep-btn">Share</button></div>`;
+  } else if (f.type==='song') {
+    const sp = f.spotifyId ? `<iframe style="border-radius:8px;border:0;margin:16px 0 0;" src="https://open.spotify.com/embed/track/${f.spotifyId}?utm_source=generator&theme=0" width="100%" height="152" allow="autoplay;clipboard-write;encrypted-media;fullscreen;picture-in-picture" loading="lazy"></iframe>` : `<div class="ep-player" style="margin-top:20px;"><div class="ep-wave">${waveBars}</div><div class="ep-controls"><div class="ep-play"></div><span>1:14 / 3:22</span></div></div>`;
+    pc = `<div class="ep-kicker">SONG · POSTED 2H AGO</div><h2>${f.title||'Untitled'}</h2><div class="ep-artist">${f.artist||'unknown artist'}</div>${sp}${metaBlock}<div class="ep-actions"><button class="ep-btn primary">Open in BandLab Studio</button><button class="ep-btn">Remix</button></div>`;
+  } else if (f.type==='release') {
+    const sp = f.spotifyAlbumId ? `<iframe style="border-radius:8px;border:0;margin-top:16px;" src="https://open.spotify.com/embed/album/${f.spotifyAlbumId}?utm_source=generator&theme=0" width="100%" height="352" allow="autoplay;clipboard-write;encrypted-media;fullscreen;picture-in-picture" loading="lazy"></iframe>` : `<div class="ep-player" style="margin-top:20px;"><div class="ep-wave">${waveBars}</div><div class="ep-controls"><div class="ep-play"></div><span>Preview · 2:48</span></div></div>`;
+    pc = `<div class="ep-kicker">RELEASE</div><h2>${f.title||'EP'}</h2><div class="ep-artist">${f.artist||'various'}</div>${sp}<div class="ep-section"><div class="ep-sec-title">Tracklist</div><div class="ep-tracklist"><div class="ep-track"><span class="ep-track-num">01</span><span>Opening</span><span class="ep-track-dur">3:12</span></div><div class="ep-track"><span class="ep-track-num">02</span><span>${f.title||'Title Track'}</span><span class="ep-track-dur">4:08</span></div><div class="ep-track"><span class="ep-track-num">03</span><span>Interlude</span><span class="ep-track-dur">1:44</span></div><div class="ep-track"><span class="ep-track-num">04</span><span>Closing</span><span class="ep-track-dur">5:22</span></div></div></div>${metaBlock}<div class="ep-actions"><button class="ep-btn primary">Listen on BandLab</button><button class="ep-btn">Share</button></div>`;
+  } else if (f.type==='event') {
+    pc = `<div class="ep-kicker">${f.live?'LIVE NOW':'EVENT'}</div><h2>${f.title||'Event'}</h2><div class="ep-artist">${f.artist||''}</div>${f.live?'<div class="ep-live-banner"><div class="ep-live-dot"></div><span>STREAMING NOW · 342 watching</span></div>':''}<div class="ep-section"><div class="ep-sec-title">Details</div><div class="ep-detail-grid"><div><div class="k">Date</div><div class="v">Sat 21 Dec</div></div><div><div class="k">Time</div><div class="v">22:00</div></div><div><div class="k">Venue</div><div class="v">${f.venue||'TBA'}</div></div><div><div class="k">Tickets</div><div class="v">£8 — £15</div></div></div></div><div class="ep-section"><div class="ep-sec-title">Lineup</div><div class="ep-lineup"><div class="ep-lineup-act headliner">${f.title||'Headliner'}</div><div class="ep-lineup-act">${f.artist||'Support'}</div></div></div>${metaBlock}<div class="ep-actions"><button class="ep-btn primary">${f.live?'Join livestream':'Get tickets'}</button><button class="ep-btn">Share</button></div>`;
+  } else if (f.type==='promo') {
+    pc = `<div class="ep-kicker">PROMO · BANDLAB</div><h2>${f.title||'BandLab'}</h2><div class="ep-artist">Sponsored content</div><div class="ep-section" style="margin-top:20px;"><div class="ep-sec-body" style="font-size:15px;line-height:1.55;color:var(--ink-mid);">Create, collaborate, and share your music with millions of creators worldwide.</div></div><div class="ep-actions"><button class="ep-btn primary">Try BandLab Studio</button></div>`;
+  } else if (f.type==='message') {
+    pc = `<div class="ep-kicker">MESSAGE</div><h2 style="font-size:24px;line-height:1.2;">${f.title||''}</h2><div class="ep-artist">from @${['loopweaver','beatroot','synthgarden','wavefern'][Math.floor(Math.random()*4)]}</div><div class="ep-section" style="margin-top:20px;"><div class="ep-sec-body" style="font-size:17px;line-height:1.6;color:var(--ink);font-family:var(--font-display);">${f.html.replace(/<[^>]+>/g,' ').trim()}</div></div><div class="ep-actions"><button class="ep-btn">Reply</button><button class="ep-btn">Share</button></div>`;
+  } else {
+    pc = `<div class="ep-kicker">${(f.type||'FLYER').toUpperCase()}</div><h2>${f.title||'Untitled'}</h2><div class="ep-artist">${f.artist||''}</div>${metaBlock}<div class="ep-actions"><button class="ep-btn primary">Open in BandLab</button></div>`;
+  }
+  panel.innerHTML = pc;
+
+  requestAnimationFrame(() => {
+    const isMobile = window.innerWidth < 768;
+    if (isMobile) {
+      clone.style.left = (window.innerWidth/2 - origW/2)+'px';
+      clone.style.top = '15%';
+      const scale = Math.min((window.innerWidth*0.8)/origW, (window.innerHeight*0.35)/origH);
+      clone.style.transform = `rotate(0deg) scale(${scale})`;
+    } else {
+      const chatW = chatSidebar.classList.contains('collapsed') ? 0 : parseInt(getComputedStyle(document.documentElement).getPropertyValue('--chat-w')) || 320;
+      const panelW=360, panelR=32+chatW, panelGap=32, leftEdge=40;
+      const rightEdge = window.innerWidth - panelW - panelR - panelGap;
+      const availW = Math.max(240, rightEdge - leftEdge);
+      const maxW = Math.min(availW, 560), maxH = window.innerHeight*0.72;
+      const scale = Math.min(maxW/origW, maxH/origH);
+      clone.style.left = (leftEdge + availW/2 - origW/2)+'px';
+      clone.style.top = (window.innerHeight/2 - origH/2)+'px';
+      clone.style.transform = `rotate(0deg) scale(${scale})`;
+    }
+  });
+}
+
+function closeExpanded(skipAnim) {
+  if (!expandedEl) return;
+  const clone = expandedEl, source = expandedSource;
+  expandedEl = null; expandedSource = null;
+  overlay.classList.remove('open');
+  const gameFrame = document.getElementById('game-frame');
+  if (gameFrame) gameFrame.remove();
+  if (skipAnim) { if(clone)clone.remove(); if(source)source.style.visibility=''; return; }
+  if (!clone) { if(source)source.style.visibility=''; return; }
+  const rect2 = source.getBoundingClientRect();
+  const oW = source.offsetWidth, oH = source.offsetHeight;
+  const r2 = getComputedStyle(source).getPropertyValue('--rot').trim()||'0deg';
+  clone.style.left = (rect2.left+rect2.width/2-oW/2)+'px';
+  clone.style.top = (rect2.top+rect2.height/2-oH/2)+'px';
+  clone.style.transform = `rotate(${r2}) scale(1)`;
+  setTimeout(()=>{clone.remove();if(source)source.style.visibility='';},600);
+}
+overlay.addEventListener('click', e => { if(e.target===overlay) closeExpanded(); });
+closeBtn.addEventListener('click', () => closeExpanded());
+window.addEventListener('keydown', e => { if(e.key==='Escape' && expandedEl) closeExpanded(); });
+
+// ============================================================
+// GAME LAUNCHER
+// ============================================================
+function launchGame() {
+  const frame = document.createElement('iframe');
+  frame.src = 'beat-invaders.html'; frame.id = 'game-frame';
+  frame.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;border:none;z-index:600;background:#010101;';
+  frame.setAttribute('allow','autoplay');
+  document.body.appendChild(frame);
+  const h = e => { if(e.key==='Escape'){frame.remove();window.removeEventListener('keydown',h);} };
+  window.addEventListener('keydown', h);
+}
+window.launchGame = launchGame;
+
+// ============================================================
+// POST MODAL
+// ============================================================
+const postModal = document.getElementById('post-modal');
+let pmStep=1, pmPaper='paper-cream', pmShape='shape-rect', pmType='song', pmFont='Anton';
+const TYPE_DEFAULTS = { song:{shape:'shape-rect',size:'sz-m'}, event:{shape:'shape-rect',size:'sz-l'}, release:{shape:'shape-rect',size:'sz-sq'}, mixtape:{shape:'shape-cassette',size:'sz-cassette'}, message:{shape:'shape-bubble',size:'sz-bubble'} };
+
+document.querySelectorAll('#pm-types .pm-shape-btn').forEach(btn => {
+  btn.addEventListener('click', () => { pmType=btn.dataset.type; document.querySelectorAll('#pm-types .pm-shape-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); const def=TYPE_DEFAULTS[pmType]; if(def){pmShape=def.shape; document.querySelectorAll('.pm-shapes .pm-shape-btn[data-shape]').forEach(b=>b.classList.toggle('active',b.dataset.shape===pmShape));} });
+});
+
+const FONT_OPTIONS = [['Anton','Anton'],['Archivo Black','Archivo'],['Abril Fatface','Abril'],['Bebas Neue','Bebas'],['Bungee','Bungee'],['Monoton','Monoton'],['Permanent Marker','Marker'],['Staatliches','Staatl.'],['Press Start 2P','Pixel'],['Shrikhand','Shrik.'],['Syne','Syne'],['Caveat','Caveat']];
+const fontsEl = document.getElementById('pm-fonts');
+FONT_OPTIONS.forEach(([family,label],i) => {
+  const btn = document.createElement('button');
+  btn.className = 'pm-font-btn'+(i===0?' active':'');
+  btn.style.fontFamily = family+',sans-serif';
+  btn.textContent = label; btn.dataset.font = family;
+  btn.addEventListener('click', () => { pmFont=family; fontsEl.querySelectorAll('.pm-font-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); });
+  fontsEl.appendChild(btn);
+});
+
+const SWATCH_COLORS = [['paper-cream','#faf4e1'],['paper-white','#ffffff'],['paper-black','#050505'],['paper-red','#f12c18'],['paper-orange','#ff690d'],['paper-yellow','#fcc931'],['paper-green','#00c37d'],['paper-cyan','#29dbe5'],['paper-blue','#2f93f6'],['paper-purple','#b400ff'],['paper-pink','#ff5c9a'],['paper-kraft','#c7a074'],['paper-magenta','#d91e7a'],['paper-lime','#c4e835'],['paper-navy','#132044'],['paper-charcoal','#2a2a2a'],['paper-newsprint','#e9e0c8'],['paper-bone','#e8e1d0']];
+const pmSwatches = document.getElementById('pm-swatches');
+SWATCH_COLORS.forEach(([cls,hex],i) => {
+  const s = document.createElement('div');
+  s.className = 'pm-swatch'+(i===0?' active':'');
+  s.style.background = hex; s.dataset.paper = cls;
+  s.addEventListener('click', () => { pmPaper=cls; pmSwatches.querySelectorAll('.pm-swatch').forEach(x=>x.classList.remove('active')); s.classList.add('active'); });
+  pmSwatches.appendChild(s);
+});
+
+document.querySelectorAll('.pm-shape-btn[data-shape]').forEach(btn => {
+  btn.addEventListener('click', () => { if(btn.dataset.shape) pmShape=btn.dataset.shape; });
+});
+
+function pmGoStep(n) {
+  pmStep=n;
+  [1,2,3].forEach(s=>{const el=document.getElementById('pm-step-'+s);if(el)el.style.display=s===n?'flex':'none';});
+  document.querySelectorAll('.pm-step').forEach(s=>{const sn=parseInt(s.dataset.step);s.classList.toggle('active',sn===n);s.classList.toggle('done',sn<n);});
+  if(n===3) renderPreview();
+}
+function renderPreview() {
+  const title = document.getElementById('pm-title').value||'MY FLYER';
+  const sub = document.getElementById('pm-subtitle').value||'by you';
+  const preview = document.getElementById('pm-preview');
+  const def = TYPE_DEFAULTS[pmType]||TYPE_DEFAULTS.song;
+  preview.innerHTML = `<div class="flyer ${def.size} s-gig ${pmPaper} ${pmShape} type-${pmType}" style="position:relative;--x:0;--y:0;--rot:-3deg;pointer-events:none;transform:rotate(-3deg);"><div class="inner"><div class="c"><div style="font-family:${pmFont},sans-serif;font-size:36px;line-height:0.9;text-transform:uppercase;margin-bottom:auto;">${title}</div><div style="font-size:11px;margin-top:8px;opacity:0.75;">${sub}</div></div></div></div>`;
+}
+
+document.getElementById('post-btn-top').addEventListener('click', () => { postModal.classList.add('open'); pmGoStep(1); });
+document.getElementById('pm-close').addEventListener('click', () => postModal.classList.remove('open'));
+document.querySelector('.pm-backdrop').addEventListener('click', () => postModal.classList.remove('open'));
+document.getElementById('pm-next-1').addEventListener('click', () => pmGoStep(2));
+document.getElementById('pm-next-2').addEventListener('click', () => pmGoStep(3));
+document.getElementById('pm-back-2').addEventListener('click', () => pmGoStep(1));
+document.getElementById('pm-back-3').addEventListener('click', () => pmGoStep(2));
+
+document.getElementById('pm-ai-gen').addEventListener('click', () => {
+  const prompt = document.getElementById('pm-ai').value; if(!prompt)return;
+  document.getElementById('pm-title').value = prompt.split(' ').slice(0,3).join(' ').toUpperCase();
+  document.getElementById('pm-subtitle').value = 'AI-generated';
+  const rp = SWATCH_COLORS[Math.floor(Math.random()*SWATCH_COLORS.length)];
+  pmPaper = rp[0]; pmSwatches.querySelectorAll('.pm-swatch').forEach(s=>s.classList.toggle('active',s.dataset.paper===pmPaper));
+});
+
+document.getElementById('pm-post').addEventListener('click', () => {
+  const title = document.getElementById('pm-title').value||'MY FLYER';
+  const sub = document.getElementById('pm-subtitle').value||'by you';
+  const pages = document.querySelectorAll('.wall-page');
+  const page = pages[currentPage]; if(!page) return;
+  const VW = window.innerWidth, VH = window.innerHeight;
+  const pos = {x:VW*0.3+Math.random()*VW*0.4, y:180+Math.random()*(VH-360)};
+  const def = TYPE_DEFAULTS[pmType]||TYPE_DEFAULTS.song;
+  const newF = {type:pmType==='mixtape'?'release':pmType, style:'s-gig', paper:pmPaper, size:def.size, shape:pmShape, title, artist:sub, html:`<div style="font-family:${pmFont},sans-serif;font-size:36px;line-height:0.9;text-transform:uppercase;margin-bottom:auto;">${title}</div><div class="support">${sub}</div>`};
+  const el = createFlyerEl(newF, pos, Date.now());
+  el.style.zIndex = '180';
+  el.style.transition = 'transform 0.5s cubic-bezier(0.16,1,0.3,1), opacity 0.4s ease';
+  el.style.opacity = '0'; el.style.transform = `translate(-50%,-50%) rotate(var(--rot)) scale(0.5)`;
+  page.appendChild(el); flyerEls.push(el);
+  requestAnimationFrame(()=>{el.style.opacity='1';el.style.transform=`translate(-50%,-50%) rotate(var(--rot)) scale(1)`;});
+  const tag = document.createElement('div'); tag.className='new-tag'; tag.textContent='NEW'; el.prepend(tag);
+  postModal.classList.remove('open');
+  // Toast
+  const toast = document.createElement('div');
+  toast.style.cssText = 'position:fixed;bottom:120px;left:50%;transform:translateX(-50%);z-index:200;padding:14px 28px;background:var(--bl-red);color:#fff;font-family:var(--font-display);font-size:14px;font-weight:600;opacity:0;transition:opacity 0.3s;';
+  toast.textContent = 'Flyer posted!';
+  document.body.appendChild(toast);
+  requestAnimationFrame(()=>{toast.style.opacity='1';});
+  setTimeout(()=>{toast.style.opacity='0';setTimeout(()=>toast.remove(),300);},2500);
+});
+
+// ============================================================
+// CHAT SIDEBAR
+// ============================================================
+const chatSidebar = document.getElementById('chat-sidebar');
+const chatMessages = document.getElementById('chat-messages');
+const chatInput = document.getElementById('chat-input');
+const chatTab = document.getElementById('chat-tab');
+const chatCollapseBtn = document.getElementById('chat-collapse-btn');
+const chatBadge = document.getElementById('chat-badge');
+let unreadCount = 0;
+
+const CHAT_USERS = [
+  {name:'beatroot',color:'#29dbe5',badge:'\u{1F3B5}'},
+  {name:'loopweaver',color:'#fcc931',badge:'\u2B50'},
+  {name:'synthgarden',color:'#b400ff',badge:'\u{1F6E1}\uFE0F'},
+  {name:'wavefern',color:'#00c37d'},
+  {name:'bassbloom',color:'#ff690d'},{name:'noisefern',color:'#ff5c9a'},
+  {name:'deepmix',color:'#2f93f6'},{name:'driftwood',color:'#c4e835'},
+  {name:'echopulse',color:'#f12c18'},{name:'moonloop',color:'#b8a7dc'},
+];
+
+const CHAT_MESSAGES_BY_CITY = {
+  shoreditch: [
+    "anyone going to the warehouse gig friday?","just posted my first flyer! check it out",
+    "🔥🔥🔥 that bass church track","who made the nightfall recording? it's beautiful",
+    "has anyone tried the beat invaders game? addictive","looking for a drummer in shoreditch DM me",
+    "the half moon club set was insane last night","proper mental on wednesdays is still the one",
+    "brick lane vibes tonight","anyone selling spare for the rave?",
+    "new EP just dropped, check my flyer","that distortion field gig was mental",
+    "lofi night at hoxton square was class","need a guitarist for our band, east london",
+    "the wall's getting busy tonight","who else is here at rivington?",
+    "just discovered this app, love it","can someone record the set tonight?",
+    "that DJ set went hard 🔥","innit the bass was proper heavy",
+  ],
+  shimokitazawa: [
+    "下北のライブ最高だった","shimokita vibes tonight 🎶",
+    "誰かドラマー知ってる？","the indie scene here is incredible",
+    "city pop revival set was beautiful","新しいバンド見つけた！",
+    "anyone at kitazawa tonight?","ライブハウス最高",
+    "just posted a flyer in Japanese!","the vinyl shops here are amazing",
+    "daizawa coffee + music = perfect","下北沢SHELTER行く人いる？",
+    "that shoegaze band was unreal","新曲リリースしました",
+    "素敵な音楽ありがとう","who wants to jam tomorrow?",
+    "the atmosphere here is magical","夜の散歩が好き",
+    "anyone know a good rehearsal space?","shimokita south is where it's at",
+  ],
+  bushwick: [
+    "who's spinning at the warehouse tonight?","that hip-hop set was fire 🔥",
+    "deadass the best party this month","flushing ave crew checking in",
+    "anyone got a spare cable? playing at 10","the DIY scene here is unmatched",
+    "crate diggers was legendary last week","wyckoff ave represent",
+    "just posted my first beat, check it","that punk show was insane",
+    "brooklyn basement shows > everything","need a bass player, DM me",
+    "the ghetto tech set went crazy","myrtle ave vibes",
+    "who's recording the open mic?","that graffiti on the wall is art",
+    "best tacos + music combo ever","knickerbocker crew what up",
+    "the beat invaders high score is 12k now","vinyl only sets hit different",
+  ],
+  echopark: [
+    "sunset blvd session was dreamy","noche de garage was incredible",
+    "fuego lento on repeat all day","echo park ave crew checking in",
+    "backyard shows in LA hit different","anyone at the rooftop tonight?",
+    "that bedroom pop set was so chill","¿quién toca esta noche?",
+    "the lo-fi scene here is growing","mohawk st has the best spots",
+    "sunset sessions are the best","just posted a new track, check it out",
+    "who else is vibing to city pop?","elysian park at golden hour tho",
+    "need a venue for a small show","that surf rock band was sick",
+    "la corriente nuevo single es fuego","baxter st underground is legit",
+    "who wants to collab on a track?","the weather + music = perfection",
+  ],
+  capetown: [
+    "long street is alive tonight","that amapiano set was incredible 🔥",
+    "eish, daai beat is fire","aand musiek was beautiful",
+    "bo-kaap sunset sessions are the best","anyone at woodstock tonight?",
+    "the jazz scene here is world class","umculo wami on repeat",
+    "looking for producers in cape town","observatory has the best vibes",
+    "jozi to you set went crazy","v&a waterfront sessions",
+    "gqom night was insane","free entry at long street tonight",
+    "that drummer was incredible","cape town music scene is underrated",
+    "who's playing at the waterfront?","the vibe here is unmatched",
+    "dub experiments was a journey","looking for a vocalist, DM me",
+  ],
+  jakarta: [
+    "malam musik kemang gila seru!","hujan di kota vibes 🌧️",
+    "siapa mau collab?","blok m underground scene is growing",
+    "that dangdut remix was fire","senopati has the best cafes + music",
+    "baru post flyer pertama!","the indie scene here is incredible",
+    "panggung rakyat setiap sabtu","tebet crew checking in",
+    "kota malam on repeat","looking for a guitarist in jakarta",
+    "cikini art district vibes","gratis masuk malam ini!",
+    "that bedroom beat was insane","kemang music festival when?",
+    "produser + vokalis wanted","the concrete walls have great acoustics",
+    "awan senja new track is beautiful","open mic tonight at blok m",
+  ],
+};
+
+const CHAT_ONLINE_COUNTS = {
+  shoreditch:14, shimokitazawa:22, bushwick:18, echopark:11, capetown:8, jakarta:31,
+};
+
+function updateChat() {
+  chatMessages.innerHTML = '';
+  const subs = SUBS_PER_CITY[currentCity]||[];
+  const subName = subs[currentPage] || subs[0] || currentCity;
+  document.getElementById('chat-title').textContent = 'Wall chat · '+subName;
+  document.getElementById('chat-online').textContent = (CHAT_ONLINE_COUNTS[currentCity]||10)+' here';
+  const msgs = CHAT_MESSAGES_BY_CITY[currentCity]||CHAT_MESSAGES_BY_CITY.shoreditch;
+  const shuffled = msgs.slice().sort(()=>Math.random()-0.5).slice(0,12);
+  shuffled.forEach(text => addChatMessage(text, false));
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  if (typeof updatePinnedMessage === 'function') updatePinnedMessage();
+  if (typeof updateRadio === 'function') updateRadio();
+  if (typeof updateViewerCount === 'function') updateViewerCount();
+}
+
+const FLOAT_EMOJIS = ['\u{1F525}','\u2764\uFE0F','\u{1F3B5}','\u{1F918}','\u{1F480}','\u{1F44F}','\u{1F64C}','\u{1F4AF}','\u{1F60D}','\u{1F3B6}','\u{1F525}\u{1F525}','\u{1F525}\u{1F525}\u{1F525}'];
+
+function spawnFloatingEmoji(emoji) {
+  const el = document.createElement('div');
+  el.className = 'floating-emoji';
+  el.textContent = emoji;
+  el.style.left = (window.innerWidth - 360 - 20 + Math.random()*100) + 'px';
+  el.style.bottom = (200 + Math.random()*200) + 'px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+function extractEmojis(text) {
+  const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE00}-\u{FE0F}\u{1F000}-\u{1FFFF}]/gu;
+  return text.match(emojiRegex) || [];
+}
+
+function addChatMessage(text, isUser, animate) {
+  const user = isUser ? {name:'you',color:'var(--bl-red)'} : CHAT_USERS[Math.floor(Math.random()*CHAT_USERS.length)];
+  const times = ['just now','1m','2m','3m','5m','8m','12m','15m','20m'];
+  const time = isUser ? 'just now' : times[Math.floor(Math.random()*times.length)];
+  const msg = document.createElement('div');
+  msg.className = 'chat-msg';
+  if (animate) { msg.style.opacity='0'; msg.style.transform='translateY(8px)'; msg.style.transition='opacity 0.3s, transform 0.3s'; }
+  const badgeHtml = user.badge ? `<span class="chat-badge-icon">${user.badge}</span>` : '';
+  msg.innerHTML = `${badgeHtml}<span class="chat-user" style="color:${user.color};">${user.name}</span><span class="chat-text">${text}</span><span class="chat-time">${time}</span>`;
+  chatMessages.appendChild(msg);
+  if (animate) requestAnimationFrame(()=>{msg.style.opacity='1';msg.style.transform='translateY(0)';});
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  // Floating emojis
+  const found = extractEmojis(text);
+  found.slice(0,2).forEach(e => spawnFloatingEmoji(e));
+  if (!isUser && chatSidebar.classList.contains('collapsed')) {
+    unreadCount++;
+    chatBadge.textContent = unreadCount;
+    chatBadge.style.display = 'flex';
+  }
+}
+
+// Auto-add chat messages
+function scheduleNextChat() {
+  const delay = 8000 + Math.random()*7000;
+  setTimeout(()=>{
+    const msgs = CHAT_MESSAGES_BY_CITY[currentCity]||CHAT_MESSAGES_BY_CITY.shoreditch;
+    addChatMessage(msgs[Math.floor(Math.random()*msgs.length)], false, true);
+    scheduleNextChat();
+  }, delay);
+}
+scheduleNextChat();
+
+// User send
+function sendUserMessage() {
+  const text = chatInput.value.trim();
+  if (!text) return;
+  addChatMessage(text, true, true);
+  chatInput.value = '';
+}
+document.getElementById('chat-send').addEventListener('click', sendUserMessage);
+chatInput.addEventListener('keydown', e => { if(e.key==='Enter') sendUserMessage(); });
+
+// Toggle chat
+document.getElementById('chat-tab').addEventListener('click', () => {
+  chatSidebar.classList.toggle('collapsed');
+  if (!chatSidebar.classList.contains('collapsed')) {
+    unreadCount = 0;
+    if (chatBadge) chatBadge.style.display = 'none';
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+});
+chatCollapseBtn.addEventListener('click', () => {
+  chatSidebar.classList.toggle('collapsed');
+  if (!chatSidebar.classList.contains('collapsed')) {
+    unreadCount = 0;
+    if (chatBadge) chatBadge.style.display = 'none';
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+});
+
+// On mobile/tablet, start collapsed; on desktop, start open
+if (window.innerWidth <= 1024) chatSidebar.classList.add('collapsed');
+
+// ============================================================
+// VIEWER COUNT
+// ============================================================
+function updateViewerCount() {
+  const subs = SUBS_PER_CITY[currentCity]||[];
+  const subName = subs[currentPage] || subs[0] || currentCity;
+  const count = CHAT_ONLINE_COUNTS[currentCity] || 10;
+  const vcText = document.getElementById('vc-text');
+  if (vcText) vcText.textContent = count + ' watching \u00B7 ' + subName;
+}
+
+// ============================================================
+// EMOTE PICKER
+// ============================================================
+const emoteBtn = document.getElementById('emote-btn');
+const emotePicker = document.getElementById('emote-picker');
+emoteBtn.addEventListener('click', () => { emotePicker.classList.toggle('open'); });
+document.querySelectorAll('.emote').forEach(em => {
+  em.addEventListener('click', () => {
+    chatInput.value += em.dataset.e;
+    chatInput.focus();
+    emotePicker.classList.remove('open');
+  });
+});
+document.addEventListener('click', e => {
+  if (!e.target.closest('.emote-picker-wrap')) emotePicker.classList.remove('open');
+});
+
+// ============================================================
+// PINNED MESSAGES
+// ============================================================
+const PINNED_MSGS = {
+  shoreditch: "\u{1F4CC} Half Moon Club tonight at Smalls \u2014 doors at 1am, free entry",
+  shimokitazawa: "\u{1F4CC} \u4E0B\u5317\u6CA2SHELTER \u2014 \u30E9\u30A4\u30D6\u4ECA\u591C 19:30 start",
+  bushwick: "\u{1F4CC} Open mic at Wyckoff warehouse \u2014 sign up at the door",
+  echopark: "\u{1F4CC} Noche de Garage this Friday \u2014 backyard show, $5",
+  capetown: "\u{1F4CC} Amapiano night at Long Street \u2014 gratis entry before midnight",
+  jakarta: "\u{1F4CC} Panggung Rakyat setiap Sabtu \u2014 bawa alat musik sendiri",
+};
+
+function updatePinnedMessage() {
+  const el = document.getElementById('chat-pinned');
+  if (!el) return;
+  el.textContent = PINNED_MSGS[currentCity] || '';
+  el.style.display = PINNED_MSGS[currentCity] ? 'block' : 'none';
+}
+
+// ============================================================
+// GIFT MESSAGES
+// ============================================================
+const GIFT_ITEMS = [
+  'a BandLab Pro sub', 'a Studio Pass', 'a Flyer Boost', '100 coins', 'a VIP badge',
+];
+
+function scheduleGift() {
+  const delay = 60000 + Math.random() * 30000;
+  setTimeout(() => {
+    const giver = CHAT_USERS[Math.floor(Math.random()*CHAT_USERS.length)];
+    let receiver = CHAT_USERS[Math.floor(Math.random()*CHAT_USERS.length)];
+    while (receiver.name === giver.name) receiver = CHAT_USERS[Math.floor(Math.random()*CHAT_USERS.length)];
+    const item = GIFT_ITEMS[Math.floor(Math.random()*GIFT_ITEMS.length)];
+    const text = `\u{1F381} ${giver.name} gifted ${item} to ${receiver.name}!`;
+    const msg = document.createElement('div');
+    msg.className = 'chat-msg gift';
+    msg.style.opacity='0'; msg.style.transform='translateY(8px)'; msg.style.transition='opacity 0.3s, transform 0.3s';
+    msg.innerHTML = `<span class="chat-text">${text}</span>`;
+    chatMessages.appendChild(msg);
+    requestAnimationFrame(()=>{msg.style.opacity='1';msg.style.transform='translateY(0)';});
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    scheduleGift();
+  }, delay);
+}
+scheduleGift();
+
+// ============================================================
+// RADIO TRACKS
+// ============================================================
+const RADIO_TRACKS = {
+  shoreditch: [
+    {title:'Midnight Drift',artist:'Hale Moon',color:'linear-gradient(135deg,#f12c18,#b400ff)'},
+    {title:'Mono.Chrome.',artist:'Collective',color:'linear-gradient(135deg,#29dbe5,#2f93f6)'},
+    {title:'Piano Rooms',artist:'Nocturnes',color:'linear-gradient(135deg,#fcc931,#ff690d)'},
+    {title:'Proper Mental',artist:'The Lads',color:'linear-gradient(135deg,#00c37d,#29dbe5)'},
+    {title:'Scared of Horses',artist:'Glass Vowel',color:'linear-gradient(135deg,#b400ff,#f12c18)'},
+  ],
+  shimokitazawa: [
+    {title:'\u98A8\u306E\u6B4C',artist:'haruka',color:'linear-gradient(135deg,#29dbe5,#b400ff)'},
+    {title:'\u771F\u591C\u4E2D\u30E9\u30B8\u30AA',artist:'YORU',color:'linear-gradient(135deg,#1a0a2e,#b400ff)'},
+    {title:'City Pop Revival',artist:'Various',color:'linear-gradient(135deg,#ff5c9a,#fcc931)'},
+    {title:'Shimokita Nights',artist:'\u4E0B\u5317\u6CA2',color:'linear-gradient(135deg,#f12c18,#ff690d)'},
+    {title:'Neon Rain',artist:'Pulse Drift',color:'linear-gradient(135deg,#0a2040,#f12c18)'},
+  ],
+  bushwick: [
+    {title:'Bass Church',artist:'Sub Hz',color:'linear-gradient(135deg,#f12c18,#fcc931)'},
+    {title:'Ghetto Tech',artist:'180 BPM',color:'linear-gradient(135deg,#b400ff,#29dbe5)'},
+    {title:'Break Beats',artist:'Open Decks',color:'linear-gradient(135deg,#00c37d,#fcc931)'},
+    {title:'Crate Diggers',artist:'Vinyl Only',color:'linear-gradient(135deg,#ff690d,#f12c18)'},
+    {title:'Deadass Good',artist:'BK Collective',color:'linear-gradient(135deg,#29dbe5,#b400ff)'},
+  ],
+  echopark: [
+    {title:'Fuego Lento',artist:'La Corriente',color:'linear-gradient(135deg,#ff690d,#f12c18)'},
+    {title:'Sunbleach',artist:'Surf Co',color:'linear-gradient(135deg,#fcc931,#29dbe5)'},
+    {title:'True North',artist:'Ambient Lab',color:'linear-gradient(135deg,#29dbe5,#00c37d)'},
+    {title:'Noche de Garage',artist:'Los Punks',color:'linear-gradient(135deg,#f12c18,#fcc931)'},
+    {title:'Bedroom Pop',artist:'Echo Park',color:'linear-gradient(135deg,#ff5c9a,#b400ff)'},
+  ],
+  capetown: [
+    {title:'Umculo Wami',artist:'Themba',color:'linear-gradient(135deg,#00c37d,#29dbe5)'},
+    {title:'Aand Musiek',artist:'Long St Collective',color:'linear-gradient(135deg,#fcc931,#ff690d)'},
+    {title:'Dub Tapes',artist:'Kingston 93',color:'linear-gradient(135deg,#f12c18,#b400ff)'},
+    {title:'Eish Vibes',artist:'Cape Sound',color:'linear-gradient(135deg,#29dbe5,#00c37d)'},
+    {title:'Gqom Night',artist:'Durban Bass',color:'linear-gradient(135deg,#b400ff,#f12c18)'},
+  ],
+  jakarta: [
+    {title:'Hujan di Kota',artist:'Awan Senja',color:'linear-gradient(135deg,#29dbe5,#2f93f6)'},
+    {title:'Kota Malam',artist:'Rindu',color:'linear-gradient(135deg,#ff690d,#f12c18)'},
+    {title:'Malam Musik',artist:'Various',color:'linear-gradient(135deg,#fcc931,#00c37d)'},
+    {title:'Panggung Rakyat',artist:'Underground',color:'linear-gradient(135deg,#f12c18,#b400ff)'},
+    {title:'Dangdut Remix',artist:'Blok M',color:'linear-gradient(135deg,#b400ff,#29dbe5)'},
+  ],
+};
+
+let radioCurrentIdx = 0;
+let radioElapsed = 0;
+let radioProgressTimer = null;
+
+function updateRadio() {
+  radioCurrentIdx = 0;
+  radioElapsed = 0;
+  const tracks = RADIO_TRACKS[currentCity] || RADIO_TRACKS.shoreditch;
+  const current = tracks[radioCurrentIdx];
+
+  // Update current track display
+  document.getElementById('radio-track-name').textContent = current.title;
+  document.getElementById('radio-track-artist').textContent = current.artist;
+  document.getElementById('radio-art').style.background = current.color;
+  document.getElementById('radio-listeners').textContent = (Math.floor(10 + Math.random() * 30)) + ' listening';
+  document.getElementById('radio-up-count').textContent = Math.floor(10 + Math.random() * 25);
+  document.getElementById('radio-down-count').textContent = Math.floor(1 + Math.random() * 8);
+
+  // Reset voted state
+  document.getElementById('radio-up').classList.remove('voted');
+  document.getElementById('radio-down').classList.remove('voted');
+
+  // Reset progress
+  const bar = document.getElementById('radio-bar');
+  bar.style.width = '0%';
+  document.getElementById('radio-elapsed').textContent = '0:00';
+  const totalDur = 180 + Math.floor(Math.random() * 60);
+  const durMin = Math.floor(totalDur / 60);
+  const durSec = totalDur % 60;
+  document.getElementById('radio-duration').textContent = durMin + ':' + String(durSec).padStart(2,'0');
+
+  // Render queue (tracks 1-4)
+  renderRadioQueue(tracks);
+
+  // Update mini radio bar
+  updateRadioMini(current);
+
+  // Start progress timer
+  if (radioProgressTimer) clearInterval(radioProgressTimer);
+  radioElapsed = 0;
+  radioProgressTimer = setInterval(function() {
+    radioElapsed++;
+    const pct = Math.min(100, (radioElapsed / 200) * 100);
+    document.getElementById('radio-bar').style.width = pct + '%';
+    const eMin = Math.floor(radioElapsed / 60);
+    const eSec = radioElapsed % 60;
+    document.getElementById('radio-elapsed').textContent = eMin + ':' + String(eSec).padStart(2,'0');
+    if (radioElapsed >= 200) {
+      advanceRadioTrack();
+    }
+  }, 1000);
+}
+
+function advanceRadioTrack() {
+  const tracks = RADIO_TRACKS[currentCity] || RADIO_TRACKS.shoreditch;
+  radioCurrentIdx = (radioCurrentIdx + 1) % tracks.length;
+  const current = tracks[radioCurrentIdx];
+  document.getElementById('radio-track-name').textContent = current.title;
+  document.getElementById('radio-track-artist').textContent = current.artist;
+  document.getElementById('radio-art').style.background = current.color;
+  document.getElementById('radio-up-count').textContent = Math.floor(10 + Math.random() * 25);
+  document.getElementById('radio-down-count').textContent = Math.floor(1 + Math.random() * 8);
+  document.getElementById('radio-up').classList.remove('voted');
+  document.getElementById('radio-down').classList.remove('voted');
+  document.getElementById('radio-bar').style.width = '0%';
+  radioElapsed = 0;
+  renderRadioQueue(tracks);
+  updateRadioMini(current);
+}
+
+function renderRadioQueue(tracks) {
+  const queue = document.getElementById('radio-queue');
+  const queueTracks = [];
+  for (let i = 1; i <= 4; i++) {
+    const idx = (radioCurrentIdx + i) % tracks.length;
+    queueTracks.push(tracks[idx]);
+  }
+  document.getElementById('radio-queue-count').textContent = queueTracks.length + ' tracks';
+  // Remove old items
+  queue.querySelectorAll('.radio-queue-item').forEach(function(el) { el.remove(); });
+  queueTracks.forEach(function(t, i) {
+    const item = document.createElement('div');
+    item.className = 'radio-queue-item';
+    const votes = Math.floor(3 + Math.random() * 15);
+    item.innerHTML = '<span class="rqi-num">' + (i + 1) + '</span>' +
+      '<div class="rqi-art" style="background:' + t.color + ';"></div>' +
+      '<div class="rqi-info"><div class="rqi-name">' + t.title + '</div><div class="rqi-artist">' + t.artist + '</div></div>' +
+      '<span class="rqi-votes">\u2764 ' + votes + '</span>';
+    queue.appendChild(item);
+  });
+}
+
+function updateRadioMini(track) {
+  var rmArt = document.getElementById('rm-art');
+  var rmTitle = document.getElementById('rm-title');
+  var rmArtist = document.getElementById('rm-artist');
+  if (rmArt) rmArt.style.background = track.color;
+  if (rmTitle) rmTitle.textContent = track.title;
+  if (rmArtist) rmArtist.textContent = track.artist;
+}
+
+// Radio vote buttons
+document.getElementById('radio-up').addEventListener('click', function() {
+  var btn = document.getElementById('radio-up');
+  var el = document.getElementById('radio-up-count');
+  if (btn.classList.contains('voted')) return;
+  btn.classList.add('voted');
+  el.textContent = parseInt(el.textContent) + 1;
+  // Remove down vote if active
+  var downBtn = document.getElementById('radio-down');
+  if (downBtn.classList.contains('voted')) {
+    downBtn.classList.remove('voted');
+    var downEl = document.getElementById('radio-down-count');
+    downEl.textContent = Math.max(0, parseInt(downEl.textContent) - 1);
+  }
+});
+document.getElementById('radio-down').addEventListener('click', function() {
+  var btn = document.getElementById('radio-down');
+  var el = document.getElementById('radio-down-count');
+  if (btn.classList.contains('voted')) return;
+  btn.classList.add('voted');
+  el.textContent = parseInt(el.textContent) + 1;
+  // Remove up vote if active
+  var upBtn = document.getElementById('radio-up');
+  if (upBtn.classList.contains('voted')) {
+    upBtn.classList.remove('voted');
+    var upEl = document.getElementById('radio-up-count');
+    upEl.textContent = Math.max(0, parseInt(upEl.textContent) - 1);
+  }
+});
+document.getElementById('radio-add-btn').addEventListener('click', function() {
+  alert('In production, this opens BandLab search');
+});
+
+// Mini radio bar — tap to open chat
+document.getElementById('radio-mini').addEventListener('click', function() {
+  chatSidebar.classList.remove('collapsed');
+  unreadCount = 0;
+  chatBadge.style.display = 'none';
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+});
+
+// ============================================================
+// UPDATE CHAT (patched to include pinned + radio + viewer)
+// ============================================================
+const _origUpdateChat = updateChat;
+
+// ============================================================
+// FLYER PULSE — random flyers jiggle to simulate live activity
+// ============================================================
+function pulseRandomFlyer() {
+  const activePages = document.querySelectorAll('.wall-page:not(.page-inactive)');
+  if (!activePages.length) return;
+  const page = activePages[0];
+  const flyers = page.querySelectorAll('.flyer:not(.pulse-now)');
+  if (!flyers.length) return;
+  const target = flyers[Math.floor(Math.random() * flyers.length)];
+  target.classList.add('pulse-now');
+  // Bump a reaction count on this flyer
+  const reactions = target.querySelectorAll('.reaction .rc');
+  if (reactions.length) {
+    const rc = reactions[Math.floor(Math.random() * reactions.length)];
+    rc.textContent = parseInt(rc.textContent) + 1;
+  }
+  setTimeout(() => target.classList.remove('pulse-now'), 600);
+}
+function schedulePulse() {
+  const delay = 2000 + Math.random() * 4000;
+  setTimeout(() => { pulseRandomFlyer(); schedulePulse(); }, delay);
+}
+schedulePulse();
+
+// ============================================================
+// INIT
+// ============================================================
+setTimeout(() => { renderFlyers('shoreditch'); updateChat(); updateViewerCount(); updatePinnedMessage(); updateRadio(); }, 0);
+</script>
+</body>
+</html>
